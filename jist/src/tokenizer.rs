@@ -1,0 +1,642 @@
+/*
+* This file takes in the wrtten source code and tokenizes it into a vector of tokens
+* These tokens can then be used to create an AST
+*/
+
+pub mod tokenizer {
+    use crate::base_variables::variables::VARIABLE_STACK;
+    use crate::token_types::token_type::TokenTypes;
+
+    pub struct ParseInfo {
+        pub token: TokenTypes,
+        pub chars_read: i32,
+        pub value: String,
+    }
+
+    impl ParseInfo {
+        pub fn new(token: TokenTypes, chars_read: i32, value: String) -> Self {
+            ParseInfo {
+                token,
+                chars_read,
+                value,
+            }
+        }
+        pub fn to_string(&self) -> String {
+            let mut str = String::new();
+            str.push_str("TokenType: ");
+            str.push_str(&self.token.to_string());
+            str.push_str("Chars read: ");
+            str.push_str(&self.chars_read.to_string());
+            str.push_str("value: ");
+            str.push_str(&self.value.to_string());
+            return str;
+        }
+    }
+    impl ParseInfo {
+        fn eq(&self, other: &Self) -> bool {
+            self.token == other.token && self.chars_read == other.chars_read
+        }
+    }
+
+    pub struct Token<T> {
+        pub value: T,
+        pub token_type: TokenTypes,
+    }
+    impl<T: std::fmt::Display> Token<T> {
+        pub fn to_string(&self) -> String {
+            let mut str = String::new();
+            str.push_str(&self.value.to_string());
+            str.push_str(&self.token_type.to_string());
+            return str;
+        }
+    }
+
+    impl<T> Token<T> {
+        pub fn new(value: T, token_type: TokenTypes) -> Self {
+            Token { value, token_type }
+        }
+    }
+    static mut MULTLINECOMMENT: bool = false;
+
+    pub fn tokenize(expression: String) -> Vec<ParseInfo> {
+        //print!("Tokenizing expression: {}\n", expression);
+        let mut token_list: Vec<ParseInfo> = Vec::new();
+        let none = ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+
+        let mut index = 0;
+        let chars: Vec<char> = expression.chars().collect();
+
+        while index < chars.len() {
+            let char = chars[index];
+            let nextchar = if index + 1 < chars.len() {
+                chars[index + 1]
+            } else {
+                '\0' // Null character for out-of-bounds safety
+            };
+
+            if char == ';' {
+                index += 1;
+                token_list.push(ParseInfo::new(TokenTypes::SemiColon, 1, "none".to_string()));
+                continue;
+            }
+
+            if char == ' ' || char == '\n' || char == '\r' || char == '\t' {
+                index += 1;
+                continue; // Skip whitespace characters
+            }
+
+            unsafe {
+                if MULTLINECOMMENT {
+                    // Skip characters within multi-line comments
+                    while index < chars.len() {
+                        let char = chars[index];
+                        let nextchar = if index + 1 < chars.len() {
+                            chars[index + 1]
+                        } else {
+                            '\0'
+                        };
+                        if char == '*' && nextchar == '/' {
+                            MULTLINECOMMENT = false;
+                            index += 2;
+                            break;
+                        }
+                        index += 1;
+                    }
+                    continue;
+                }
+
+                if char == '/' && nextchar == '/' {
+                    // Single-line comment - skip the rest of the line
+                    let info = ParseInfo::new(
+                        TokenTypes::Comment,
+                        (chars.len() - index) as i32,
+                        "none".to_string(),
+                    );
+                    token_list.push(info);
+                    break;
+                } else if char == '/' && nextchar == '*' {
+                    MULTLINECOMMENT = true;
+                    index += 2;
+                    continue;
+                }
+            }
+
+            // Process regular tokens
+            let info: ParseInfo = read_token(&expression, index);
+            if info.token != none.token {
+                index += info.chars_read as usize;
+                token_list.push(info);
+                continue;
+            }
+
+            index += 1;
+        }
+
+        token_list
+    }
+
+    pub fn read_token(expression: &String, index: usize) -> ParseInfo {
+        let none: ParseInfo = ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+
+        let char = expression.chars().nth(index).unwrap();
+
+        match char {
+            '+' | '-' | '*' | '/' => {
+                let chars_read = 1;
+                return ParseInfo::new(
+                    TokenTypes::Operator,
+                    chars_read.try_into().unwrap(),
+                    char.to_string(),
+                );
+            }
+            '(' => return ParseInfo::new(TokenTypes::LeftParenthesis, 1, char.to_string()),
+            ')' => return ParseInfo::new(TokenTypes::RightParenthesis, 1, char.to_string()),
+            '{' => return ParseInfo::new(TokenTypes::LeftCurly, 1, char.to_string()),
+            '}' => return ParseInfo::new(TokenTypes::RightCurly, 1, char.to_string()),
+            ',' => return ParseInfo::new(TokenTypes::ArgumentSeparator, 1, char.to_string()),
+            '=' => return ParseInfo::new(TokenTypes::AssignmentOperator, 1, char.to_string()),
+            _ => {}
+        }
+
+        let info = read_variable_declaration(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+        let info = read_function_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+        let info = read_variable_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+        let info = read_variable_call(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = read_function_declaration(expression, index);
+        // Handle number or function parsing if no matches yet
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = read_function_call(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+        let mut j = index;
+        let mut decimals = 0;
+
+        // Loop through the expression
+        while j < expression.len() {
+            let char: char = expression.chars().nth(j).unwrap();
+
+            // Break if the character is not a digit or decimal point
+            if !char.is_digit(10) && char != '.' {
+                break;
+            }
+
+            // Count decimal points
+            if char == '.' {
+                decimals += 1;
+                // If there are multiple decimal points, return None
+                if decimals > 1 {
+                    return none;
+                }
+            }
+
+            j += 1;
+        }
+
+        // Extract the number substring
+        let number_str = &expression[index..j];
+
+        if let Ok(_parsed_number) = number_str.parse::<f64>() {
+            let chars_read = j - index;
+            if decimals == 0 {
+                return ParseInfo::new(
+                    TokenTypes::Int,
+                    chars_read.try_into().unwrap(),
+                    number_str.to_string(),
+                );
+            } else {
+                return ParseInfo::new(
+                    TokenTypes::Float,
+                    chars_read.try_into().unwrap(),
+                    number_str.to_string(),
+                );
+            }
+        }
+
+        let j = index;
+        // Ensure j is within bounds and unwrap safely
+        if let Some(c) = expression.chars().nth(j) {
+            // Check for the start of "true" or "false"
+            if c == 't' || c == 'f' {
+                let mut j = index + 1;
+
+                // Continue iterating to find the end of the boolean literal or a space
+                while j < expression.len() && expression.chars().nth(j).unwrap() != ' ' {
+                    j += 1;
+                }
+
+                // Now check if the substring is "true" or "false"
+                let bool_str = &expression[index..j];
+                if bool_str == "true" || bool_str == "false" {
+                    let chars_read = j - index;
+                    let chars_read_converted: usize = match chars_read.try_into() {
+                        Ok(value) => value,
+                        Err(_) => {
+                            //println!("Error converting characters read.");
+                            return none;
+                        }
+                    };
+
+                    // Return the ParseInfo with the correct boolean value
+                    return ParseInfo::new(
+                        TokenTypes::Bool,
+                        chars_read_converted.try_into().unwrap(),
+                        bool_str.to_string(),
+                    );
+                }
+            }
+        }
+
+        // tokenize char value if it matches 'a' to 'z' or 'A' to 'Z'
+        if char.is_alphabetic() {
+            let chars_read = 1;
+            return ParseInfo::new(
+                TokenTypes::Char,
+                chars_read.try_into().unwrap(),
+                char.to_string(),
+            );
+        }
+
+        // check for string values
+        if char == '"' {
+            let mut j = index + 1;
+            while j < expression.len() {
+                if expression.chars().nth(j).unwrap() == '"' {
+                    break;
+                }
+                j += 1;
+            }
+            let chars_read = j - index + 1;
+            return ParseInfo::new(
+                TokenTypes::String,
+                chars_read.try_into().unwrap(),
+                expression[index..j + 1].to_string(),
+            );
+        }
+        return none;
+    }
+
+    fn read_function_declaration(expression: &String, index: usize) -> ParseInfo {
+        let mut j = index;
+        let mut function: String = String::new();
+        let func_compare = "func";
+
+        // Collect alphabetic characters forming the function name
+        while j < expression.len() {
+            if let Some(char) = expression.chars().nth(j) {
+                if char.is_alphabetic() {
+                    function.push(char);
+                } else {
+                    break;
+                }
+            }
+            j += 1;
+
+            // If we've collected 4 characters, check if they form "func"
+            if function.len() == 4 {
+                if function == func_compare {
+                    // Skip whitespace and collect the actual function name
+                    let mut function_name = String::new();
+                    while j < expression.len() {
+                        if let Some(char) = expression.chars().nth(j) {
+                            if char.is_alphabetic() {
+                                function_name.push(char);
+                            } else if char != ' ' {
+                                break;
+                            }
+                        }
+                        j += 1;
+                    }
+                    //print!("Function name: {}\n", function_name);
+
+                    // Return ParseInfo with the length of "func" and function name
+                    return ParseInfo::new(
+                        TokenTypes::Function,
+                        (j - index).try_into().unwrap(),
+                        "none".to_string(),
+                    );
+                } else {
+                    return ParseInfo::new(
+                        TokenTypes::None,
+                        (j - index).try_into().unwrap(),
+                        "none".to_string(),
+                    );
+                }
+            }
+
+            // If more than 4 characters, remove the first character (sliding window)
+            if function.len() > 4 {
+                function.remove(0);
+            }
+        }
+
+        // Return default ParseInfo if function not found
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+    }
+
+    static mut PARSEFUNCTIONCALL: bool = false;
+    fn read_function_call(expression: &String, index: usize) -> ParseInfo {
+        let mut j = index;
+        let mut function_name: String = String::new();
+
+        let chars: Vec<char> = expression.chars().collect();
+
+        // Start collecting the function name
+        while j < chars.len() {
+            let char = chars[j];
+            let _nextchar = if j + 1 < chars.len() {
+                chars[j + 1]
+            } else {
+                '\0' // Null character for out-of-bounds safety
+            };
+
+            if char == '(' {
+                // Return the function call information when '(' is found
+                unsafe { PARSEFUNCTIONCALL = true };
+                return ParseInfo::new(
+                    TokenTypes::FunctionCall,
+                    (j - index).try_into().unwrap(),
+                    function_name,
+                );
+            } else if !char.is_whitespace() {
+                // Append non-whitespace characters to function_name
+                function_name.push(char);
+            } else if char == ')' {
+                // Return the function call information when ')' is found
+                unsafe { PARSEFUNCTIONCALL = false };
+                return ParseInfo::new(
+                    TokenTypes::FunctionCall,
+                    (j - index).try_into().unwrap(),
+                    function_name,
+                );
+            }
+
+            let mut parameter = String::new();
+            let sent_param_flag = false;
+
+            if unsafe { PARSEFUNCTIONCALL } {
+                // Skip whitespace after the function name
+                while j < chars.len() {
+                    if chars[j].is_whitespace() {
+                        j += 1;
+                    } else if chars[j] == ')' {
+                        unsafe { PARSEFUNCTIONCALL = false };
+                        break;
+                    } else if sent_param_flag {
+                        // Collect the parameter
+                        //sent_param_flag = true;
+                        return ParseInfo::new(
+                            TokenTypes::FunctionArguments,
+                            (j - index).try_into().unwrap(),
+                            parameter,
+                        );
+                    } else {
+                        // loop through parameter until we find a comma
+                        while j < chars.len() {
+                            if chars[j] == ',' {
+                                return ParseInfo::new(
+                                    TokenTypes::VariableCall,
+                                    (j - index).try_into().unwrap(),
+                                    parameter,
+                                );
+                            } else {
+                                parameter.push(chars[j]);
+                                j += 1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            j += 1;
+        }
+
+        // Return None if no function call found
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+    }
+
+    fn read_variable_declaration(expression: &String, index: usize) -> ParseInfo {
+        let mut j = index;
+        let mut variable: String = String::new();
+        let let_compare = "let";
+
+        // Collect alphabetic characters forming the function name
+        while j < expression.len() {
+            if let Some(char) = expression.chars().nth(j) {
+                if char.is_alphabetic() {
+                    variable.push(char);
+                } else {
+                    break;
+                }
+            }
+            j += 1;
+
+            if variable.len() == 3 {
+                if variable == let_compare {
+                    // Skip whitespace and collect the actual function name
+                    let mut variable_name = String::new();
+                    while j < expression.len() {
+                        if let Some(char) = expression.chars().nth(j) {
+                            if char.is_alphabetic() {
+                                variable_name.push(char);
+                            } else if char != ' ' {
+                                break;
+                            }
+                        }
+                        j += 1;
+                    }
+                    //print!("Variable name: {}\n", variable_name);
+
+                    return ParseInfo::new(
+                        TokenTypes::Variable,
+                        (j - index).try_into().unwrap(),
+                        variable_name,
+                    );
+                } else {
+                    return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+                }
+            }
+
+            if variable.len() > 3 {
+                variable.remove(0);
+            }
+        }
+
+        // Return default ParseInfo if function not found
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+    }
+
+    fn read_function_assignment(expression: &String, index: usize) -> ParseInfo {
+        let chars: Vec<char> = expression.chars().collect();
+        let mut j = index;
+
+        // Look for the `->` pattern
+        while j < chars.len() {
+            let char = chars[j];
+            let nextchar = if j + 1 < chars.len() {
+                chars[j + 1]
+            } else {
+                '\0' // Null character for out-of-bounds safety
+            };
+
+            if char == '-' && nextchar == '>' {
+                j += 2; // Move past `->`
+
+                // Skip whitespace after `->`
+                while j < chars.len() && chars[j].is_whitespace() {
+                    j += 1;
+                }
+
+                // Collect the return type (lowercase type)
+                let mut return_type = String::new();
+                while j < chars.len() {
+                    let char = chars[j];
+                    if char.is_lowercase() || char == '_' {
+                        return_type.push(char);
+                        j += 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Check if we collected a valid return type
+                if !return_type.is_empty() {
+                    return ParseInfo::new(
+                        TokenTypes::ReturnTypeAssignment,
+                        (j - index).try_into().unwrap(),
+                        return_type,
+                    );
+                }
+            } else {
+                j += 1; // Continue scanning if `->` not found
+            }
+        }
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+    }
+
+    fn read_variable_assignment(expression: &String, index: usize) -> ParseInfo {
+        let chars: Vec<char> = expression.chars().collect();
+        let mut j = index;
+        let original_index = index;
+
+        // Look for the `:` pattern
+        while j < chars.len() {
+            let char = chars[j];
+
+            if char == ':' {
+                j += 1; // Move past `:`
+
+                // Skip whitespace after `:`
+                while j < chars.len() && chars[j].is_whitespace() {
+                    j += 1;
+                }
+
+                // Collect the type (assuming it is lowercase or an identifier)
+                let mut var_type = String::new();
+                while j < chars.len() {
+                    let char = chars[j];
+                    if char.is_lowercase() || char.is_alphanumeric() || char == '_' {
+                        var_type.push(char);
+                        j += 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Skip whitespace after the type and check for `=`
+                while j < chars.len() && chars[j].is_whitespace() {
+                    j += 1;
+                }
+
+                if j < chars.len() && chars[j] == '=' {
+                    // Print for debugging
+                    /*
+                        print!(
+
+                            "Variable Type: '{}', Length: {}\n",
+                            var_type,
+                            j - original_index
+                        );
+                    */
+                    return ParseInfo::new(
+                        TokenTypes::VarTypeAssignment,
+                        (j - original_index).try_into().unwrap(),
+                        var_type,
+                    );
+                }
+            } else {
+                j += 1; // Continue scanning if `:` not found
+            }
+        }
+
+        // Return None if no valid variable assignment found
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+    }
+
+    fn read_variable_call(expression: &String, index: usize) -> ParseInfo {
+        let mut j = index;
+        let mut variable_name = String::new();
+
+        // Iterate over characters in the string starting at 'index'
+        let chars = expression.chars().skip(index).enumerate();
+
+        for (_i, char) in chars {
+            // Check if the current or next character is '=' (assignment)
+            let next_char = expression.chars().nth(j + 1).unwrap_or('\0');
+            if char == '=' || next_char == '=' {
+                return ParseInfo::new(
+                    TokenTypes::VariableCall,
+                    (j - index).try_into().unwrap(),
+                    variable_name,
+                );
+            }
+
+            // Collect valid variable name characters (alphanumeric and '_')
+            if char.is_alphanumeric() || char == '_' {
+                variable_name.push(char);
+            } else if char.is_whitespace() {
+                continue;
+            } else {
+                break;
+            }
+
+            j += 1;
+        }
+
+        // After collecting the variable name, check if it exists in the stack
+        if !variable_name.is_empty() {
+            for variable in unsafe { &VARIABLE_STACK } {
+                if variable.name == variable_name {
+                    return ParseInfo::new(
+                        TokenTypes::VariableCall,
+                        (j - index).try_into().unwrap(),
+                        variable_name,
+                    );
+                }
+            }
+        }
+
+        // Return None if no valid variable call found
+        ParseInfo::new(
+            TokenTypes::None,
+            0,
+            "No valid variable call found".to_string(),
+        )
+    }
+}

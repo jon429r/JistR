@@ -1,0 +1,5 @@
+
+let a: int = 101 + 1;
+let b: int = (101 + 1);
+let c: int = 19;
+echo(c);
