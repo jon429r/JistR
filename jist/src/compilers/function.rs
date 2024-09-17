@@ -83,6 +83,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
             }
             ASTNode::FunctionCall(f) => {
                 // Handle function call
+
                 parsing_function_call = true;
                 function_name = Some(f.name.clone());
                 let mut number_of_parentheses = 0;
@@ -149,6 +150,33 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                         ASTNode::ArgumentSeparator => {
                             //println!("Comma separator between arguments.");
                         }
+                        ASTNode::String(s) => {
+                            //println!("Function argument: {}", s.value);
+                            let arg1 = (String::new(), BaseTypes::StringWrapper(s.value.clone()));
+                            parameter_and_value.push(arg1);
+                        }
+                        ASTNode::Int(n) => {
+                            //println!("Function argument: {}", n.value);
+                            let arg1 = (String::new(), BaseTypes::Int(n.value.clone()));
+                            parameter_and_value.push(arg1);
+                        }
+                        ASTNode::Char(c) => {
+                            //println!("Function argument: {}", c.value);
+                            let arg1 = (String::new(), BaseTypes::Char(c.value.clone()));
+                            parameter_and_value.push(arg1);
+                        }
+                        ASTNode::Bool(b) => {
+                            //println!("Function argument: {}", b.value);
+                            let arg1 = (String::new(), BaseTypes::Bool(b.value.clone()));
+                            parameter_and_value.push(arg1);
+                        }
+                        ASTNode::Float(
+                            f,
+                        ) => {
+                            //println!("Function argument: {}", f.value);
+                            let arg1 = (String::new(), BaseTypes::Float(f.value.clone().into()));
+                            parameter_and_value.push(arg1);
+                        }
                         _ => {
                             println!("Unhandled node in function call: {:?}", expression[i]);
                         }
@@ -185,7 +213,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                     parameter_and_value[0].1.clone().try_into().unwrap(),
                     parameter_and_value[1].1.clone().try_into().unwrap(),
                 );
-                //println!("Result of Function: {}", result); // Output: 8
+                println!("Result of Function: {}", result); // Output: 8
             }
         } else if std.contains_key(function_name.as_ref().unwrap().as_str()) {
             //println!("Function call is in STD_FUNCTIONS.");

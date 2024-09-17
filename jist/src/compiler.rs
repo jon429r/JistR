@@ -5,7 +5,7 @@
 pub mod compiler {
     use crate::compilers::function::parse_function_declaration_or_call;
     use crate::compilers::variable::parse_variable_declaration_or_assignment;
-    use crate::node::node::{ASTNode, IntNode};
+    use crate::node::node::{ASTNode, IntNode, OperatorNode};
     use crate::token_types::token_type::*;
     use std::process::exit;
 
@@ -86,26 +86,36 @@ pub mod compiler {
     }
 
     pub fn operation(
-        expression: &mut Vec<ASTNode>,  // Now mutable
+        expression: &mut Vec<ASTNode>, 
         first_value: Option<ASTNode>,
         has_parenthisis: bool,
     ) -> ASTNode {
         let first: Option<ASTNode> = first_value;
-        let mut operator: Option<ASTNode> = None;
-        let mut third: Option<ASTNode> = None;
+        let mut operator: ASTNode = ASTNode::Operator(OperatorNode { operator: "+".to_string() });
+        let mut right: ASTNode = ASTNode::Int(IntNode { value: 0 });
+        let mut left: ASTNode = ASTNode::Int(IntNode { value: 0 });
+        let mut first_found = false;
 
-        let skip_by: usize = if has_parenthisis { 2 } else { 1 };
+        //let skip_by: usize = if has_parenthisis { 2 } else { 1 };
+        expression.reverse();
 
-        for next_node in expression.iter().skip(skip_by) {
+        println!("Expression: {:?}", expression);
+
+        for next_node in expression {
             match next_node {
                 ASTNode::LeftParenthesis => {}
                 ASTNode::RightParenthesis => {}
                 ASTNode::Operator(o) => {
-                    operator = Some(ASTNode::Operator(o.clone()));
+                    operator = ASTNode::Operator(o.clone());
                 }
                 ASTNode::Int(n2) => {
-                    third = Some(ASTNode::Int(n2.clone()));
-                    break;
+                    if first_found == false {
+                        left = ASTNode::Int(n2.clone());
+                        first_found = true;
+                    } else {
+                        right = ASTNode::Int(n2.clone());
+                        break;
+                    }
                 }
                 _ => {
                     println!("Syntax Error: Expected operator or number.");
@@ -114,14 +124,10 @@ pub mod compiler {
             }
         }
 
-        if let (Some(f), Some(op), Some(t)) = (first, operator, third) {
-            let result = parse_operator(&f, &op, &t);
+            let result = parse_operator(&left, &operator, &right);
             println!("Parsed expression result: {:?}", result);
             return result;
-        } else {
-            println!("Syntax Error: Incomplete expression.");
-            exit(1);
-        }
+       
     }
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
