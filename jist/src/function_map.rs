@@ -34,9 +34,16 @@ pub mod function {
 }
 
 use std::collections::HashMap;
-use std::sync::Mutex; // For thread safety
+use std::sync::Mutex;
+
+use function::Function; // For thread safety
 
 lazy_static::lazy_static! {
+    pub static ref USER_FUNCTIONS: Mutex<HashMap<String, Function>> = {
+        let map = HashMap::new();
+        map.into()
+    };
+    
     pub static ref STD_FUNCTIONS_DOUBLE: Mutex<HashMap<&'static str, fn(f64, f64) -> f64>> = {
         let mut map = HashMap::new();
         map.insert("max", FunctionMap::max as fn(f64, f64) -> f64);

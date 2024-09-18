@@ -141,49 +141,49 @@ pub mod tokenizer {
         let char = expression.chars().nth(index).unwrap();
 
         match char {
-            '+' | '-' | '*' | '/' => {
-                let chars_read = 1;
-                return ParseInfo::new(
-                    TokenTypes::Operator,
-                    chars_read.try_into().unwrap(),
-                    char.to_string(),
-                );
+            '"' | '\'' => {
+                let mut j = index + 1;
+                while j < expression.len() {
+                    match char {
+                        '"' => {
+                            if expression.chars().nth(j).unwrap() == char {
+                                return ParseInfo::new(
+                                    TokenTypes::String,
+                                    (j - index + 1).try_into().unwrap(),
+                                    expression[index..j + 1].to_string(),
+                                );
+                            }
+                        }
+                        '\'' => {
+                            if expression.chars().nth(j).unwrap() == char {
+                                return ParseInfo::new(
+                                    TokenTypes::Char,
+                                    (j - index + 1).try_into().unwrap(),
+                                    expression[index..j + 1].to_string(),
+                                );
+                            }
+                        }
+                        _ => {}
+                    }
+                    if expression.chars().nth(j).unwrap() == char {
+                        return ParseInfo::new(
+                            TokenTypes::Char,
+                            1,
+                            expression[index..j + 1].to_string(),
+                        );
+                    }
+                    j += 1;
+                }
+                {
+                    let chars_read = j - index + 1;
+                    return ParseInfo::new(
+                        TokenTypes::String,
+                        chars_read.try_into().unwrap(),
+                        expression[index..j + 1].to_string(),
+                    );
+                }
             }
-            '(' => return ParseInfo::new(TokenTypes::LeftParenthesis, 1, char.to_string()),
-            ')' => return ParseInfo::new(TokenTypes::RightParenthesis, 1, char.to_string()),
-            '{' => return ParseInfo::new(TokenTypes::LeftCurly, 1, char.to_string()),
-            '}' => return ParseInfo::new(TokenTypes::RightCurly, 1, char.to_string()),
-            ',' => return ParseInfo::new(TokenTypes::ArgumentSeparator, 1, char.to_string()),
-            '=' => return ParseInfo::new(TokenTypes::AssignmentOperator, 1, char.to_string()),
             _ => {}
-        }
-
-        let info = read_variable_declaration(expression, index);
-        if info.token != none.token {
-            return info;
-        }
-        let info = read_function_assignment(expression, index);
-        if info.token != none.token {
-            return info;
-        }
-        let info = read_variable_assignment(expression, index);
-        if info.token != none.token {
-            return info;
-        }
-        let info = read_variable_call(expression, index);
-        if info.token != none.token {
-            return info;
-        }
-
-        let info = read_function_declaration(expression, index);
-        // Handle number or function parsing if no matches yet
-        if info.token != none.token {
-            return info;
-        }
-
-        let info = read_function_call(expression, index);
-        if info.token != none.token {
-            return info;
         }
         let mut j = index;
         let mut decimals = 0;
@@ -229,50 +229,64 @@ pub mod tokenizer {
             }
         }
 
-        let j = index;
-        // Ensure j is within bounds and unwrap safely
-        if let Some(c) = expression.chars().nth(j) {
-            // Check for the start of "true" or "false"
-            if c == 't' || c == 'f' {
-                let mut j = index + 1;
+        match char {
+            '+' | '-' | '*' | '/' => {
+                let chars_read = 1;
+                return ParseInfo::new(
+                    TokenTypes::Operator,
+                    chars_read.try_into().unwrap(),
+                    char.to_string(),
+                );
+            }
+            '(' => return ParseInfo::new(TokenTypes::LeftParenthesis, 1, char.to_string()),
+            ')' => return ParseInfo::new(TokenTypes::RightParenthesis, 1, char.to_string()),
+            '{' => return ParseInfo::new(TokenTypes::LeftCurly, 1, char.to_string()),
+            '}' => return ParseInfo::new(TokenTypes::RightCurly, 1, char.to_string()),
+            ',' => return ParseInfo::new(TokenTypes::ArgumentSeparator, 1, char.to_string()),
+            '=' => return ParseInfo::new(TokenTypes::AssignmentOperator, 1, char.to_string()),
+            _ => {}
+        }
 
-                // Continue iterating to find the end of the boolean literal or a space
-                while j < expression.len() && expression.chars().nth(j).unwrap() != ' ' {
-                    j += 1;
-                }
+        let info = read_variable_declaration(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+        let info = read_function_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+        let info = read_variable_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+        let info = read_variable_call(expression, index);
+        if info.token != none.token {
+            return info;
+        }
 
-                // Now check if the substring is "true" or "false"
-                let bool_str = &expression[index..j];
-                if bool_str == "true" || bool_str == "false" {
-                    let chars_read = j - index;
-                    let chars_read_converted: usize = match chars_read.try_into() {
-                        Ok(value) => value,
-                        Err(_) => {
-                            //println!("Error converting characters read.");
-                            return none;
-                        }
-                    };
+        let info = read_function_declaration(expression, index);
+        // Handle number or function parsing if no matches yet
+        if info.token != none.token {
+            return info;
+        }
 
-                    // Return the ParseInfo with the correct boolean value
+        let info = read_function_call(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        /*
+                // tokenize char value if it matches 'a' to 'z' or 'A' to 'Z'
+                if char.is_alphabetic() {
+                    let chars_read = 1;
                     return ParseInfo::new(
-                        TokenTypes::Bool,
-                        chars_read_converted.try_into().unwrap(),
-                        bool_str.to_string(),
+                        TokenTypes::Char,
+                        chars_read.try_into().unwrap(),
+                        char.to_string(),
                     );
                 }
-            }
-        }
-
-        // tokenize char value if it matches 'a' to 'z' or 'A' to 'Z'
-        if char.is_alphabetic() {
-            let chars_read = 1;
-            return ParseInfo::new(
-                TokenTypes::Char,
-                chars_read.try_into().unwrap(),
-                char.to_string(),
-            );
-        }
-
+        */
+        /*
         // check for string values
         if char == '"' {
             let mut j = index + 1;
@@ -288,7 +302,7 @@ pub mod tokenizer {
                 chars_read.try_into().unwrap(),
                 expression[index..j + 1].to_string(),
             );
-        }
+        }*/
         return none;
     }
 
@@ -409,6 +423,10 @@ pub mod tokenizer {
                     } else {
                         // loop through parameter until we find a comma
                         while j < chars.len() {
+                            // TODO check if numeric then return Int
+                            //check if is special keyword then return that
+                            // check if first is " or ' then return string or char
+
                             if chars[j] == ',' {
                                 return ParseInfo::new(
                                     TokenTypes::VariableCall,

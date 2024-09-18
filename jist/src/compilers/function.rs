@@ -1,17 +1,17 @@
-use crate::base_variables::base_types::BaseTypes;
+use crate::base_variables::base_types::{BaseTypes, Int};
 use crate::base_variables::variable::Variable;
 use crate::node::node::{ASTNode, VariableCallNode};
 
 use crate::base_variables::variables::VARIABLE_STACK;
-use crate::function_map::function::Function;
+use crate::function_map::function::{self, Function};
 use crate::function_map::{
-    STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE,
+    STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE, USER_FUNCTIONS,
 };
 
 pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
     //println!("Parsing function.");
 
-    let mut function_name: Option<String> = None;
+    let mut function_name: String = "None".to_string();
     let parameters: Vec<Variable> = Vec::new();
     let mut number_of_curly_braces = 0;
     let mut return_type: Option<BaseTypes> = None;
@@ -25,7 +25,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                 // Handle function declaration
                 // TODO: We need to tell the parser to continue passing expressions here until we
                 // reach the end of the function's ending }.
-                function_name = Some(f.name.clone());
+                function_name = f.name.clone();
                 //println!("Function name: {}", f.name);
 
                 // Start looking for function body or arguments
@@ -60,12 +60,27 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                                 if number_of_curly_braces == 0 {
                                     //println!("End of function declaration.");
                                     // TODO create new function object and add it to function maps
+                                    if function_name == "None" {
+                                        println!("Syntax Error: Function name is missing.");
+                                        return false;
+                                    }
                                     let function = Function::new(
-                                        function_name.as_ref().unwrap().clone(),
+                                        function_name.clone(),
                                         parameters.clone(),
                                         return_type.clone().unwrap(),
                                         expression.clone(),
                                     );
+
+                                    let mut user_functions = USER_FUNCTIONS.lock().unwrap();
+                                    if function_name == "None" {
+                                        println!("Syntax Error: Function is incomplete.");
+                                        return false;
+                                    }
+                                    user_functions.insert(
+                                        function_name.clone(),
+                                        function,
+                                    );
+
                                     break;
                                 }
                                 break; // End of function declaration
@@ -85,12 +100,14 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                 // Handle function call
 
                 parsing_function_call = true;
-                function_name = Some(f.name.clone());
+                function_name = f.name.clone();
                 let mut number_of_parentheses = 0;
                 //println!("Function call: {}", f.name);
 
                 i += 1;
                 while i < expression.len() {
+                    
+                println!("Node: {:?}", &expression[i]);
                     match &expression[i] {
                         ASTNode::FunctionCallArguments(_) => {
                             //println!("Parsing function call arguments.");
@@ -103,7 +120,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                          */
                         ASTNode::LeftParenthesis => {
                             if number_of_parentheses == 0 {
-                                //println!("Function call starting (.");
+                                println!("Function call starting (.");
                                 number_of_parentheses += 1;
                             } else {
                                 // TODO do what is within the LeftParenthesis
@@ -148,7 +165,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                             parameter_and_value.push(arg1);
                         }
                         ASTNode::ArgumentSeparator => {
-                            //println!("Comma separator between arguments.");
+                            println!("Comma separator between arguments.");
                         }
                         ASTNode::String(s) => {
                             //println!("Function argument: {}", s.value);
@@ -156,7 +173,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                             parameter_and_value.push(arg1);
                         }
                         ASTNode::Int(n) => {
-                            //println!("Function argument: {}", n.value);
+                            println!("Function argument: {}", n.value);
                             let arg1 = (String::new(), BaseTypes::Int(n.value.clone()));
                             parameter_and_value.push(arg1);
                         }
@@ -190,12 +207,6 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
         }
         i += 1;
     }
-
-    if function_name.is_none() {
-        println!("Syntax Error: Function is incomplete.");
-        return false;
-    }
-
     //println!("Successfully parsed function call.");
     //check that function is in our 4 function maps
 
@@ -205,26 +216,31 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
     let std_echo = STD_FUNCTIONS_ECHO.lock().unwrap();
 
     if parsing_function_call {
-        if std_double.contains_key(function_name.as_ref().unwrap().as_str()) {
-            //println!("Function call is in STD_FUNCTIONS_DOUBLE.");
+        if std_double.contains_key(function_name.clone().as_str()) {
+            println!("Function call is in STD_FUNCTIONS_DOUBLE.");
             //call function with parameters
-            if let Some(func) = std_double.get(function_name.as_ref().unwrap().as_str()) {
+            if let Some(func) = std_double.get(function_name.as_str()) {
+                println!("Function: {}", function_name);
+                //print parameters and value
+                for (name, value) in &parameter_and_value {
+                    println!("Parameter: {} Value: {:?}", name, value);
+                 }
                 let result = func(
                     parameter_and_value[0].1.clone().try_into().unwrap(),
                     parameter_and_value[1].1.clone().try_into().unwrap(),
                 );
                 println!("Result of Function: {}", result); // Output: 8
             }
-        } else if std.contains_key(function_name.as_ref().unwrap().as_str()) {
+        } else if std.contains_key(function_name.as_str()) {
             //println!("Function call is in STD_FUNCTIONS.");
-            if let Some(func) = std.get(function_name.as_ref().unwrap().as_str()) {
+            if let Some(func) = std.get(function_name.as_str()) {
                 let result = func();
                 //println!("Result of Function: {}", result); // Output: 8
             }
-        } else if std_echo.contains_key(function_name.as_ref().unwrap().as_str()) {
+        } else if std_echo.contains_key(function_name.as_str()) {
             //println!("Function call is in STD_FUNCTIONS_ECHO.");
 
-            if let Some(func) = std_echo.get(function_name.as_ref().unwrap().as_str()) {
+            if let Some(func) = std_echo.get(function_name.as_str()) {
                 if parameter_and_value.len() == 0 {
                     println!("Syntax Error: No parameters supplied to function.");
                     let result = func(String::new());
@@ -245,9 +261,9 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                 //print!("Result of Function: ");
                 //return result;
             }
-        } else if std_single.contains_key(function_name.as_ref().unwrap().as_str()) {
+        } else if std_single.contains_key(function_name.as_str()) {
             //println!("Function call is in STD_FUNCTIONS_SINGLE.");
-            if let Some(func) = std_echo.get(function_name.as_ref().unwrap().as_str()) {
+            if let Some(func) = std_echo.get(function_name.as_str()) {
                 if parameter_and_value.len() == 0 {
                     println!("Syntax Error: No parameters supplied to function.");
                     let result = func(String::new());
