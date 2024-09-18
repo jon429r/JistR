@@ -43,7 +43,7 @@ lazy_static::lazy_static! {
         let map = HashMap::new();
         map.into()
     };
-    
+
     pub static ref STD_FUNCTIONS_DOUBLE: Mutex<HashMap<&'static str, fn(f64, f64) -> f64>> = {
         let mut map = HashMap::new();
         map.insert("max", FunctionMap::max as fn(f64, f64) -> f64);

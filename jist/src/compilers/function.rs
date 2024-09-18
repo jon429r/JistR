@@ -3,7 +3,7 @@ use crate::base_variables::variable::Variable;
 use crate::node::node::{ASTNode, VariableCallNode};
 
 use crate::base_variables::variables::VARIABLE_STACK;
-use crate::function_map::function::{Function};
+use crate::function_map::function::Function;
 use crate::function_map::{
     STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE, USER_FUNCTIONS,
 };
@@ -76,10 +76,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                                         println!("Syntax Error: Function is incomplete.");
                                         return false;
                                     }
-                                    user_functions.insert(
-                                        function_name.clone(),
-                                        function,
-                                    );
+                                    user_functions.insert(function_name.clone(), function);
 
                                     break;
                                 }
@@ -106,8 +103,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
 
                 i += 1;
                 while i < expression.len() {
-                    
-                println!("Node: {:?}", &expression[i]);
+                    println!("Node: {:?}", &expression[i]);
                     match &expression[i] {
                         ASTNode::FunctionCallArguments(_) => {
                             //println!("Parsing function call arguments.");
@@ -187,9 +183,7 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                             let arg1 = (String::new(), BaseTypes::Bool(b.value.clone()));
                             parameter_and_value.push(arg1);
                         }
-                        ASTNode::Float(
-                            f,
-                        ) => {
+                        ASTNode::Float(f) => {
                             //println!("Function argument: {}", f.value);
                             let arg1 = (String::new(), BaseTypes::Float(f.value.clone().into()));
                             parameter_and_value.push(arg1);
@@ -224,7 +218,17 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                 //print parameters and value
                 for (name, value) in &parameter_and_value {
                     println!("Parameter: {} Value: {:?}", name, value);
-                 }
+                }
+
+                // Convert Int to Float if parameter is of type Int
+                if let BaseTypes::Int(x) = parameter_and_value[0].1 {
+                    parameter_and_value[0].1 = BaseTypes::Float(x as f64);
+                }
+
+                if let BaseTypes::Int(x) = parameter_and_value[1].1 {
+                    parameter_and_value[1].1 = BaseTypes::Float(x as f64);
+                }
+
                 let result = func(
                     parameter_and_value[0].1.clone().try_into().unwrap(),
                     parameter_and_value[1].1.clone().try_into().unwrap(),
@@ -266,6 +270,10 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
             if let Some(func) = std_echo.get(function_name.as_str()) {
                 if parameter_and_value.len() == 0 {
                     println!("Syntax Error: No parameters supplied to function.");
+                    if let BaseTypes::Int(x) = parameter_and_value[0].1 {
+                        parameter_and_value[0].1 = BaseTypes::Float(x as f64);
+                    }
+
                     let result = func(String::new());
                     return true;
                 }

@@ -20,6 +20,18 @@ pub mod variable {
         fn get_value(&self) -> BaseTypes;
     }
 
+    impl PartialEq for BaseTypes {
+        fn eq(&self, other: &Self) -> bool {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => x == y,
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => x == y,
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 == s2,
+                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 == c2,
+                _ => false,
+            }
+        }
+    }
+
     impl Variable {
         pub fn new(name: String, value: BaseTypes, var_type: BaseTypes) -> Variable
 where
@@ -27,6 +39,12 @@ where
         {
             //print!("Creating new variable: {} with value: {:?} and type: {:?}\n", name, value, var_type);
             let value_as_base_type: BaseTypes = value.into();
+
+            //let base Type int become a f64
+            let var_type = match var_type {
+                BaseTypes::Int(i) => BaseTypes::Float(i as f64),
+                _ => var_type,
+            };
 
             // Ensure the value type matches the variable type
             let checked_value = match var_type {
