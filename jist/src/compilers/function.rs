@@ -1,9 +1,9 @@
-use crate::base_variables::base_types::{BaseTypes, Int};
+use crate::base_variables::base_types::BaseTypes;
 use crate::base_variables::variable::Variable;
 use crate::node::node::{ASTNode, VariableCallNode};
 
 use crate::base_variables::variables::VARIABLE_STACK;
-use crate::function_map::function::{self, Function};
+use crate::function_map::function::{Function};
 use crate::function_map::{
     STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE, USER_FUNCTIONS,
 };
