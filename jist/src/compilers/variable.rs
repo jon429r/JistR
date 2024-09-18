@@ -123,7 +123,7 @@ pub fn parse_variable_declaration_or_assignment(exp_stack: &mut Vec<ASTNode>) ->
         return false;
     }
 
-    let variable = Variable::new(var_name.unwrap(), value, var_type.unwrap());
+    let _variable = Variable::new(var_name.unwrap(), value, var_type.unwrap());
     true
 }
 
@@ -146,7 +146,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
         operator: String::new(),
     });
     let mut left: ASTNode = ASTNode::Int(IntNode { value: 0 });
-    let right: ASTNode = ASTNode::Int(IntNode { value: 0 });
+    let _right: ASTNode = ASTNode::Int(IntNode { value: 0 });
 
     while let Some(top) = exp_stack.pop() {
         match top {
@@ -154,7 +154,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                 operator = ASTNode::Operator(o);
             }
             ASTNode::Int(n) => {
-                if first == false {
+                if !first {
                     first = true;
                     left = ASTNode::Int(n);
                 } else {
@@ -163,7 +163,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                 }
             }
             ASTNode::Float(f) => {
-                if first == false {
+                if !first {
                     first = true;
                     left = ASTNode::Float(f);
                 } else {
@@ -172,7 +172,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                 }
             }
             ASTNode::String(s) => {
-                if first == false {
+                if !first {
                     first = true;
                     left = ASTNode::String(s);
                 } else {
@@ -181,7 +181,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                 }
             }
             ASTNode::Bool(b) => {
-                if first == false {
+                if !first {
                     first = true;
                     left = ASTNode::Bool(b);
                 } else {
@@ -190,7 +190,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                 }
             }
             ASTNode::Char(c) => {
-                if first == false {
+                if !first {
                     first = true;
                     left = ASTNode::Char(c);
                 } else {
