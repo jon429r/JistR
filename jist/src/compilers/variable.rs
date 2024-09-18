@@ -1,8 +1,40 @@
-use crate::base_variables::variable::Variable;
-use crate::node::node::{IntNode, OperatorNode};
-use crate::{base_variables::base_types::BaseTypes, node::node::ASTNode};
+use std::process::exit;
 
-pub fn parse_variable_declaration_or_assignment(exp_stack: &mut Vec<ASTNode>) -> bool {
+use crate::base_variables::variable::Variable;
+use crate::node::node::ASTNode;
+use crate::node::node::VariableCallNode;
+use crate::node::node::{IntNode, OperatorNode};
+use crate::{base_variables::base_types::BaseTypes, VARIABLE_STACK};
+
+pub fn parse_variable_call(node: ASTNode) -> (String, BaseTypes) {
+    match node {
+        ASTNode::VariableCall(v) => {
+            //println!("Function argument: {}", v.name);
+            let mut _arg_name = ASTNode::VariableCall(VariableCallNode {
+                name: v.name.clone(),
+            });
+            //var stack for var with this name
+            let mut arg1_value = BaseTypes::StringWrapper(String::new()); // Initialize with default value
+            let mut arg1_name = String::new(); // Initialize with default value
+            for var in unsafe { VARIABLE_STACK.iter() } {
+                if var.name == v.name {
+                    arg1_value = var.value.clone();
+                    //print!("Value: {:?}", arg1_value);
+                    arg1_name = var.name.clone();
+                }
+            }
+            let arg1 = (arg1_name, arg1_value);
+            //parameter_and_value.push(arg1);
+            return arg1;
+        }
+        _ => {
+            println!("Syntax Error: Expected a variable call.");
+            exit(1)
+        }
+    }
+}
+
+pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
     let mut var_name: Option<String> = None;
     let mut var_type: Option<BaseTypes> = None;
     let mut assignment_operator: Option<String> = None;
