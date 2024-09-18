@@ -6,7 +6,10 @@ use crate::node::node::VariableCallNode;
 use crate::node::node::{IntNode, OperatorNode};
 use crate::{base_variables::base_types::BaseTypes, VARIABLE_STACK};
 
-pub fn parse_variable_call(node: ASTNode) -> (String, BaseTypes) {
+///
+///This Function takes in an ASTNode and returns a tuple of the variable name and its value
+///
+pub fn parse_variable_call(node: &ASTNode) -> (String, BaseTypes) {
     match node {
         ASTNode::VariableCall(v) => {
             //println!("Function argument: {}", v.name);
@@ -34,6 +37,10 @@ pub fn parse_variable_call(node: ASTNode) -> (String, BaseTypes) {
     }
 }
 
+///
+///This function takes in a mutable reference to a vector of ASTNodes and parses the variable
+///declaration returning end after parsing the variable declaration
+///
 pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
     let mut var_name: Option<String> = None;
     let mut var_type: Option<BaseTypes> = None;
@@ -43,6 +50,7 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
     let mut var_value = ASTNode::Int(IntNode { value: 0 });
     let mut first: Option<ASTNode> = Option::None;
     let mut parenthesis: bool = false;
+    let mut variableCallValues: Vec<(String, BaseTypes)> = Vec::new();
 
     let mut index = 0;
     while index < exp_stack.len() {
@@ -67,6 +75,22 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             ASTNode::AssignmentOperator(a) => {
                 assignment_operator = Some(a.operator.clone());
                 inside_assignment = true;
+            }
+            ASTNode::VariableCall(c) => {
+                if inside_assignment {
+                    let resullt = parse_variable_call(&node);
+                    //add the value back into the epression at same index
+                    exp_stack.insert(
+                        index,
+                        ASTNode::VariableCall(VariableCallNode {
+                            name: resullt.0.clone(),
+                        }),
+                    );
+                    //variableCallValues.push(resullt);
+                } else {
+                    println!("Syntax Error: Variable call outside of assignment.");
+                    return false;
+                }
             }
             ASTNode::Int(n) => {
                 if inside_assignment {
@@ -141,7 +165,7 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             ASTNode::RightParenthesis => {}
             _ => {
                 println!(
-                    "Syntax Error: Unhandled node while parsing variable: {:?}",
+                    "Syntax Error: Unhandled node while parsing variable declaration: {:?}",
                     node
                 );
                 return false;
@@ -159,6 +183,10 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
     true
 }
 
+///
+///This Function is in the variable module and takes in a mut ref of a vector of ASTNodes
+///It returns a BaseType result of the parsed expression
+///
 pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
     //cloned_exp_stack.reverse();
     //println!("Cloned stack after reversed: {:?}", cloned_exp_stack);

@@ -131,6 +131,8 @@ pub mod compiler {
     }
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
+        println!("Expression: {:?}", expression);
+
         let mut index = 0; // Start with index-based iteration
         while index < expression.len() {
             let node = &expression[index]; // Access node by index
@@ -175,7 +177,7 @@ pub mod compiler {
                     }
                 }
                 ASTNode::VariableCall(v) => {
-                    let call_result = parse_variable_call(node.clone()); // Mutable reference
+                    let call_result = parse_variable_call(&node); // Mutable reference
                 }
                 ASTNode::Comment(c) => {
                     return;

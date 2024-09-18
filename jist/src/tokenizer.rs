@@ -138,53 +138,6 @@ pub mod tokenizer {
     pub fn read_token(expression: &String, index: usize) -> ParseInfo {
         let none: ParseInfo = ParseInfo::new(TokenTypes::None, 0, "none".to_string());
 
-        let char = expression.chars().nth(index).unwrap();
-
-        match char {
-            '"' | '\'' => {
-                let mut j = index + 1;
-                while j < expression.len() {
-                    match char {
-                        '"' => {
-                            if expression.chars().nth(j).unwrap() == char {
-                                return ParseInfo::new(
-                                    TokenTypes::String,
-                                    (j - index + 1).try_into().unwrap(),
-                                    expression[index..j + 1].to_string(),
-                                );
-                            }
-                        }
-                        '\'' => {
-                            if expression.chars().nth(j).unwrap() == char {
-                                return ParseInfo::new(
-                                    TokenTypes::Char,
-                                    (j - index + 1).try_into().unwrap(),
-                                    expression[index..j + 1].to_string(),
-                                );
-                            }
-                        }
-                        _ => {}
-                    }
-                    if expression.chars().nth(j).unwrap() == char {
-                        return ParseInfo::new(
-                            TokenTypes::Char,
-                            1,
-                            expression[index..j + 1].to_string(),
-                        );
-                    }
-                    j += 1;
-                }
-                {
-                    let chars_read = j - index + 1;
-                    return ParseInfo::new(
-                        TokenTypes::String,
-                        chars_read.try_into().unwrap(),
-                        expression[index..j + 1].to_string(),
-                    );
-                }
-            }
-            _ => {}
-        }
         let mut j = index;
         let mut decimals = 0;
 
@@ -209,57 +162,19 @@ pub mod tokenizer {
             j += 1;
         }
 
-        // Extract the number substring
-        let number_str = &expression[index..j];
+        let char = expression.chars().nth(index).unwrap();
 
-        if let Ok(_parsed_number) = number_str.parse::<f64>() {
-            let chars_read = j - index;
-            if decimals == 0 {
-                return ParseInfo::new(
-                    TokenTypes::Int,
-                    chars_read.try_into().unwrap(),
-                    number_str.to_string(),
-                );
-            } else {
-                return ParseInfo::new(
-                    TokenTypes::Float,
-                    chars_read.try_into().unwrap(),
-                    number_str.to_string(),
-                );
-            }
-        }
-
-        match char {
-            '+' | '-' | '*' | '/' => {
-                let chars_read = 1;
-                return ParseInfo::new(
-                    TokenTypes::Operator,
-                    chars_read.try_into().unwrap(),
-                    char.to_string(),
-                );
-            }
-            '(' => return ParseInfo::new(TokenTypes::LeftParenthesis, 1, char.to_string()),
-            ')' => return ParseInfo::new(TokenTypes::RightParenthesis, 1, char.to_string()),
-            '{' => return ParseInfo::new(TokenTypes::LeftCurly, 1, char.to_string()),
-            '}' => return ParseInfo::new(TokenTypes::RightCurly, 1, char.to_string()),
-            ',' => return ParseInfo::new(TokenTypes::ArgumentSeparator, 1, char.to_string()),
-            '=' => return ParseInfo::new(TokenTypes::AssignmentOperator, 1, char.to_string()),
-            _ => {}
-        }
-
-        let info = read_variable_declaration(expression, index);
+        let info = read_numbers(expression.to_string(), char, index);
         if info.token != none.token {
             return info;
         }
-        let info = read_function_assignment(expression, index);
+
+        let info = read_operators(expression.to_string(), char, index);
         if info.token != none.token {
             return info;
         }
-        let info = read_variable_assignment(expression, index);
-        if info.token != none.token {
-            return info;
-        }
-        let info = read_variable_call(expression, index);
+        let info = read_strings_chars(expression.to_string(), char, index);
+
         if info.token != none.token {
             return info;
         }
@@ -271,6 +186,26 @@ pub mod tokenizer {
         }
 
         let info = read_function_call(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = read_variable_declaration(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = read_function_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = read_variable_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = read_variable_call(expression, index);
         if info.token != none.token {
             return info;
         }
@@ -365,87 +300,68 @@ pub mod tokenizer {
     }
 
     static mut PARSEFUNCTIONCALL: bool = false;
+
     fn read_function_call(expression: &String, index: usize) -> ParseInfo {
         let mut j = index;
-        let mut function_name: String = String::new();
-
+        let mut function_name = String::new();
         let chars: Vec<char> = expression.chars().collect();
 
-        // Start collecting the function name
+        // Collect the function name
         while j < chars.len() {
             let char = chars[j];
-            let _nextchar = if j + 1 < chars.len() {
-                chars[j + 1]
-            } else {
-                '\0' // Null character for out-of-bounds safety
-            };
+            let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
 
             if char == '(' {
-                // Return the function call information when '(' is found
+                // Detected function call: mark it and return info
                 unsafe { PARSEFUNCTIONCALL = true };
                 return ParseInfo::new(
                     TokenTypes::FunctionCall,
                     (j - index).try_into().unwrap(),
-                    function_name,
+                    function_name.clone(),
                 );
             } else if !char.is_whitespace() {
-                // Append non-whitespace characters to function_name
+                // Build up function name
                 function_name.push(char);
-            } else if char == ')' {
-                // Return the function call information when ')' is found
-                unsafe { PARSEFUNCTIONCALL = false };
-                return ParseInfo::new(
-                    TokenTypes::FunctionCall,
-                    (j - index).try_into().unwrap(),
-                    function_name,
-                );
             }
-
-            let mut parameter = String::new();
-            let sent_param_flag = false;
-
-            if unsafe { PARSEFUNCTIONCALL } {
-                // Skip whitespace after the function name
-                while j < chars.len() {
-                    if chars[j].is_whitespace() {
-                        j += 1;
-                    } else if chars[j] == ')' {
-                        unsafe { PARSEFUNCTIONCALL = false };
-                        break;
-                    } else if sent_param_flag {
-                        // Collect the parameter
-                        //sent_param_flag = true;
-                        return ParseInfo::new(
-                            TokenTypes::FunctionArguments,
-                            (j - index).try_into().unwrap(),
-                            parameter,
-                        );
-                    } else {
-                        // loop through parameter until we find a comma
-                        while j < chars.len() {
-                            // TODO check if numeric then return Int
-                            //check if is special keyword then return that
-                            // check if first is " or ' then return string or char
-
-                            if chars[j] == ',' {
-                                return ParseInfo::new(
-                                    TokenTypes::VariableCall,
-                                    (j - index).try_into().unwrap(),
-                                    parameter,
-                                );
-                            } else {
-                                parameter.push(chars[j]);
-                                j += 1;
-                            }
-                        }
-                    }
-                }
-            }
-
             j += 1;
         }
 
-        // Return None if no function call found
+        // Parse the function parameters
+        if unsafe { PARSEFUNCTIONCALL } {
+            let mut parameter = String::new();
+
+            while j < chars.len() {
+                let char = chars[j];
+                let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
+
+                if char == ')' {
+                    // End of function call parameters
+                    unsafe { PARSEFUNCTIONCALL = false };
+                    return ParseInfo::new(
+                        TokenTypes::RightParenthesis,
+                        (j - index).try_into().unwrap(),
+                        ")".to_string(),
+                    );
+                } else if char == ',' {
+                    // Handle function arguments separated by commas
+                    if !parameter.is_empty() {
+                        return ParseInfo::new(
+                            TokenTypes::FunctionArguments,
+                            (j - index).try_into().unwrap(),
+                            parameter.clone(),
+                        );
+                    }
+                    parameter.clear();
+                } else if !char.is_whitespace() {
+                    // Collect parameter characters
+                    parameter.push(char);
+                }
+
+                j += 1;
+            }
+        }
+
+        // Default return if no valid function call or parameters found
         ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
@@ -617,15 +533,21 @@ pub mod tokenizer {
         for (_i, char) in chars {
             // Check if the current or next character is '=' (assignment)
             let next_char = expression.chars().nth(j + 1).unwrap_or('\0');
-            if char == '=' || next_char == '=' {
+            if char == '(' || next_char == '(' {
+                return ParseInfo::new(
+                    TokenTypes::FunctionCall,
+                    (j - index).try_into().unwrap(),
+                    variable_name,
+                );
+            } else if char == '=' || next_char == '=' {
                 return ParseInfo::new(
                     TokenTypes::VariableCall,
                     (j - index).try_into().unwrap(),
                     variable_name,
                 );
             }
-
             // Collect valid variable name characters (alphanumeric and '_')
+
             if char.is_alphanumeric() || char == '_' {
                 variable_name.push(char);
             } else if char.is_whitespace() {
@@ -656,5 +578,117 @@ pub mod tokenizer {
             0,
             "No valid variable call found".to_string(),
         )
+    }
+
+    pub fn read_strings_chars(expression: String, char: char, index: usize) -> ParseInfo {
+        match char {
+            '"' | '\'' => {
+                let mut j = index + 1;
+                while j < expression.len() {
+                    match char {
+                        '"' => {
+                            if expression.chars().nth(j).unwrap() == char {
+                                return ParseInfo::new(
+                                    TokenTypes::String,
+                                    (j - index + 1).try_into().unwrap(),
+                                    expression[index..j + 1].to_string(),
+                                );
+                            }
+                        }
+                        '\'' => {
+                            if expression.chars().nth(j).unwrap() == char {
+                                return ParseInfo::new(
+                                    TokenTypes::Char,
+                                    (j - index + 1).try_into().unwrap(),
+                                    expression[index..j + 1].to_string(),
+                                );
+                            }
+                        }
+                        _ => {}
+                    }
+                    if expression.chars().nth(j).unwrap() == char {
+                        return ParseInfo::new(
+                            TokenTypes::Char,
+                            1,
+                            expression[index..j + 1].to_string(),
+                        );
+                    }
+                    j += 1;
+                }
+                {
+                    let chars_read = j - index + 1;
+                    return ParseInfo::new(
+                        TokenTypes::String,
+                        chars_read.try_into().unwrap(),
+                        expression[index..j + 1].to_string(),
+                    );
+                }
+            }
+            _ => {
+                return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+            }
+        }
+    }
+
+    pub fn read_numbers(expression: String, char: char, index: usize) -> ParseInfo {
+        // Extract the number substring
+        let mut j = index;
+        let mut decimals = 0;
+
+        // Traverse through the expression to identify the full number (including decimals)
+        while j < expression.len()
+            && (expression[j..j + 1].chars().all(|c| c.is_digit(10))
+                || expression[j..j + 1] == *".")
+        {
+            if expression[j..j + 1] == *"." {
+                decimals += 1;
+            }
+            j += 1;
+        }
+
+        let number_str = &expression[index..j];
+
+        // Check if it's a valid number and if there's only one decimal point
+        if decimals <= 1 && number_str.parse::<f64>().is_ok() {
+            let chars_read = j - index;
+            if decimals == 0 {
+                return ParseInfo::new(
+                    TokenTypes::Int,
+                    chars_read.try_into().unwrap(),
+                    number_str.to_string(),
+                );
+            } else {
+                return ParseInfo::new(
+                    TokenTypes::Float,
+                    chars_read.try_into().unwrap(),
+                    number_str.to_string(),
+                );
+            }
+        }
+
+        // Return None token type if parsing fails
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+    }
+
+    pub fn read_operators(expression: String, char: char, index: usize) -> ParseInfo {
+        match char {
+            '+' | '-' | '*' | '/' => {
+                let chars_read = 1;
+                return ParseInfo::new(
+                    TokenTypes::Operator,
+                    chars_read.try_into().unwrap(),
+                    char.to_string(),
+                );
+            }
+            '(' => return ParseInfo::new(TokenTypes::LeftParenthesis, 1, char.to_string()),
+            ')' => return ParseInfo::new(TokenTypes::RightParenthesis, 1, char.to_string()),
+            '{' => return ParseInfo::new(TokenTypes::LeftCurly, 1, char.to_string()),
+            '}' => return ParseInfo::new(TokenTypes::RightCurly, 1, char.to_string()),
+            ',' => return ParseInfo::new(TokenTypes::ArgumentSeparator, 1, char.to_string()),
+            '=' => return ParseInfo::new(TokenTypes::AssignmentOperator, 1, char.to_string()),
+            _ => {
+                return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+            }
+        }
     }
 }

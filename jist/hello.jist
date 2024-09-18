@@ -1,2 +1,3 @@
 let a: string = "goodbye";
 echo("hello world");
+add(2,2);
