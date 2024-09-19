@@ -1,3 +1,2 @@
-let a: string = "goodbye";
-echo("hello world");
-add(2,2);
+let b: int = add(2,2);
+echo(b);
