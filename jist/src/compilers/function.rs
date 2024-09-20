@@ -1,6 +1,9 @@
 use crate::base_variables::base_types::BaseTypes;
 use crate::base_variables::variable::Variable;
 use crate::node::node::{ASTNode, VariableCallNode};
+use std::collections::HashMap;
+use std::process::exit;
+use std::sync::MutexGuard;
 
 use crate::base_variables::variables::VARIABLE_STACK;
 use crate::function_map::function::Function;
@@ -8,79 +11,42 @@ use crate::function_map::{
     STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE, USER_FUNCTIONS,
 };
 
-pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
-    //println!("Parsing function.");
-
+pub fn parse_function_declaration(expression: &Vec<ASTNode>) -> bool {
     let mut function_name: String = "None".to_string();
-    let parameters: Vec<Variable> = Vec::new();
+    let mut parameters: Vec<Variable> = Vec::new();
     let mut number_of_curly_braces = 0;
-    let mut return_type: Option<BaseTypes> = None;
-    let mut parsing_function_call = false;
-    let mut parameter_and_value: Vec<(String, BaseTypes)> = Vec::new();
+    let mut return_type: BaseTypes = BaseTypes::Null;
 
     let mut i = 0;
     while i < expression.len() {
         match &expression[i] {
             ASTNode::Function(f) => {
-                // Handle function declaration
-                // TODO: We need to tell the parser to continue passing expressions here until we
-                // reach the end of the function's ending }.
                 function_name = f.name.clone();
-                //println!("Function name: {}", f.name);
-
-                // Start looking for function body or arguments
                 i += 1;
                 while i < expression.len() {
                     match &expression[i] {
-                        ASTNode::FunctionArguments(f) => {
-                            //println!("Function arguments: {}", f.value);
-                            //add f to parameters
-                            //f: BaseTypes = f.value.clone().into();
-                            //parameters.push(f.clone());
-                            // TODO create a variable object and add it to parameters vector
-                        }
-                        ASTNode::ArgumentSeparator => {
-                            continue;
-                        }
-                        ASTNode::ReturnTypeAssignment(r) => {
-                            //println!("Return type: {:?}", r.value);
-                            return_type = Some(r.value.clone().into());
-                        }
-                        ASTNode::LeftCurly => {
-                            //println!("Function body start.");
-                            number_of_curly_braces += 1;
-                        }
+                        ASTNode::LeftCurly => number_of_curly_braces += 1,
                         ASTNode::RightCurly => {
-                            //println!("Function body end.");
                             if number_of_curly_braces == 0 {
-                                println!("Syntax Error: Unmatched curly braces.");
+                                println!("Syntax Error: Unmatched closing curly brace.");
                                 return false;
                             } else {
                                 number_of_curly_braces -= 1;
                                 if number_of_curly_braces == 0 {
-                                    //println!("End of function declaration.");
-                                    // TODO create new function object and add it to function maps
                                     if function_name == "None" {
-                                        println!("Syntax Error: Function name is missing.");
+                                        println!("Syntax Error: Missing function name.");
                                         return false;
                                     }
                                     let function = Function::new(
                                         function_name.clone(),
                                         parameters.clone(),
-                                        return_type.clone().unwrap(),
+                                        return_type.clone(),
                                         expression.clone(),
                                     );
-
                                     let mut user_functions = USER_FUNCTIONS.lock().unwrap();
-                                    if function_name == "None" {
-                                        println!("Syntax Error: Function is incomplete.");
-                                        return false;
-                                    }
                                     user_functions.insert(function_name.clone(), function);
-
                                     break;
                                 }
-                                break; // End of function declaration
                             }
                         }
                         _ => {
@@ -88,232 +54,225 @@ pub fn parse_function_declaration_or_call(expression: &Vec<ASTNode>) -> bool {
                                 "Unhandled node in function declaration: {:?}",
                                 expression[i]
                             );
+                            return false;
                         }
                     }
                     i += 1;
                 }
             }
-            ASTNode::FunctionCall(f) => {
-                // Handle function call
-
-                parsing_function_call = true;
-                function_name = f.name.clone();
-                let mut number_of_parentheses = 0;
-                //println!("Function call: {}", f.name);
-
-                i += 1;
-                while i < expression.len() {
-                    println!("Node: {:?}", &expression[i]);
-                    match &expression[i] {
-                        ASTNode::FunctionCallArguments(_) => {
-                            //println!("Parsing function call arguments.");
-                            parse_function_call_arguments(&expression[i + 1..]);
-                        }
-                        /*
-                         * TODO Make functions able to take expressions like 1+1 and (1+1), hjk
-                         * by making a temp varible declaration and set the alue of expression to
-                         * the value of a variable to pass
-                         */
-                        ASTNode::LeftParenthesis => {
-                            if number_of_parentheses == 0 {
-                                println!("Function call starting (.");
-                                number_of_parentheses += 1;
-                            } else {
-                                // TODO do what is within the LeftParenthesis
-                            }
-                            //println!("Function call starting (.");
-                        }
-                        ASTNode::RightParenthesis => {
-                            //println!("Function call ending ).");
-                            if number_of_parentheses == 0 {
-                                println!("Syntax Error: Unmatched parenthesis.");
-                                return false;
-                            } else {
-                                number_of_parentheses -= 1;
-                                if number_of_parentheses == 0 {
-                                    //println!("End of function call.");
-                                    break;
-                                }
-                            }
-                            break; // End of function call
-                        }
-                        ASTNode::SemiColon => {
-                            //println!("End of function.");
-                            return true;
-                        }
-                        ASTNode::VariableCall(v) => {
-                            //println!("Function argument: {}", v.name);
-                            let mut _arg_name = ASTNode::VariableCall(VariableCallNode {
-                                name: v.name.clone(),
-                            });
-                            //var stack for var with this name
-                            let mut arg1_value = BaseTypes::StringWrapper(String::new()); // Initialize with default value
-                            let mut arg1_name = String::new(); // Initialize with default value
-                            for var in unsafe { VARIABLE_STACK.iter() } {
-                                if var.name == v.name {
-                                    arg1_value = var.value.clone();
-                                    //print!("Value: {:?}", arg1_value);
-                                    arg1_name = var.name.clone();
-                                }
-                            }
-
-                            let arg1 = (arg1_name, arg1_value);
-                            parameter_and_value.push(arg1);
-                        }
-                        ASTNode::ArgumentSeparator => {
-                            println!("Comma separator between arguments.");
-                        }
-                        ASTNode::String(s) => {
-                            //println!("Function argument: {}", s.value);
-                            let arg1 = (String::new(), BaseTypes::StringWrapper(s.value.clone()));
-                            parameter_and_value.push(arg1);
-                        }
-                        ASTNode::Int(n) => {
-                            println!("Function argument: {}", n.value);
-                            let arg1 = (String::new(), BaseTypes::Int(n.value.clone()));
-                            parameter_and_value.push(arg1);
-                        }
-                        ASTNode::Char(c) => {
-                            //println!("Function argument: {}", c.value);
-                            let arg1 = (String::new(), BaseTypes::Char(c.value.clone()));
-                            parameter_and_value.push(arg1);
-                        }
-                        ASTNode::Bool(b) => {
-                            //println!("Function argument: {}", b.value);
-                            let arg1 = (String::new(), BaseTypes::Bool(b.value.clone()));
-                            parameter_and_value.push(arg1);
-                        }
-                        ASTNode::Float(f) => {
-                            //println!("Function argument: {}", f.value);
-                            let arg1 = (String::new(), BaseTypes::Float(f.value.clone().into()));
-                            parameter_and_value.push(arg1);
-                        }
-                        _ => {
-                            println!("Unhandled node in function call: {:?}", expression[i]);
-                        }
-                    }
-                    i += 1;
-                }
-            }
-            _ => {
-                println!("Unhandled node: {:?}", expression[i]);
-            }
+            _ => println!("Unhandled node: {:?}", expression[i]),
         }
         i += 1;
     }
-    //println!("Successfully parsed function call.");
-    //check that function is in our 4 function maps
-
-    let std_double = STD_FUNCTIONS_DOUBLE.lock().unwrap();
-    let std_single = STD_FUNCTIONS_SINGLE.lock().unwrap();
-    let std = STD_FUNCTIONS.lock().unwrap();
-    let std_echo = STD_FUNCTIONS_ECHO.lock().unwrap();
-
-    if parsing_function_call {
-        if std_double.contains_key(function_name.clone().as_str()) {
-            println!("Function call is in STD_FUNCTIONS_DOUBLE.");
-            //call function with parameters
-            if let Some(func) = std_double.get(function_name.as_str()) {
-                println!("Function: {}", function_name);
-                //print parameters and value
-                for (name, value) in &parameter_and_value {
-                    println!("Parameter: {} Value: {:?}", name, value);
-                }
-
-                // Convert Int to Float if parameter is of type Int
-                if let BaseTypes::Int(x) = parameter_and_value[0].1 {
-                    parameter_and_value[0].1 = BaseTypes::Float(x as f64);
-                }
-
-                if let BaseTypes::Int(x) = parameter_and_value[1].1 {
-                    parameter_and_value[1].1 = BaseTypes::Float(x as f64);
-                }
-
-                let result = func(
-                    parameter_and_value[0].1.clone().try_into().unwrap(),
-                    parameter_and_value[1].1.clone().try_into().unwrap(),
-                );
-                println!("Result of Function: {}", result); // Output: 8
-            }
-        } else if std.contains_key(function_name.as_str()) {
-            //println!("Function call is in STD_FUNCTIONS.");
-            if let Some(func) = std.get(function_name.as_str()) {
-                let result = func();
-                //println!("Result of Function: {}", result); // Output: 8
-            }
-        } else if std_echo.contains_key(function_name.as_str()) {
-            //println!("Function call is in STD_FUNCTIONS_ECHO.");
-
-            if let Some(func) = std_echo.get(function_name.as_str()) {
-                if parameter_and_value.len() == 0 {
-                    println!("Syntax Error: No parameters supplied to function.");
-                    let result = func(String::new());
-                    return true;
-                }
-                let param: String = match parameter_and_value[0].1.clone().to_string().try_into() {
-                    Ok(value) => value,
-                    Err(_) => {
-                        //println!("Failed to convert parameter to String.");
-                        String::new()
-                    }
-                };
-                /*print!(
-                    "Parameter: {}", param
-                );
-                */
-                let result = func(param);
-                //print!("Result of Function: ");
-                //return result;
-            }
-        } else if std_single.contains_key(function_name.as_str()) {
-            //println!("Function call is in STD_FUNCTIONS_SINGLE.");
-            if let Some(func) = std_echo.get(function_name.as_str()) {
-                if parameter_and_value.len() == 0 {
-                    println!("Syntax Error: No parameters supplied to function.");
-                    if let BaseTypes::Int(x) = parameter_and_value[0].1 {
-                        parameter_and_value[0].1 = BaseTypes::Float(x as f64);
-                    }
-
-                    let result = func(String::new());
-                    return true;
-                }
-                let param: String = match parameter_and_value[0].1.clone().try_into() {
-                    Ok(value) => value,
-                    Err(_) => {
-                        println!("Failed to convert parameter to String.");
-                        String::new()
-                    }
-                };
-                let result = func(param);
-                //return result;
-            }
-        } else {
-            println!("Function call is not in any of the STD_FUNCTIONS.");
-        }
-    } else {
-        // now we need to create a function object and add it to the function map
-        //print!("Creating function object.");
-    }
-
-    // now call compile function with parameters if supllie
-
     true
 }
 
-fn parse_function_call_arguments(expression: &[ASTNode]) {
-    //println!("*****Processing function call arguments.");
-
+pub fn parse_function_call(expression: &Vec<ASTNode>) -> BaseTypes {
+    let mut function_name: String = "None".to_string();
+    let mut parameter_and_value: Vec<BaseTypes> = Vec::new();
     let mut i = 0;
+
+    match expression.get(i).unwrap() {
+        ASTNode::FunctionCall(f) => {
+            function_name = f.name.clone();
+            i += 1;
+            while i < expression.len() {
+                match &expression[i] {
+                    ASTNode::FunctionCallArguments(_) => {
+                        parameter_and_value = parse_function_call_arguments(&expression[i + 1..]);
+                    }
+                    ASTNode::LeftParenthesis => {
+                        parameter_and_value = parse_function_call_arguments(&expression[i + 1..]);
+                    }
+                    /*ASTNode::VariableCall(v) => {
+                                            let mut arg1_value = BaseTypes::StringWrapper(String::new());
+                                            let mut arg1_name = String::new();
+                                            for var in unsafe { VARIABLE_STACK.iter() } {
+                                                if var.name == v.name {
+                                                    arg1_value = var.value.clone();
+                                                    arg1_name = var.name.clone();
+                                                }
+                                            }
+                                            let arg1 = (arg1_name, arg1_value);
+                                            parameter_and_value.push(arg1);
+                                        }
+                                        ASTNode::Int(n) => {
+                                            let arg1 = (String::new(), BaseTypes::Int(n.value.clone()));
+                                            parameter_and_value.push(arg1);
+                                        }
+                    */
+                    _ => println!("Unhandled node in function call: {:?}", expression[i]),
+                }
+                i += 1;
+            }
+        }
+        _ => println!("Unhandled node: {:?}", expression[i]),
+    }
+
+    // Handle the result or error
+    let result = get_function_result(function_name, &mut parameter_and_value);
+    return result;
+}
+
+pub fn get_function_result(
+    function_name: String,
+    parameter_and_value: &mut Vec<BaseTypes>,
+) -> BaseTypes {
+    let std_echo = match STD_FUNCTIONS_ECHO.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    let std = match STD_FUNCTIONS.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    let std_double = match STD_FUNCTIONS_DOUBLE.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    let std_single = match STD_FUNCTIONS_SINGLE.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+
+    if let Some(func) = std_double.get(function_name.as_str()) {
+        println!(
+            "Function call is in STD_FUNCTIONS_DOUBLE: {}",
+            function_name
+        );
+
+        // Convert Int to Float for the first two parameters
+        for param in parameter_and_value.iter_mut().take(2) {
+            if let BaseTypes::Int(x) = *param {
+                *param = BaseTypes::Float(x as f64);
+            }
+        }
+
+        // Ensure at least two parameters are provided
+        if parameter_and_value.len() < 2 {
+            println!(
+                "Syntax Error: Not enough parameters supplied to function, {}/2 Provided.",
+                parameter_and_value.len()
+            );
+            exit(1);
+        }
+
+        // Call the function and return the result
+        let param1: f64 = parameter_and_value[0]
+            .clone()
+            .try_into()
+            .expect("Failed to convert parameter 1 to f64");
+        let param2: f64 = parameter_and_value[1]
+            .clone()
+            .try_into()
+            .expect("Failed to convert parameter 2 to f64");
+
+        let result = func(param1, param2);
+        println!("Result of Function: {:?}", result);
+
+        return BaseTypes::Float(result);
+    }
+
+    // Function is in STD_FUNCTIONS
+    if let Some(func) = std.get(function_name.as_str()) {
+        println!("Function call is in STD_FUNCTIONS: {}", function_name);
+
+        // Call the function and return the result
+        let result = func();
+        println!("Result of Function: {}", result);
+
+        return BaseTypes::Float(result);
+    }
+
+    // Function is in STD_FUNCTIONS_ECHO
+    if let Some(func) = std_echo.get(&function_name.as_str()) {
+        println!("Function call is in STD_FUNCTIONS_ECHO: {}", function_name);
+
+        // Ensure at least one parameter is provided
+        if parameter_and_value.is_empty() {
+            println!("Syntax Error: No parameters supplied to function.");
+            exit(1);
+        }
+
+        // Call the function and return the result
+        let param: BaseTypes = parameter_and_value[0].clone();
+        let result = func(param.into());
+
+        return result.into();
+    }
+
+    // Function is in STD_FUNCTIONS_SINGLE
+    if let Some(func) = std_single.get(&function_name.as_str()) {
+        println!(
+            "Function call is in STD_FUNCTIONS_SINGLE: {}",
+            function_name
+        );
+
+        // Ensure at least one parameter is provided
+        if parameter_and_value.is_empty() {
+            println!("Syntax Error: No parameters supplied to function.");
+            exit(1);
+        }
+
+        // Convert the first parameter to f64
+        let param: f64 = parameter_and_value[0]
+            .clone()
+            .try_into()
+            .expect("Failed to convert parameter to f64");
+
+        // Call the function and return the result
+        let result = func(param);
+        println!("Result of Function: {}", result);
+
+        return BaseTypes::Float(result);
+    }
+
+    // Function not found
+
+    println!("Function call is not in any of the STD_FUNCTIONS.");
+    exit(1);
+}
+
+fn parse_function_call_arguments(expression: &[ASTNode]) -> Vec<BaseTypes> {
+    let mut arguments: Vec<BaseTypes> = Vec::new();
+    let mut i = 0;
+
     while i < expression.len() {
         match &expression[i] {
             ASTNode::VariableCall(v) => {
-                //println!("Function argument: {}", v.name);
+                // Process variable call, you could push its value from a variable store
+                // For now, let's assume variables are stored in VARIABLE_STACK and extract their values
+                for var in unsafe { VARIABLE_STACK.iter() } {
+                    if var.name == v.name {
+                        arguments.push(var.value.clone());
+                    }
+                }
+            }
+            ASTNode::Int(n) => {
+                // Handle integer argument
+                arguments.push(BaseTypes::Int(n.value));
+            }
+            ASTNode::Float(f) => {
+                // Handle float argument
+                arguments.push(BaseTypes::Float(f.value.into()));
+            }
+            ASTNode::String(s) => {
+                // Handle string argument
+                arguments.push(BaseTypes::StringWrapper(s.value.clone()));
+            }
+            ASTNode::Bool(b) => {
+                // Handle boolean argument
+                arguments.push(BaseTypes::Bool(b.value));
+            }
+            ASTNode::Char(c) => {
+                // Handle char argument
+                arguments.push(BaseTypes::Char(c.value));
             }
             ASTNode::ArgumentSeparator => {
-                //println!("Comma separator between arguments.");
+                // Simply skip over argument separators (commas)
             }
             ASTNode::RightParenthesis => {
-                //println!("End of function call arguments.");
+                // End of arguments, break out of the loop
                 break;
             }
             _ => {
@@ -322,4 +281,8 @@ fn parse_function_call_arguments(expression: &[ASTNode]) {
         }
         i += 1;
     }
+
+    // Return the collected arguments
+    println!("@@@@@@@@@@@Arguments: {:?}", arguments);
+    arguments
 }

@@ -76,7 +76,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             match node {
                 ASTNode::SemiColon => {
-                    if hasroot == false {
+                    if !hasroot {
                         //throw syntax error
                         print!("Syntax error expression must be more than semicolon");
                         exit(1);
@@ -86,7 +86,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                 }
                 _ => {
-                    if hasroot == false {
+                    if !hasroot {
                         hasroot = true;
                         tokenized_expression.push(node);
                     } else {

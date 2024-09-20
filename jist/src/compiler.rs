@@ -3,7 +3,8 @@
 * /compilers directory.
 */
 pub mod compiler {
-    use crate::compilers::function::parse_function_declaration_or_call;
+    use crate::compilers::function::*;
+
     use crate::compilers::variable::parse_variable_call;
     use crate::compilers::variable::parse_variable_declaration;
     use crate::node::node::{ASTNode, IntNode, OperatorNode};
@@ -159,7 +160,7 @@ pub mod compiler {
                     }
                 }
                 ASTNode::Function(f) => {
-                    let end = parse_function_declaration_or_call(expression); // Mutable reference
+                    let end = parse_function_declaration(expression); // Mutable reference
                     if end {
                         return;
                     }
@@ -171,10 +172,8 @@ pub mod compiler {
                     println!("Char: {}", c.value);
                 }
                 ASTNode::FunctionCall(f) => {
-                    let end = parse_function_declaration_or_call(expression); // Mutable reference
-                    if end {
-                        return;
-                    }
+                    let end = parse_function_call(expression); // Mutable reference
+                    return;
                 }
                 ASTNode::VariableCall(v) => {
                     let call_result = parse_variable_call(&node); // Mutable reference

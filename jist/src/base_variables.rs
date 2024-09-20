@@ -33,18 +33,12 @@ pub mod variable {
     }
 
     impl Variable {
-        pub fn new(name: String, value: BaseTypes, var_type: BaseTypes) -> Variable
-where
-            //T: Into<BaseTypes>, // Trait to ensure the value can be converted to BaseTypes
-        {
-            //print!("Creating new variable: {} with value: {:?} and type: {:?}\n", name, value, var_type);
+        pub fn new(name: String, value: BaseTypes, var_type: BaseTypes) -> Variable {
             let value_as_base_type: BaseTypes = value.into();
-
-            //let base Type int become a f64
-            let var_type = match var_type {
-                BaseTypes::Int(i) => BaseTypes::Float(i as f64),
-                _ => var_type,
-            };
+            println!(
+                "Variable info: {}, {:?}, {:?}",
+                name, value_as_base_type, var_type
+            );
 
             // Ensure the value type matches the variable type
             let checked_value = match var_type {
@@ -187,6 +181,7 @@ where
         fn from(value: BaseTypes) -> Self {
             match value {
                 BaseTypes::Int(i) => i,
+                BaseTypes::Float(f) => f as i32,
                 _ => 0,
             }
         }
@@ -196,6 +191,7 @@ where
         fn from(value: BaseTypes) -> Self {
             match value {
                 BaseTypes::Float(f) => f,
+                BaseTypes::Int(i) => i as f64,
                 _ => 0.0,
             }
         }
@@ -205,7 +201,16 @@ where
         fn from(value: BaseTypes) -> Self {
             match value {
                 BaseTypes::StringWrapper(s) => s,
-                _ => String::new(),
+                BaseTypes::Int(i) => i.to_string(),
+                BaseTypes::Float(f) => f.to_string(),
+                BaseTypes::Bool(b) => b.to_string(),
+                BaseTypes::Char(c) => c.to_string(),
+                _ => {
+                    println!(
+                        "Warning: Value not able to be returned as string. Returning empty string."
+                    );
+                    String::new()
+                }
             }
         }
     }
@@ -214,6 +219,8 @@ where
         fn from(value: BaseTypes) -> Self {
             match value {
                 BaseTypes::Bool(b) => b,
+                BaseTypes::Int(1) => true,
+                BaseTypes::Int(0) => false,
                 _ => false,
             }
         }

@@ -1,6 +1,7 @@
 use std::process::exit;
 
 use crate::base_variables::variable::Variable;
+use crate::compilers::function::parse_function_call;
 use crate::node::node::ASTNode;
 use crate::node::node::VariableCallNode;
 use crate::node::node::{IntNode, OperatorNode};
@@ -76,17 +77,47 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                 assignment_operator = Some(a.operator.clone());
                 inside_assignment = true;
             }
+            ASTNode::FunctionCall(c) => {
+                if inside_assignment {
+                    println!(
+                        "Function call found within variable declaration. Expression: {:?}",
+                        exp_stack
+                    );
+                    let mut function_call_stack = exp_stack.clone();
+                    function_call_stack.reverse();
+                    function_call_stack.pop();
+                    function_call_stack.pop();
+                    function_call_stack.pop();
+                    function_call_stack.reverse();
+
+                    println!("Function call stack: {:?}", function_call_stack);
+
+                    let result = parse_function_call(&function_call_stack);
+                    // TODO set value to result
+                    value = result.into();
+
+                    println!(
+                        "New variable = name: {}, value: {:?}, type: {:?}",
+                        var_name.clone().unwrap(),
+                        value,
+                        var_type.clone().unwrap()
+                    );
+
+                    let _variable = Variable::new(var_name.unwrap(), value, var_type.unwrap());
+                    return true;
+                }
+            }
             ASTNode::VariableCall(c) => {
                 if inside_assignment {
-                    let resullt = parse_variable_call(&node);
+                    let result = parse_variable_call(&node);
                     //add the value back into the epression at same index
                     exp_stack.insert(
                         index,
                         ASTNode::VariableCall(VariableCallNode {
-                            name: resullt.0.clone(),
+                            name: result.0.clone(),
                         }),
                     );
-                    //variableCallValues.push(resullt);
+                    variableCallValues.push(result);
                 } else {
                     println!("Syntax Error: Variable call outside of assignment.");
                     return false;
@@ -163,6 +194,22 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                 parenthesis = true;
             }
             ASTNode::RightParenthesis => {}
+            ASTNode::FunctionCall(c) => {
+                if inside_assignment {
+                    let resullt = parse_variable_call(&node);
+                    //add the value back into the epression at same index
+                    exp_stack.insert(
+                        index,
+                        ASTNode::VariableCall(VariableCallNode {
+                            name: resullt.0.clone(),
+                        }),
+                    );
+                //variableCallValues.push(resullt);
+                } else {
+                    println!("Syntax Error: Function call outside of assignment.");
+                    return false;
+                }
+            }
             _ => {
                 println!(
                     "Syntax Error: Unhandled node while parsing variable declaration: {:?}",

@@ -179,6 +179,11 @@ pub mod tokenizer {
             return info;
         }
 
+        let info = read_variable_declaration(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
         let info = read_function_declaration(expression, index);
         // Handle number or function parsing if no matches yet
         if info.token != none.token {
@@ -186,11 +191,6 @@ pub mod tokenizer {
         }
 
         let info = read_function_call(expression, index);
-        if info.token != none.token {
-            return info;
-        }
-
-        let info = read_variable_declaration(expression, index);
         if info.token != none.token {
             return info;
         }
@@ -311,6 +311,9 @@ pub mod tokenizer {
             let char = chars[j];
             let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
 
+            if char == '=' {
+                return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+            }
             if char == '(' {
                 // Detected function call: mark it and return info
                 unsafe { PARSEFUNCTIONCALL = true };
@@ -370,7 +373,7 @@ pub mod tokenizer {
         let mut variable: String = String::new();
         let let_compare = "let";
 
-        // Collect alphabetic characters forming the function name
+        // Collect alphabetic characters forming the variable name
         while j < expression.len() {
             if let Some(char) = expression.chars().nth(j) {
                 if char.is_alphabetic() {
@@ -383,13 +386,15 @@ pub mod tokenizer {
 
             if variable.len() == 3 {
                 if variable == let_compare {
-                    // Skip whitespace and collect the actual function name
+                    // Skip whitespace and collect the actual variable name
                     let mut variable_name = String::new();
                     while j < expression.len() {
                         if let Some(char) = expression.chars().nth(j) {
                             if char.is_alphabetic() {
                                 variable_name.push(char);
                             } else if char != ' ' {
+                                break;
+                            } else if char == ':' {
                                 break;
                             }
                         }
