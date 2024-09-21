@@ -30,6 +30,165 @@ pub mod variable {
                 _ => false,
             }
         }
+        fn ne(&self, other: &Self) -> bool {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => x != y,
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => x != y,
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 != s2,
+                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 != c2,
+                _ => {
+                    println!("Warning: Cannot compare different types.");
+                    false
+                }
+            }
+        }
+    }
+
+    impl PartialOrd for BaseTypes {
+        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => x.partial_cmp(y),
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => x.partial_cmp(y),
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1.partial_cmp(s2),
+                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1.partial_cmp(c2),
+                _ => {
+                    println!("Warning: Cannot compare different types.");
+                    None
+                }
+            }
+        }
+
+        fn lt(&self, other: &Self) -> bool {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => x < y,
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => x < y,
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 < s2,
+                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 < c2,
+                _ => {
+                    println!("Warning: Cannot compare different types.");
+                    false
+                }
+            }
+        }
+
+        fn gt(&self, other: &Self) -> bool {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => x > y,
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => x > y,
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 > s2,
+                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 > c2,
+                _ => {
+                    println!("Warning: Cannot compare different types.");
+                    false
+                }
+            }
+        }
+
+        fn ge(&self, other: &Self) -> bool {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => x >= y,
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => x >= y,
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 >= s2,
+                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 >= c2,
+                _ => {
+                    println!("Warning: Cannot compare different types.");
+                    false
+                }
+            }
+        }
+
+        fn le(&self, other: &Self) -> bool {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => x <= y,
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => x <= y,
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 <= s2,
+                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 <= c2,
+                _ => {
+                    println!("Warning: Cannot compare different types.");
+                    false
+                }
+            }
+        }
+    }
+
+    impl std::ops::Add for BaseTypes {
+        type Output = BaseTypes;
+        fn add(self, other: BaseTypes) -> BaseTypes {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => BaseTypes::Int(x + y),
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => BaseTypes::Float(x + y),
+                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => {
+                    BaseTypes::StringWrapper(s1 + &s2)
+                }
+                _ => {
+                    println!("Warning: Cannot add different types as well as char type.");
+                    BaseTypes::Null
+                }
+            }
+        }
+    }
+
+    impl std::ops::Sub for BaseTypes {
+        type Output = BaseTypes;
+        fn sub(self, other: BaseTypes) -> BaseTypes {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => BaseTypes::Int(x - y),
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => BaseTypes::Float(x - y),
+                _ => {
+                    println!(
+                        "Warning: Cannot subtract different types as well as string and char type."
+                    );
+                    BaseTypes::Null
+                }
+            }
+        }
+    }
+
+    impl std::ops::Mul for BaseTypes {
+        type Output = BaseTypes;
+        fn mul(self, other: BaseTypes) -> BaseTypes {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => BaseTypes::Int(x * y),
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => BaseTypes::Float(x * y),
+                _ => {
+                    println!(
+                        "Warning: Cannot multiply different types as well as string and char type."
+                    );
+                    BaseTypes::Null
+                }
+            }
+        }
+    }
+
+    impl std::ops::Div for BaseTypes {
+        type Output = BaseTypes;
+        fn div(self, other: BaseTypes) -> BaseTypes {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => BaseTypes::Int(x / y),
+                (BaseTypes::Float(x), BaseTypes::Float(y)) => BaseTypes::Float(x / y),
+                _ => {
+                    println!(
+                        "Warning: Cannot divide different types as well as string and char type."
+                    );
+                    BaseTypes::Null
+                }
+            }
+        }
+    }
+
+    impl std::ops::Rem for BaseTypes {
+        type Output = BaseTypes;
+        fn rem(self, other: BaseTypes) -> BaseTypes {
+            match (self, other) {
+                (BaseTypes::Int(x), BaseTypes::Int(y)) => BaseTypes::Int(x % y),
+                _ => {
+                    println!(
+                        "Warning: Cannot divide different types as well as string and char type."
+                    );
+                    BaseTypes::Null
+                }
+            }
+        }
     }
 
     impl Variable {
