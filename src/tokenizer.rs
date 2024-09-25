@@ -165,6 +165,11 @@ pub mod tokenizers {
 
         let char = expression.chars().nth(index).unwrap();
 
+        let info = read_boolean(expression.to_string(), index);
+        if info.token != none.token {
+            return info;
+        }
+
         let info = read_numbers(expression.to_string(), char, index);
         if info.token != none.token {
             return info;
@@ -240,6 +245,32 @@ pub mod tokenizers {
             );
         }*/
         return none;
+    }
+
+    fn read_boolean(expression: String, index: usize) -> ParseInfo {
+        let mut j = index;
+        let mut boolean: String = String::new();
+        let bool_compare1 = "True";
+        let bool_compare2 = "False";
+
+        while j < expression.len() {
+            if let Some(char) = expression.chars().nth(j) {
+                if char.is_alphabetic() {
+                    boolean.push(char);
+                    j += 1; // Increment the index to progress through the string
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        if boolean == bool_compare1 || boolean == bool_compare2 {
+            return ParseInfo::new(TokenTypes::Bool, (j - index).try_into().unwrap(), boolean);
+        }
+
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
     fn read_function_declaration(expression: &String, index: usize) -> ParseInfo {
@@ -865,7 +896,7 @@ mod tests {
             ParseInfo {
                 token: TokenTypes::Bool,
                 chars_read: 4,
-                value: "true".to_string(),
+                value: "True".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::SemiColon,
@@ -1010,7 +1041,7 @@ mod tests {
             ParseInfo {
                 token: TokenTypes::Bool,
                 chars_read: 4,
-                value: "true".to_string(),
+                value: "True".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::SemiColon,
