@@ -3,7 +3,7 @@
 * a variety of syntax expressions
 */
 
-pub mod token_type {
+pub mod token_types {
     //use crate::tokenizer::tokenizer::Token;
 
     #[derive(Debug, Clone)]

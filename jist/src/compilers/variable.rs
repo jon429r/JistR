@@ -1,12 +1,12 @@
 use std::process::exit;
 
-use crate::base_variables::base_types::BaseTypes;
-use crate::base_variables::variable::Variable;
-use crate::base_variables::variables::VARIABLE_STACK;
+use crate::base_variable::base_types::BaseTypes;
+use crate::base_variable::variable::Variable;
+use crate::base_variable::variables::VARIABLE_STACK;
 use crate::compilers::function::parse_function_call;
-use crate::node::node::ASTNode;
-use crate::node::node::VariableCallNode;
-use crate::node::node::{IntNode, OperatorNode};
+use crate::node::nodes::ASTNode;
+use crate::node::nodes::VariableCallNode;
+use crate::node::nodes::{IntNode, OperatorNode};
 
 ///
 ///This Function takes in an ASTNode and returns a tuple of the variable name and its value
@@ -52,7 +52,7 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
     let mut var_value = ASTNode::Int(IntNode { value: 0 });
     let mut first: Option<ASTNode> = Option::None;
     let mut parenthesis: bool = false;
-    let mut variableCallValues: Vec<(String, BaseTypes)> = Vec::new();
+    let mut variable_call_values: Vec<(String, BaseTypes)> = Vec::new();
 
     let mut index = 0;
     while index < exp_stack.len() {
@@ -118,7 +118,7 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                             name: result.0.clone(),
                         }),
                     );
-                    variableCallValues.push(result);
+                    variable_call_values.push(result);
                 } else {
                     println!("Syntax Error: Variable call outside of assignment.");
                     return false;
@@ -205,7 +205,7 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                             name: resullt.0.clone(),
                         }),
                     );
-                //variableCallValues.push(resullt);
+                //variable_call_values.push(resullt);
                 } else {
                     println!("Syntax Error: Function call outside of assignment.");
                     return false;

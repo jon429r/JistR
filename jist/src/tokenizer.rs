@@ -3,9 +3,9 @@
 * These tokens can then be used to create an AST
 */
 
-pub mod tokenizer {
-    use crate::base_variables::variables::VARIABLE_STACK;
-    use crate::token_types::token_type::TokenTypes;
+pub mod tokenizers {
+    use crate::base_variable::variables::VARIABLE_STACK;
+    use crate::token_type::token_types::TokenTypes;
 
     #[derive(Debug, PartialEq, Clone)]
     pub struct ParseInfo {
@@ -699,42 +699,370 @@ pub mod tokenizer {
     }
 }
 
-use super::*;
-use crate::token_types::token_type::TokenTypes;
-use tokenizer::ParseInfo;
+mod tests {
 
-#[test]
-fn test_tokenize_variable_declaration() {
-    let input = "let a: int = 1;".to_string();
+    use super::*;
+    use crate::token_type::token_types::TokenTypes;
+    use crate::tokenizer::tokenizers::ParseInfo;
 
-    let expected = vec![
-        ParseInfo {
-            token: TokenTypes::Variable,
-            chars_read: 5,
-            value: "a".to_string(),
-        },
-        ParseInfo {
-            token: TokenTypes::VarTypeAssignment,
-            chars_read: 6,
-            value: "int".to_string(),
-        },
-        ParseInfo {
-            token: TokenTypes::AssignmentOperator,
-            chars_read: 1,
-            value: "=".to_string(),
-        },
-        ParseInfo {
-            token: TokenTypes::Int,
-            chars_read: 1,
-            value: "1".to_string(),
-        },
-        ParseInfo {
-            token: TokenTypes::SemiColon,
-            chars_read: 1,
-            value: ";".to_string(),
-        },
-    ];
+    #[test]
+    fn test_tokenize_variable_declaration_int() {
+        let input = "let a: int = 1;".to_string();
 
-    let result = tokenizer::tokenize(input);
-    assert_eq!(result, expected);
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Variable,
+                chars_read: 5,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::VarTypeAssignment,
+                chars_read: 6,
+                value: "int".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "1".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_declaration_float() {
+        let input = "let a: float = 1.102;".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Variable,
+                chars_read: 5,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::VarTypeAssignment,
+                chars_read: 8,
+                value: "float".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Float,
+                chars_read: 5,
+                value: "1.102".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_declaration_string() {
+        let input = "let a: string = \"Hello, World!\";".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Variable,
+                chars_read: 5,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::VarTypeAssignment,
+                chars_read: 9,
+                value: "string".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::String,
+                chars_read: 15,
+                value: "\"Hello, World!\"".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_declaration_char() {
+        let input = "let a: char = 'a';".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Variable,
+                chars_read: 5,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::VarTypeAssignment,
+                chars_read: 7,
+                value: "char".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Char,
+                chars_read: 3,
+                value: "'a'".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_declaration_boolean() {
+        let input = "let a: bool = True;".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Variable,
+                chars_read: 5,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::VarTypeAssignment,
+                chars_read: 7,
+                value: "bool".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Bool,
+                chars_read: 4,
+                value: "true".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_call_int() {
+        let input = "a = 1;".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::VariableCall,
+                chars_read: 1,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "1".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_call_float() {
+        let input = "a = 1.102;".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::VariableCall,
+                chars_read: 1,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Float,
+                chars_read: 5,
+                value: "1.102".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_call_string() {
+        let input = "a = \"Hello, World!\";".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::VariableCall,
+                chars_read: 1,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::String,
+                chars_read: 15,
+                value: "\"Hello, World!\"".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_call_char() {
+        let input = "a = 'a';".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::VariableCall,
+                chars_read: 1,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Char,
+                chars_read: 3,
+                value: "'a'".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_call_boolean() {
+        let input = "a = True;".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::VariableCall,
+                chars_read: 1,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Bool,
+                chars_read: 4,
+                value: "true".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_function_call() {
+        let input = "add(1, 2);".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::FunctionCall,
+                chars_read: 3,
+                value: "add".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::LeftParenthesis,
+                chars_read: 1,
+                value: "(".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "1".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::ArgumentSeparator,
+                chars_read: 1,
+                value: ",".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "2".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::RightParenthesis,
+                chars_read: 1,
+                value: ")".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
 }

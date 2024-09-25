@@ -1,9 +1,9 @@
 mod ast;
-pub mod base_variables;
+pub mod base_variable;
 pub mod compiler;
 mod function_map;
 mod node;
-pub mod token_types;
+pub mod token_type;
 mod tokenizer;
 
 mod compilers {
@@ -19,17 +19,18 @@ use std::fs;
 use std::path::Path;
 use std::process::exit;
 
-use base_variables::variables::VARIABLE_STACK;
-use compiler::compiler::route_to_parser;
-use node::node::match_token_to_node;
-use node::node::ASTNode;
-use tokenizer::tokenizer::tokenize;
+use base_variable::variables::VARIABLE_STACK;
+use compiler::compilers::route_to_parser;
+use node::nodes::match_token_to_node;
+use node::nodes::ASTNode;
+use tokenizer::tokenizers::tokenize;
 
+///
+/// This function checks if the file extension is valid. IE: .jist
+///
 fn check_file_extension(file_path: String) -> Result<bool, Box<dyn Error>> {
     let ext = Path::new(&file_path).extension().and_then(OsStr::to_str);
-
-    let valid_ext = "jist"; // Remove the leading dot
-
+    let valid_ext = "jist";
     if ext == Some(valid_ext) {
         Ok(true)
     } else {
@@ -44,8 +45,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Err("No file path provided".into());
     }
     let file_path = &args[1];
-
-    // Check file extension
     match check_file_extension(file_path.to_owned()) {
         Ok(true) => {
             //println!("File path is valid");
@@ -75,7 +74,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         for parse_info in tokens {
             let node = match_token_to_node(parse_info);
             //println!("Node: {:?}", node);
-
             match node {
                 ASTNode::SemiColon => {
                     if !hasroot {
@@ -83,7 +81,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         print!("Syntax error expression must be more than semicolon");
                         exit(1);
                     } else {
-                        //send to parser module
+                        //send to compiler.rs
                         route_to_parser(&mut tokenized_expression);
                     }
                 }
@@ -135,6 +133,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     for variable in unsafe { VARIABLE_STACK.iter() } {
         variable.print();
     }
-
     Ok(())
+}
+
+mod test {
+    #[test]
+    fn test_check_file_extension() {
+        let file_path = "test.jist";
+        let result = super::check_file_extension(file_path.to_string());
+        assert_eq!(result.is_ok(), true);
+    }
+
+    #[test]
+    fn test_check_file_extension_invalid() {
+        let file_path = "test.txt";
+        let result = super::check_file_extension(file_path.to_string());
+        assert_eq!(result.is_err(), true);
+    }
 }

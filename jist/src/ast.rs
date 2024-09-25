@@ -1,5 +1,5 @@
 pub mod ast {
-    use crate::node::node::ASTNode;
+    use crate::node::nodes::ASTNode;
 
     #[derive(Debug, Clone)]
     pub struct AST {

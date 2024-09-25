@@ -3,10 +3,10 @@
 * with them
 */
 
-pub mod node {
-    use crate::base_variables::base_types::BaseTypes;
-    use crate::token_types::token_type::*;
-    use crate::tokenizer::tokenizer::ParseInfo;
+pub mod nodes {
+    use crate::base_variable::base_types::BaseTypes;
+    use crate::token_type::token_types::*;
+    use crate::tokenizer::tokenizers::ParseInfo;
 
     pub fn to_base_type(node: &ASTNode) -> Option<BaseTypes> {
         match node {

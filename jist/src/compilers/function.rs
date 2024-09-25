@@ -1,11 +1,11 @@
-use crate::base_variables::base_types::BaseTypes;
-use crate::base_variables::variable::Variable;
-use crate::node::node::ASTNode;
+use crate::base_variable::variable::Variable;
+use crate::node::nodes::ASTNode;
 //use std::collections::HashMap;
 use std::process::exit;
 //use std::sync::MutexGuard;
 
-use crate::base_variables::variables::VARIABLE_STACK;
+use crate::base_variable::base_types::BaseTypes;
+use crate::base_variable::variables::VARIABLE_STACK;
 use crate::function_map::function::Function;
 use crate::function_map::{
     STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE, USER_FUNCTIONS,

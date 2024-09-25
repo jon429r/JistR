@@ -2,13 +2,13 @@
 * This file takes in a vector of AST nodes and routes them to be compiled by Rust functions in the
 * /compilers directory.
 */
-pub mod compiler {
+pub mod compilers {
     use crate::compilers::function::*;
 
     use crate::compilers::variable::parse_variable_call;
     use crate::compilers::variable::parse_variable_declaration;
-    use crate::node::node::{ASTNode, IntNode, OperatorNode};
-    use crate::token_types::token_type::*;
+    use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
+    use crate::token_type::token_types::*;
     use std::process::exit;
 
     pub struct Parser {
@@ -85,12 +85,8 @@ pub mod compiler {
         ASTNode::None
     }
 
-    pub fn operation(
-        expression: &mut Vec<ASTNode>,
-        first_value: Option<ASTNode>,
-        has_parenthisis: bool,
-    ) -> ASTNode {
-        let first: Option<ASTNode> = first_value;
+    pub fn operation(expression: &mut Vec<ASTNode>) -> ASTNode {
+        //let first: Option<ASTNode> = first_value;
         let mut operator: ASTNode = ASTNode::Operator(OperatorNode {
             operator: "+".to_string(),
         });
@@ -154,7 +150,7 @@ pub mod compiler {
                         println!("Result: {:?}", first);
                         break;
                     } else {
-                        let result = operation(expression, first, false); // Mutable reference
+                        let result = operation(expression); // Mutable reference
                         println!("Result: {:?}", result);
                         break;
                     }
@@ -184,7 +180,7 @@ pub mod compiler {
                 ASTNode::LeftParenthesis => {
                     let first: Option<ASTNode> = next_node.cloned();
 
-                    let value = operation(expression, first, true); // Mutable reference
+                    let value = operation(expression); // Mutable reference
                     print!("Result: {:?}", value);
                     break;
                 }

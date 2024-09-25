@@ -16,7 +16,7 @@ pub mod variable {
         pub var_type: BaseTypes,
     }
 
-    pub trait get_value {
+    pub trait GetValue {
         fn get_value(&self) -> BaseTypes;
     }
 
@@ -28,18 +28,6 @@ pub mod variable {
                 (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 == s2,
                 (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 == c2,
                 _ => false,
-            }
-        }
-        fn ne(&self, other: &Self) -> bool {
-            match (self, other) {
-                (BaseTypes::Int(x), BaseTypes::Int(y)) => x != y,
-                (BaseTypes::Float(x), BaseTypes::Float(y)) => x != y,
-                (BaseTypes::StringWrapper(s1), BaseTypes::StringWrapper(s2)) => s1 != s2,
-                (BaseTypes::Char(c1), BaseTypes::Char(c2)) => c1 != c2,
-                _ => {
-                    println!("Warning: Cannot compare different types.");
-                    false
-                }
             }
         }
     }

@@ -5,9 +5,9 @@ pub mod functions {
 }
 
 pub mod function {
-    use crate::base_variables::base_types::BaseTypes;
-    use crate::base_variables::variable::Variable;
-    use crate::node::node::ASTNode;
+    use crate::base_variable::base_types::BaseTypes;
+    use crate::base_variable::variable::Variable;
+    use crate::node::nodes::ASTNode;
 
     pub struct Function {
         pub name: String,
