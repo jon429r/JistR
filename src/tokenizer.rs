@@ -730,7 +730,8 @@ pub mod tokenizers {
     }
 }
 
-mod tests {
+#[cfg(test)]
+mod tokenizer_tests {
 
     use super::*;
     use crate::token_type::token_types::TokenTypes;
@@ -875,7 +876,7 @@ mod tests {
     }
 
     #[test]
-    fn test_tokenize_variable_declaration_boolean() {
+    fn test_tokenize_variable_declaration_boolean_true() {
         let input = "let a: bool = True;".to_string();
         let expected = vec![
             ParseInfo {
@@ -897,6 +898,40 @@ mod tests {
                 token: TokenTypes::Bool,
                 chars_read: 4,
                 value: "True".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_variable_declaration_boolean_false() {
+        let input = "let a: bool = False;".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Variable,
+                chars_read: 5,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::VarTypeAssignment,
+                chars_read: 7,
+                value: "bool".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Bool,
+                chars_read: 5,
+                value: "False".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::SemiColon,
@@ -1076,6 +1111,74 @@ mod tests {
                 token: TokenTypes::ArgumentSeparator,
                 chars_read: 1,
                 value: ",".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "2".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::RightParenthesis,
+                chars_read: 1,
+                value: ")".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_operation() {
+        let input = "1 + 2;".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "1".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Operator,
+                chars_read: 1,
+                value: "+".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "2".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+        let result = tokenizers::tokenize(input);
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_tokenize_operation_with_parethisis() {
+        let input = "(1 + 2);".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::LeftParenthesis,
+                chars_read: 1,
+                value: "(".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Int,
+                chars_read: 1,
+                value: "1".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Operator,
+                chars_read: 1,
+                value: "+".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::Int,

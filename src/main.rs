@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for line in lines {
         let tokens = tokenize(line);
-        println!("Tokens {:?}", tokens);
+        //println!("Tokens {:?}", tokens);
         //
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();
@@ -136,7 +136,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-mod test {
+#[cfg(test)]
+mod main_test {
+    use assert_cmd::Command;
+
     #[test]
     fn test_check_file_extension() {
         let file_path = "test.jist";
@@ -151,3 +154,16 @@ mod test {
         assert_eq!(result.is_err(), true);
     }
 }
+/*
+    #[cfg(test)]
+    mod test_input_output {
+        use assert_cmd::Command;
+
+        //pass in a file path and check if the output is correct
+        fn test_varible_declarations() {
+            let file_path = "../tests/variable_declaration.jist";
+            // run the program and check the VARIABLE_STACK
+            let mut cmd = Command::new("cargo run -- ../tests/variable_declaration.jist");
+        }
+    }
+*/

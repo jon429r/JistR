@@ -1,0 +1,5 @@
+let a: int = 1; 
+let b: float = 1.234; 
+let c: char = 'z'; 
+let d: string = "testing";
+let e: boolean = true;

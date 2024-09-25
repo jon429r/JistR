@@ -97,7 +97,7 @@ pub mod compilers {
         //let skip_by: usize = if has_parenthisis { 2 } else { 1 };
         expression.reverse();
 
-        println!("Expression: {:?}", expression);
+        //println!("Expression: {:?}", expression);
 
         for next_node in expression {
             match next_node {
@@ -196,6 +196,182 @@ pub mod compilers {
                 }
             }
             index += 1; // Move to the next node
+        }
+    }
+}
+
+#[cfg(test)]
+mod complier_tests {
+    use crate::compiler::compilers::{operation, parse_operator};
+    use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
+    //test parse operator
+    #[test]
+    fn test_parse_operator_addition() {
+        let left = ASTNode::Int(IntNode { value: 5 });
+        let operator = ASTNode::Operator(OperatorNode {
+            operator: "+".to_string(),
+        });
+        let right = ASTNode::Int(IntNode { value: 5 });
+        let result = parse_operator(&left, &operator, &right);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 10);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
+            }
+        }
+    }
+
+    #[test]
+    fn test_parse_operator_subtraction() {
+        let left = ASTNode::Int(IntNode { value: 5 });
+        let operator = ASTNode::Operator(OperatorNode {
+            operator: "-".to_string(),
+        });
+        let right = ASTNode::Int(IntNode { value: 5 });
+        let result = parse_operator(&left, &operator, &right);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 0);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
+            }
+        }
+    }
+
+    #[test]
+    fn test_parse_operator_multiplication() {
+        let left = ASTNode::Int(IntNode { value: 5 });
+        let operator = ASTNode::Operator(OperatorNode {
+            operator: "*".to_string(),
+        });
+        let right = ASTNode::Int(IntNode { value: 5 });
+        let result = parse_operator(&left, &operator, &right);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 25);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
+            }
+        }
+    }
+
+    #[test]
+    fn test_parse_operator_divition() {
+        let left = ASTNode::Int(IntNode { value: 5 });
+        let operator = ASTNode::Operator(OperatorNode {
+            operator: "/".to_string(),
+        });
+        let right = ASTNode::Int(IntNode { value: 5 });
+        let result = parse_operator(&left, &operator, &right);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 1);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
+            }
+        }
+    }
+
+    /*
+    #[test]
+    fn test_operator_unrecognized() {
+        let left = ASTNode::Int(IntNode { value: 5 });
+        let operator = ASTNode::Operator(OperatorNode {
+            operator: "%".to_string(),
+        });
+        let right = ASTNode::Int(IntNode { value: 5 });
+        let result = parse_operator(&left, &operator, &right);
+        match result {
+            ASTNode::None => {}
+            _ => {
+                panic!("Result is not None");
+            }
+        }
+    }
+    */
+
+    #[test]
+    fn test_operation_addition() {
+        let mut expression: Vec<ASTNode> = vec![
+            ASTNode::Int(IntNode { value: 5 }),
+            ASTNode::Operator(OperatorNode {
+                operator: "+".to_string(),
+            }),
+            ASTNode::Int(IntNode { value: 5 }),
+        ];
+        let result = operation(&mut expression);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 10);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
+            }
+        }
+    }
+
+    #[test]
+    fn test_operation_subtraction() {
+        let mut expression: Vec<ASTNode> = vec![
+            ASTNode::Int(IntNode { value: 5 }),
+            ASTNode::Operator(OperatorNode {
+                operator: "-".to_string(),
+            }),
+            ASTNode::Int(IntNode { value: 5 }),
+        ];
+        let result = operation(&mut expression);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 0);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
+            }
+        }
+
+        #[test]
+        fn test_operation_multiplication() {
+            let mut expression: Vec<ASTNode> = vec![
+                ASTNode::Int(IntNode { value: 5 }),
+                ASTNode::Operator(OperatorNode {
+                    operator: "*".to_string(),
+                }),
+                ASTNode::Int(IntNode { value: 5 }),
+            ];
+            let result = operation(&mut expression);
+            match result {
+                ASTNode::Int(n) => {
+                    assert_eq!(n.value, 25);
+                }
+                _ => {
+                    panic!("Result is not an IntNode");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_operation_divition() {
+        let mut expression: Vec<ASTNode> = vec![
+            ASTNode::Int(IntNode { value: 5 }),
+            ASTNode::Operator(OperatorNode {
+                operator: "/".to_string(),
+            }),
+            ASTNode::Int(IntNode { value: 5 }),
+        ];
+        let result = operation(&mut expression);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 1);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
+            }
         }
     }
 }
