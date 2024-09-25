@@ -67,7 +67,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let _ast_nodes: Vec<ASTNode> = Vec::new();
 
     for line in lines {
-        let tokens = tokenize(line); // Assuming tokenize returns a Vec<ParseInfo>
+        let tokens = tokenize(line);
+        println!("Tokens {:?}", tokens);
+        //
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();
         for parse_info in tokens {

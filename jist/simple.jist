@@ -1,4 +1,1 @@
-let a: int = 11+2;
-let b: int = 1+2;
-let c: int = a+b;
-echo(c);
+let a: int = 1;

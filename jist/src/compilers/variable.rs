@@ -1,11 +1,12 @@
 use std::process::exit;
 
+use crate::base_variables::base_types::BaseTypes;
 use crate::base_variables::variable::Variable;
+use crate::base_variables::variables::VARIABLE_STACK;
 use crate::compilers::function::parse_function_call;
 use crate::node::node::ASTNode;
 use crate::node::node::VariableCallNode;
 use crate::node::node::{IntNode, OperatorNode};
-use crate::{base_variables::base_types::BaseTypes, VARIABLE_STACK};
 
 ///
 ///This Function takes in an ASTNode and returns a tuple of the variable name and its value

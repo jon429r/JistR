@@ -7,6 +7,7 @@ pub mod tokenizer {
     use crate::base_variables::variables::VARIABLE_STACK;
     use crate::token_types::token_type::TokenTypes;
 
+    #[derive(Debug, PartialEq, Clone)]
     pub struct ParseInfo {
         pub token: TokenTypes,
         pub chars_read: i32,
@@ -76,7 +77,7 @@ pub mod tokenizer {
 
             if char == ';' {
                 index += 1;
-                token_list.push(ParseInfo::new(TokenTypes::SemiColon, 1, "none".to_string()));
+                token_list.push(ParseInfo::new(TokenTypes::SemiColon, 1, ";".to_string()));
                 continue;
             }
 
@@ -696,4 +697,44 @@ pub mod tokenizer {
             }
         }
     }
+}
+
+use super::*;
+use crate::token_types::token_type::TokenTypes;
+use tokenizer::ParseInfo;
+
+#[test]
+fn test_tokenize_variable_declaration() {
+    let input = "let a: int = 1;".to_string();
+
+    let expected = vec![
+        ParseInfo {
+            token: TokenTypes::Variable,
+            chars_read: 5,
+            value: "a".to_string(),
+        },
+        ParseInfo {
+            token: TokenTypes::VarTypeAssignment,
+            chars_read: 6,
+            value: "int".to_string(),
+        },
+        ParseInfo {
+            token: TokenTypes::AssignmentOperator,
+            chars_read: 1,
+            value: "=".to_string(),
+        },
+        ParseInfo {
+            token: TokenTypes::Int,
+            chars_read: 1,
+            value: "1".to_string(),
+        },
+        ParseInfo {
+            token: TokenTypes::SemiColon,
+            chars_read: 1,
+            value: ";".to_string(),
+        },
+    ];
+
+    let result = tokenizer::tokenize(input);
+    assert_eq!(result, expected);
 }

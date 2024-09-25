@@ -1,9 +1,9 @@
 use crate::base_variables::base_types::BaseTypes;
 use crate::base_variables::variable::Variable;
-use crate::node::node::{ASTNode, VariableCallNode};
-use std::collections::HashMap;
+use crate::node::node::ASTNode;
+//use std::collections::HashMap;
 use std::process::exit;
-use std::sync::MutexGuard;
+//use std::sync::MutexGuard;
 
 use crate::base_variables::variables::VARIABLE_STACK;
 use crate::function_map::function::Function;
@@ -13,9 +13,9 @@ use crate::function_map::{
 
 pub fn parse_function_declaration(expression: &Vec<ASTNode>) -> bool {
     let mut function_name: String = "None".to_string();
-    let mut parameters: Vec<Variable> = Vec::new();
+    let parameters: Vec<Variable> = Vec::new();
     let mut number_of_curly_braces = 0;
-    let mut return_type: BaseTypes = BaseTypes::Null;
+    let return_type: BaseTypes = BaseTypes::Null;
 
     let mut i = 0;
     while i < expression.len() {
@@ -110,8 +110,7 @@ pub fn parse_function_call(expression: &Vec<ASTNode>) -> BaseTypes {
     }
 
     // Handle the result or error
-    let result = get_function_result(function_name, &mut parameter_and_value);
-    return result;
+    get_function_result(function_name, &mut parameter_and_value)
 }
 
 pub fn get_function_result(
@@ -283,6 +282,6 @@ fn parse_function_call_arguments(expression: &[ASTNode]) -> Vec<BaseTypes> {
     }
 
     // Return the collected arguments
-    println!("@@@@@@@@@@@Arguments: {:?}", arguments);
+    //println!("@@@@@@@@@@@Arguments: {:?}", arguments);
     arguments
 }
