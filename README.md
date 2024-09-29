@@ -41,6 +41,9 @@ Jist is built using **Rust**, taking advantage of its safety and performance. Wi
 ```bash
 # Install the Jist compiler (requires Rust installed)
 !! Not Implemented please clone repo to use !!
+After Cloning run cargo build --release
+sudo mv target/release/jist /usr/local/bin/
+
 $ cargo install jistc
 ```
 Alternatively, you can download pre-built binaries from the [releases page](https://example.com/releases).
