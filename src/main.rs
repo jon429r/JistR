@@ -154,16 +154,77 @@ mod main_test {
         assert_eq!(result.is_err(), true);
     }
 }
-/*
-    #[cfg(test)]
-    mod test_input_output {
-        use assert_cmd::Command;
 
-        //pass in a file path and check if the output is correct
-        fn test_varible_declarations() {
-            let file_path = "../tests/variable_declaration.jist";
-            // run the program and check the VARIABLE_STACK
-            let mut cmd = Command::new("cargo run -- ../tests/variable_declaration.jist");
-        }
+#[cfg(test)]
+mod test_input_output {
+    use assert_cmd::Command;
+    use predicates::prelude::*;
+
+    // Pass in a file path and check if the output is correct
+    #[test]
+    fn test_int_variable_declarations() {
+        let file_path = "test_files/int_variable_declaration.jist";
+
+        // Run the program and check the output
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+
+        cmd.arg(file_path)
+            .assert()
+            .success() // Asserting that the command was successful
+            .stdout(predicate::str::contains(
+                "Variable Name: a\nVariable Type: Int(0)\nVariable Value: Int(1)",
+            ));
     }
-*/
+
+    #[test]
+    fn test_string_variable_declaration() {
+        let file_path = "test_files/string_variable_declaration.jist";
+
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+
+        cmd.arg(file_path)
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                "Variable info: a, StringWrapper(\"\\\"Hello World\\\"\"), StringWrapper(\"\")",
+            ));
+    }
+    /*
+        #[test]
+        fn test_bool_variable_declaration() {
+            let file_path = "test_files/boolean_variable_declaration.jist";
+            let mut cmd = Command::cargo_bin("jist").unwrap();
+            cmd.arg(file_path)
+                .assert()
+                .success()
+                .stdout(predicate::str::contains(
+                    "Variable Name: a\nVariable Type: Bool(0)\nVariable Value: Bool(true)",
+                ));
+        }
+
+        #[test]
+        fn test_char_variable_declaration() {
+            let file_path = "test_files/char_variable_declaration.jist";
+            let mut cmd = Command::cargo_bin("jist").unwrap();
+            cmd.arg(file_path)
+                .assert()
+                .success()
+                .stdout(predicate::str::contains(
+                    "Variable info: a, CharWrapper('a'), CharWrapper('')",
+                ));
+        }
+    */
+    #[test]
+    fn test_float_variable_declaration() {
+        let file_path = "test_files/float_variable_declaration.jist";
+
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+
+        cmd.arg(file_path)
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                "Variable info: a, Float(3.141590118408203), Float(0.0)",
+            ));
+    }
+}

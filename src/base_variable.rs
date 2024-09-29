@@ -181,16 +181,12 @@ pub mod variable {
 
     impl Variable {
         pub fn new(name: String, value: BaseTypes, var_type: BaseTypes) -> Variable {
-            let value_as_base_type: BaseTypes = value.into();
-            println!(
-                "Variable info: {}, {:?}, {:?}",
-                name, value_as_base_type, var_type
-            );
+            println!("Variable info: {}, {:?}, {:?}", name, value, var_type);
 
             // Ensure the value type matches the variable type
             let checked_value = match var_type {
-                BaseTypes::Int(_) => match value_as_base_type {
-                    BaseTypes::Int(_) => value_as_base_type,
+                BaseTypes::Int(_) => match value {
+                    BaseTypes::Int(_) => value,
                     _ => {
                         println!(
                             "Warning: Value type mismatch for '{}'. Setting default Int value.",
@@ -200,8 +196,8 @@ pub mod variable {
                     }
                 },
                 BaseTypes::Float(_) => {
-                    match value_as_base_type {
-                        BaseTypes::Float(_) => value_as_base_type,
+                    match value {
+                        BaseTypes::Float(_) => value,
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default Float value.", name);
                             BaseTypes::Float(0.0)
@@ -209,8 +205,8 @@ pub mod variable {
                     }
                 }
                 BaseTypes::StringWrapper(_) => {
-                    match value_as_base_type {
-                        BaseTypes::StringWrapper(_) => value_as_base_type,
+                    match value {
+                        BaseTypes::StringWrapper(_) => value,
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default String value.", name);
                             BaseTypes::StringWrapper(String::new())
@@ -218,8 +214,8 @@ pub mod variable {
                     }
                 }
                 BaseTypes::Bool(_) => {
-                    match value_as_base_type {
-                        BaseTypes::Bool(_) => value_as_base_type,
+                    match value {
+                        BaseTypes::Bool(_) => value,
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default Bool value.", name);
                             BaseTypes::Bool(false)
@@ -227,8 +223,8 @@ pub mod variable {
                     }
                 }
                 BaseTypes::Char(_) => {
-                    match value_as_base_type {
-                        BaseTypes::Char(_) => value_as_base_type,
+                    match value {
+                        BaseTypes::Char(_) => value,
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default Char value.", name);
                             BaseTypes::Char('\0')

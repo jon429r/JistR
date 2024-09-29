@@ -66,7 +66,7 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                     "int" => Some(BaseTypes::Int(0)),
                     "float" => Some(BaseTypes::Float(0.0)),
                     "string" => Some(BaseTypes::StringWrapper(String::new())),
-                    "bool" => Some(BaseTypes::Bool(false)),
+                    "boolean" => Some(BaseTypes::Bool(false)),
                     "char" => Some(BaseTypes::Char('\0')),
                     _ => {
                         println!("Syntax Error: Unrecognized type '{}'", v.value);
@@ -181,7 +181,8 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             ASTNode::Char(c) => {
                 if inside_assignment {
                     first = Some(ASTNode::Char(c.clone()));
-                    var_value = operation(exp_stack);
+                    var_value = c.value.into();
+                    //var_value = operation(exp_stack);
                     if let ASTNode::Char(c) = var_value {
                         value = BaseTypes::Char(c.value);
                     } else {

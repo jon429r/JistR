@@ -6,10 +6,6 @@ pub mod ast {
         pub root: ASTNode,
     }
 
-    pub fn display_node(node: &ASTNode) {
-        display_node(node);
-    }
-
     impl AST {
         pub fn new(root: ASTNode) -> Self {
             AST { root }
@@ -76,6 +72,24 @@ pub mod ast {
                 ASTNode::RightCurly => println!("{}RightCurlyNode", indent),
                 ASTNode::None => println!("{}NoneNode", indent),
             }
+        }
+
+        // Allowing user to conver the AST to the corresponding rust types
+    }
+
+    impl From<ASTNode> for char {
+        fn from(node: ASTNode) -> char {
+            if let ASTNode::Char(c) = node {
+                c.value
+            } else {
+                panic!("Cannot convert non-char ASTNode to char")
+            }
+        }
+    }
+
+    impl From<char> for ASTNode {
+        fn from(c: char) -> ASTNode {
+            ASTNode::Char(crate::node::nodes::CharNode { value: c })
         }
     }
 }

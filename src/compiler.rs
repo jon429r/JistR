@@ -128,7 +128,7 @@ pub mod compilers {
     }
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
-        println!("Expression: {:?}", expression);
+        //println!("Expression: {:?}", expression);
 
         let mut index = 0; // Start with index-based iteration
         while index < expression.len() {

@@ -3,10 +3,14 @@ name = "jist"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "jist"
+path = "src/main.rs"
+
 [dependencies]
 rand = "0.8"
 lazy_static = "1.4"
 
 [dev-dependencies]
 assert_cmd = "2.0"
-
+predicates = "1.0"
