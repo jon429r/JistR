@@ -1,1 +1,2 @@
-let a: bool = true;
+let b: int = 1+1;
+echo(b);
