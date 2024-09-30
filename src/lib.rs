@@ -5,6 +5,7 @@ pub mod function_map;
 pub mod node;
 pub mod token_type;
 pub mod tokenizer;
+pub mod collections
 
 pub mod compilers {
     pub mod function;

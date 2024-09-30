@@ -1,5 +1,6 @@
 mod ast;
 pub mod base_variable;
+mod collection;
 pub mod compiler;
 mod function_map;
 mod node;
