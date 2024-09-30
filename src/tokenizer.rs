@@ -4,6 +4,9 @@
 */
 
 pub mod tokenizers {
+
+    use std::char;
+
     use crate::base_variable::variables::VARIABLE_STACK;
     use crate::token_type::token_types::TokenTypes;
 
@@ -142,6 +145,13 @@ pub mod tokenizers {
         let mut j = index;
         let mut decimals = 0;
 
+        // check for [ and ]
+        if expression.chars().nth(j).unwrap() == '[' {
+            let info: ParseInfo = ParseInfo::new(TokenTypes::LeftBracket, 1, "[".to_string());
+        } else if expression.chars().nth(j). unwrap() == ']' {
+            let info: ParseInfo = ParseInfo::new(TokenTypes::RightBracket, 1, "]".to_string());
+        }
+
         // Loop through the expression
         while j < expression.len() {
             let char: char = expression.chars().nth(j).unwrap();
@@ -190,6 +200,8 @@ pub mod tokenizers {
             return info;
         }
 
+
+
         let info = read_function_declaration(expression, index);
         // Handle number or function parsing if no matches yet
         if info.token != none.token {
@@ -207,6 +219,11 @@ pub mod tokenizers {
         }
 
         let info = read_variable_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = read_collection_assignment(expression, index);
         if info.token != none.token {
             return info;
         }
@@ -400,59 +417,103 @@ pub mod tokenizers {
         ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
-    fn read_variable_declaration(expression: &String, index: usize) -> ParseInfo {
-        let mut j = index;
-        let mut variable: String = String::new();
-        let let_compare = "let";
 
-        // Collect alphabetic characters forming the variable name
-        while j < expression.len() {
-            if let Some(char) = expression.chars().nth(j) {
-                if char.is_alphabetic() {
-                    variable.push(char);
-                } else {
-                    break;
-                }
-            }
-            j += 1;
 
-            if variable.len() == 3 {
-                if variable == let_compare {
-                    // Skip whitespace and collect the actual variable name
-                    let mut variable_name = String::new();
-                    while j < expression.len() {
-                        if let Some(char) = expression.chars().nth(j) {
-                            if char.is_alphabetic() {
-                                variable_name.push(char);
-                            } else if char != ' ' {
-                                break;
-                            } else if char == ':' {
-                                break;
-                            }
-                        }
-                        j += 1;
-                    }
-                    //print!("Variable name: {}\n", variable_name);
+    static mut VARIABLE_DECLARATION: bool = false;
+    static mut COLLECTION_DECLARATION: bool = false;
+fn read_variable_declaration(expression: &String, index: usize) -> ParseInfo {
+    let mut j = index;
+    let mut variable: String = String::new();
+    let let_compare = "let";
+    let mut variable_name = String::new();
 
-                    return ParseInfo::new(
-                        TokenTypes::Variable,
-                        (j - index).try_into().unwrap(),
-                        variable_name,
-                    );
-                } else {
-                    return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
-                }
-            }
-
-            if variable.len() > 3 {
-                variable.remove(0);
+    // Collect characters to check for the "let" keyword
+    while j < expression.len() {
+        if let Some(char) = expression.chars().nth(j) {
+            if char.is_alphabetic() {
+                variable.push(char);
+            } else {
+                break;
             }
         }
+        j += 1;
 
-        // Return default ParseInfo if function not found
-        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+        // Check if the collected string equals "let"
+        if variable.len() == 3 && variable == let_compare {
+            // Reset variable to start collecting the actual variable name
+            variable.clear();
+            while j < expression.len() {
+                if let Some(char) = expression.chars().nth(j) {
+                    if char.is_alphabetic() || char == '_' {
+                        variable_name.push(char);
+                    } else if char == ':' {
+                        // Found the type declaration, break to parse the type
+                        break;
+                    } else if !char.is_whitespace() {
+                        // If it's neither whitespace nor ':', exit
+                        return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+                    }
+                }
+                j += 1;
+            }
+
+            // After the variable name, check for ':'
+            while j < expression.len() {
+                if expression.chars().nth(j) == Some(':') {
+                    j += 1; // Move past ':'
+                    // Skip whitespace
+                    while j < expression.len() && expression.chars().nth(j).unwrap().is_whitespace() {
+                        j += 1;
+                    }
+                    // Check for a collection
+                    if expression.chars().nth(j) == Some('<') {
+                        // Start of a collection
+                        j += 1; // Move past '<'
+                        let collection_name_start = j;
+                        while j < expression.len() && expression.chars().nth(j) != Some('>') {
+                            j += 1;
+                        }
+                        if j < expression.len() {
+                            // Now we should be at '>'
+                            let collection_name = &expression[collection_name_start..j];
+                            unsafe { COLLECTION_DECLARATION = true }; // Update global state
+                            print!("Collection Name: {}", collection_name);
+                            j += 1; // Move past '>'
+                            // Return collection token
+                            return ParseInfo::new(
+                                TokenTypes::Collection,
+                                (j - index).try_into().unwrap(),
+                                collection_name.to_string(),
+                            );
+                        }
+                    } else {
+                        // Handle variable type (e.g., int, bool)
+                        let type_declaration_start = j;
+                        while j < expression.len() && expression.chars().nth(j).unwrap().is_alphabetic() {
+                            j += 1;
+                        }
+                        let type_declaration = &expression[type_declaration_start..j];
+                        unsafe { VARIABLE_DECLARATION = true }; // Update global state
+                        return ParseInfo::new(
+                            TokenTypes::Variable,
+                            variable_name.len().try_into().unwrap(),
+                            variable_name,
+                        );
+                    }
+                }
+                j += 1;
+            }
+            return ParseInfo::new(TokenTypes::Variable, variable_name.len().try_into().unwrap(), variable_name);
+        }
+        // Remove the first character if more than 3 characters are collected
+        if variable.len() > 3 {
+            variable.remove(0);
+        }
     }
 
+    // Return default ParseInfo if function not found
+    ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+}
     fn read_function_assignment(expression: &String, index: usize) -> ParseInfo {
         let chars: Vec<char> = expression.chars().collect();
         let mut j = index;
@@ -501,6 +562,102 @@ pub mod tokenizers {
         ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
+    fn read_collection_assignment(expression: &str, index: usize) -> ParseInfo {
+        let chars: Vec<char> = expression.chars().collect();
+        let mut j = index;
+        let original_index = index;
+
+        // Look for ':' pattern
+        while j < chars.len() {
+            let current_char = chars[j];
+            println!("Current index: {}, Current char: '{}'", j, current_char);
+
+            if current_char == ':' {
+                println!("Found ':' at index {}", j);
+                j += 1; // Move past `:`
+
+                // Skip whitespace after `:`
+                while j < chars.len() && chars[j].is_whitespace() {
+                    println!("Skipping whitespace at index {}", j);
+                    j += 1;
+                }
+
+                // Collect the type (assuming it is lowercase or an identifier)
+                let mut collection_type = String::new();
+                while j < chars.len() {
+                    let char = chars[j];
+                    if char.is_lowercase() || char.is_alphanumeric() || char == '_' {
+                        collection_type.push(char);
+                        println!("Collecting type character: '{}'", char);
+                        j += 1;
+                    } else {
+                        println!("Non-type character encountered: '{}'", char);
+                        break;
+                    }
+                }
+
+                // Skip whitespace after the type and check for `<`
+                while j < chars.len() && chars[j].is_whitespace() {
+                    println!("Skipping whitespace after type at index {}", j);
+                    j += 1;
+                }
+
+                if j < chars.len() && chars[j] == '<' {
+                    println!("Found '<' indicating collection type at index {}", j);
+                    // Debug print statement for collection type
+                    let mut collection_type = String::new();
+                    j += 1; // Move past '<'
+                    while j < chars.len() {
+                        let char = chars[j];
+                        if char != '>' {
+                            collection_type.push(char);
+                            j += 1;
+                        //if char = '>' print then break
+                        } else if char == '>' {
+                            println!("Found '>' at index {}", j);
+                            j += 1;
+
+
+                            println!(
+                                "Collection Type: '{}', Length: {}",
+                                collection_type,
+                                j - original_index
+                            );
+                            unsafe {
+                                COLLECTION_DECLARATION = false;
+                            }
+                            return ParseInfo::new(
+                                TokenTypes::Collection,
+                                (j - original_index).try_into().unwrap(),
+                                collection_type,
+                            );
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // Set collection declaration state
+                    unsafe {
+                        COLLECTION_DECLARATION = true;
+                    }
+                } else {
+                    println!("Expected '<' not found after type. That means its a variable");
+                    //return none
+                    return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+                    
+                }
+            }
+            j += 1; // Continue scanning if `:` not found
+        }
+
+        // If we finish the loop without finding a valid collection declaration
+        unsafe {
+            COLLECTION_DECLARATION = false; // Reset state
+        }
+        println!("No valid collection declaration found.");
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
+    }
+
     fn read_variable_assignment(expression: &String, index: usize) -> ParseInfo {
         let chars: Vec<char> = expression.chars().collect();
         let mut j = index;
@@ -545,6 +702,7 @@ pub mod tokenizers {
                             j - original_index
                         );
                     */
+                    unsafe { VARIABLE_DECLARATION = false };
                     return ParseInfo::new(
                         TokenTypes::VarTypeAssignment,
                         (j - original_index).try_into().unwrap(),
@@ -557,6 +715,7 @@ pub mod tokenizers {
         }
 
         // Return None if no valid variable assignment found
+        unsafe { VARIABLE_DECLARATION = false };
         ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
@@ -744,12 +903,12 @@ mod tokenizer_tests {
         let expected = vec![
             ParseInfo {
                 token: TokenTypes::Variable,
-                chars_read: 5,
+                chars_read: 1,
                 value: "a".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::VarTypeAssignment,
-                chars_read: 6,
+                chars_read: 10,
                 value: "int".to_string(),
             },
             ParseInfo {
@@ -779,12 +938,12 @@ mod tokenizer_tests {
         let expected = vec![
             ParseInfo {
                 token: TokenTypes::Variable,
-                chars_read: 5,
+                chars_read: 1,
                 value: "a".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::VarTypeAssignment,
-                chars_read: 8,
+                chars_read: 12,
                 value: "float".to_string(),
             },
             ParseInfo {
@@ -813,12 +972,12 @@ mod tokenizer_tests {
         let expected = vec![
             ParseInfo {
                 token: TokenTypes::Variable,
-                chars_read: 5,
+                chars_read: 1,
                 value: "a".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::VarTypeAssignment,
-                chars_read: 9,
+                chars_read: 13,
                 value: "string".to_string(),
             },
             ParseInfo {
@@ -847,12 +1006,12 @@ mod tokenizer_tests {
         let expected = vec![
             ParseInfo {
                 token: TokenTypes::Variable,
-                chars_read: 5,
+                chars_read: 1,
                 value: "a".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::VarTypeAssignment,
-                chars_read: 7,
+                chars_read: 11,
                 value: "char".to_string(),
             },
             ParseInfo {
@@ -881,12 +1040,12 @@ mod tokenizer_tests {
         let expected = vec![
             ParseInfo {
                 token: TokenTypes::Variable,
-                chars_read: 5,
+                chars_read: 1,
                 value: "a".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::VarTypeAssignment,
-                chars_read: 7,
+                chars_read: 11,
                 value: "bool".to_string(),
             },
             ParseInfo {
@@ -915,12 +1074,12 @@ mod tokenizer_tests {
         let expected = vec![
             ParseInfo {
                 token: TokenTypes::Variable,
-                chars_read: 5,
+                chars_read: 1,
                 value: "a".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::VarTypeAssignment,
-                chars_read: 7,
+                chars_read: 11,
                 value: "bool".to_string(),
             },
             ParseInfo {

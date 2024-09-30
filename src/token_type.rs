@@ -101,6 +101,18 @@ pub mod token_types {
          */
         Float,
         /*
+         *   Collection
+         */
+        Collection,
+        /*
+* [
+*/
+        LeftBracket,
+        /*
+* ]
+*/
+        RightBracket,
+        /*
         Used as a bad return value
         */
         None,
@@ -130,6 +142,9 @@ pub mod token_types {
                 (TokenTypes::Variable, TokenTypes::Variable) => true,
                 (TokenTypes::Comment, TokenTypes::Comment) => true,
                 (TokenTypes::Bool, TokenTypes::Bool) => true,
+                (TokenTypes::Collection, TokenTypes::Collection) => true,
+                (TokenTypes::LeftBracket, TokenTypes:: LeftBracket) => true,
+                (TokenTypes::RightBracket, TokenTypes:: RightBracket) => true,
                 (TokenTypes::None, TokenTypes::None) => true,
                 _ => false,
             }
@@ -164,6 +179,9 @@ pub mod token_types {
                 TokenTypes::LeftCurly => "LeftCurly".to_string(),
                 TokenTypes::ReturnTypeAssignment => "ReturnTypeAssignment".to_string(),
                 TokenTypes::Comment => "Comment".to_string(),
+                TokenTypes::Collection => "Collection".to_string(),
+                TokenTypes::RightBracket => "RightBracket".to_string(),
+                TokenTypes::LeftBracket => "LeftBracket".to_string(),
                 TokenTypes::None => "None".to_string(),
             }
         }

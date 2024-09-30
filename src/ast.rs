@@ -64,6 +64,11 @@ pub mod ast {
                 ASTNode::FunctionCallArguments(f) => {
                     println!("{}FunctionCallArgumentsNode: Value: {}", indent, f.value)
                 }
+                ASTNode::Collection(c) => {
+                    println!("{}CollectionNode: Value: {}", indent, c.name)
+                }
+                ASTNode::RightBracket => println!("{}RightBracketNode", indent),
+                ASTNode::LeftBracket => println!("{}LeftBracketNode", indent),
                 ASTNode::Comment(c) => println!("{}CommentNode: Value: {}", indent, c.value),
                 ASTNode::LeftParenthesis => println!("{}LeftParenthesisNode", indent),
                 ASTNode::RightParenthesis => println!("{}RightParenthesisNode", indent),

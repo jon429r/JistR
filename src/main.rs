@@ -74,7 +74,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut tokenized_expression = Vec::new();
         for parse_info in tokens {
             let node = match_token_to_node(parse_info);
-            //println!("Node: {:?}", node);
+            println!("Node: {:?}", node);
             match node {
                 ASTNode::SemiColon => {
                     if !hasroot {

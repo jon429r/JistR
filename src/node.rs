@@ -22,6 +22,7 @@ pub mod nodes {
             ASTNode::Bool(bool_node) => Some(BaseTypes::Bool(bool_node.value)),
             ASTNode::Float(float_node) => Some(BaseTypes::Float(float_node.value as f64)),
             ASTNode::Assignment(_) => Some(BaseTypes::Null),
+            ASTNode::Collection(_) => Some(BaseTypes::Null),
             ASTNode::VarTypeAssignment(_) => Some(BaseTypes::Null),
             ASTNode::Variable(_) => Some(BaseTypes::Null),
             ASTNode::Function(_) => Some(BaseTypes::Null),
@@ -39,6 +40,8 @@ pub mod nodes {
             ASTNode::ArgumentSeparator => Some(BaseTypes::Null),
             ASTNode::LeftCurly => Some(BaseTypes::Null),
             ASTNode::RightCurly => Some(BaseTypes::Null),
+            ASTNode::RightBracket => Some(BaseTypes::Null),
+            ASTNode::LeftBracket => Some(BaseTypes::Null),
             ASTNode::None => Some(BaseTypes::Null),
         }
     }
@@ -65,6 +68,9 @@ pub mod nodes {
         ReturnTypeAssignment(ReturnTypeAssignmentNode),
         Comment(CommentNode),
         FunctionCallArguments(FunctionArgumentsNode),
+        Collection(CollectionNode),
+        LeftBracket,
+        RightBracket,
         LeftParenthesis,
         RightParenthesis,
         ArgumentSeparator,
@@ -76,6 +82,7 @@ pub mod nodes {
     impl fmt::Display for ASTNode {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
+                ASTNode::Collection(c) => write!(f, "{}", c),
                 ASTNode::SemiColon => write!(f, "SemiColon"),
                 ASTNode::Operator(o) => write!(f, "{}", o),
                 ASTNode::Int(i) => write!(f, "{}", i),
@@ -99,10 +106,32 @@ pub mod nodes {
                 ASTNode::ArgumentSeparator => write!(f, "ArgumentSeparator"),
                 ASTNode::LeftCurly => write!(f, "LeftCurly"),
                 ASTNode::RightCurly => write!(f, "RightCurly"),
+                ASTNode::RightBracket => write!(f, "RightBracket"),
+                ASTNode::LeftBracket => write!(f, "LeftBracket"),
                 ASTNode::FunctionCallArguments(call_args) => write!(f, "{}", call_args), // Call Display
                 ASTNode::FunctionArguments(args) => write!(f, "{}", args), // Call Display
                 ASTNode::None => write!(f, "None"),
             }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct CollectionNode {
+        pub name: String,
+    }
+
+    impl CollectionNode {
+        pub fn new(name: String) -> Self {
+            CollectionNode { name }
+        }
+        pub fn display_info(&self) {
+            println!("Collection: {}", self.name);
+        }
+    }
+
+    impl fmt::Display for CollectionNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Collection: {}", self.name)
         }
     }
 
@@ -579,6 +608,9 @@ pub mod nodes {
             TokenTypes::Comment => ASTNode::Comment(CommentNode::new(parse_info.value)),
             TokenTypes::SemiColon => ASTNode::SemiColon,
             TokenTypes::None => ASTNode::None,
+            TokenTypes::Collection => ASTNode::Collection(CollectionNode::new(parse_info.value)),
+            TokenTypes::LeftBracket => ASTNode::LeftBracket,
+            TokenTypes::RightBracket => ASTNode::RightBracket,
             _ => {
                 panic!("Unrecognized token: {:?}", parse_info.token);
             }
