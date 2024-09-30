@@ -1,2 +1,2 @@
-let b: int = 1+1;
-echo(b);
+let a: int = 1+1;
+echo(a)
