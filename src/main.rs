@@ -8,6 +8,7 @@ pub mod token_type;
 //mod tokenizer;
 
 mod compilers {
+    pub mod collection;
     pub mod function;
     pub mod operation;
     pub mod variable;
@@ -78,7 +79,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for line in lines {
         let tokens = tokenize(line);
-        println!("Tokens {:?}", tokens);
+        //println!("Tokens {:?}", tokens);
         //
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();

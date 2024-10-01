@@ -83,7 +83,7 @@ pub mod nodes {
     impl fmt::Display for ASTNode {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
-                ASTNode::Collection(c) => write!(f, "{}", c),
+                ASTNode::Collection(c) => write!(f, "{:?}", c),
                 ASTNode::SemiColon => write!(f, "SemiColon"),
                 ASTNode::Operator(o) => write!(f, "{}", o),
                 ASTNode::Int(i) => write!(f, "{}", i),
@@ -142,6 +142,7 @@ pub mod nodes {
                 value_type_single,
             }
         }
+
         pub fn display_info(&self) {
             println!("Collection: {}", self.name);
             println!("Collection Type: {}", self.collection_type);
@@ -641,14 +642,20 @@ pub mod nodes {
             TokenTypes::Comment => ASTNode::Comment(CommentNode::new(parse_info.value)),
             TokenTypes::SemiColon => ASTNode::SemiColon,
             TokenTypes::None => ASTNode::None,
-            TokenTypes::Collection => ASTNode::Collection(CollectionNode::new(
-                parse_info.value,
-                "".to_string(),
-                None,
-                None,
+            TokenTypes::Collection {
+                name,
+                collection_type,
+                stored_value_type_single,
+                stored_value_type_tuple,
+            } => ASTNode::Collection(CollectionNode::new(
+                name,
+                collection_type,
+                Some(stored_value_type_tuple),
+                Some(stored_value_type_single),
             )),
             TokenTypes::LeftBracket => ASTNode::LeftBracket,
             TokenTypes::RightBracket => ASTNode::RightBracket,
+            TokenTypes::FatArrow => ASTNode::FatArrow,
             _ => {
                 panic!("Unrecognized token: {:?}", parse_info.token);
             }

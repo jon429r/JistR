@@ -93,20 +93,35 @@ pub mod collection_tokenizers {
             if j < chars.len() && chars[j] == '=' {
                 // Return the collected information about the collection type
                 if !found_comma {
+                    let chars_read = j - index;
                     return ParseInfo::new(
-                        TokenTypes::Collection,
-                        (j - index).try_into().unwrap(),
+                        TokenTypes::Collection {
+                            name: collection_name.clone(),
+                            collection_type: collection_type.clone(),
+                            stored_value_type_single: stored_value_type_tuple.0.trim().to_string(),
+                            stored_value_type_tuple: ("".to_string(), "".to_string()),
+                        },
+                        chars_read.try_into().unwrap(),
                         format!(
-                            "name: {} collection_type: {}<{}>",
+                            "{} collection_type: {}<{}>",
                             collection_name,
                             collection_type,
                             stored_value_type_tuple.0.trim()
                         ),
                     );
                 } else {
+                    let chars_read = j - index;
                     return ParseInfo::new(
-                        TokenTypes::Collection,
-                        (j - index).try_into().unwrap(),
+                        TokenTypes::Collection {
+                            name: collection_name.clone(),
+                            collection_type: collection_type.clone(),
+                            stored_value_type_single: "".to_string(),
+                            stored_value_type_tuple: (
+                                stored_value_type_tuple.0.trim().to_string(),
+                                stored_value_type_tuple.1.trim().to_string(),
+                            ),
+                        },
+                        chars_read.try_into().unwrap(),
                         format!(
                             "name: {} collection_type: {}<{}, {}>",
                             collection_name,

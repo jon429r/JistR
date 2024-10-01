@@ -66,7 +66,10 @@ pub mod ast {
                     println!("{}FunctionCallArgumentsNode: Value: {}", indent, f.value)
                 }
                 ASTNode::Collection(c) => {
-                    println!("{}CollectionNode: Value: {}", indent, c.name)
+                    println!(
+                        "{}CollectionNode: Name: {}, Type: {}, Single: {:?}, Tuple: {:?}",
+                        indent, c.name, c.collection_type, c.value_type_single, c.value_type_tuple,
+                    )
                 }
                 ASTNode::RightBracket => println!("{}RightBracketNode", indent),
                 ASTNode::LeftBracket => println!("{}LeftBracketNode", indent),

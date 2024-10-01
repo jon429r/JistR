@@ -15,6 +15,7 @@ pub mod statement_tokenizer {
 }
 
 pub mod compilers {
+    pub mod collection;
     pub mod function;
     pub mod operation;
     pub mod variable;

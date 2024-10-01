@@ -3,6 +3,7 @@ pub mod variables {
     // use super::base_variables::BaseVariables::{Pi, E};
 
     pub static mut VARIABLE_STACK: Vec<Variable> = Vec::new();
+
 }
 
 pub mod variable {

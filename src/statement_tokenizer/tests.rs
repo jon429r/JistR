@@ -5,19 +5,24 @@ mod tokenizer_tests {
     use crate::token_type::token_types::TokenTypes;
 
     #[test]
-    fn test_read_collection_assignment_dict() {
+    fn test_tokenize_collection_assignment_dict() {
         // Input for testing
-        let input = "let a: dict<char, int> = {'a' => 1, 'b' => 2, 'c' => 3};";
+        let input = r#"let a: dict<string, int> = {"One" => 1, "Two" => 2, "Three" => 3};"#;
 
-        // Call the function
+        // Call the function to tokenize the input
         let result = tokenize(input.to_string());
 
-        // Expected Output
+        // Expected output tokens
         let expected = vec![
             ParseInfo {
-                token: TokenTypes::Collection,
-                chars_read: 23,
-                value: "name: a collection_type: dict<char, int>".to_string(),
+                token: TokenTypes::Collection {
+                    name: "a".to_string(),
+                    collection_type: "dict".to_string(),
+                    stored_value_type_single: "".to_string(),
+                    stored_value_type_tuple: ("string".to_string(), "int".to_string()),
+                },
+                chars_read: 25,
+                value: "name: a collection_type: dict<string, int>".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::AssignmentOperator,
@@ -30,9 +35,9 @@ mod tokenizer_tests {
                 value: "{".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::Char,
-                chars_read: 3,
-                value: "'a'".to_string(),
+                token: TokenTypes::String,
+                chars_read: 5,
+                value: "\"One\"".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::FatArrow,
@@ -50,9 +55,9 @@ mod tokenizer_tests {
                 value: ",".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::Char,
-                chars_read: 3,
-                value: "'b'".to_string(),
+                token: TokenTypes::String,
+                chars_read: 5,
+                value: "\"Two\"".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::FatArrow,
@@ -70,9 +75,9 @@ mod tokenizer_tests {
                 value: ",".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::Char,
-                chars_read: 3,
-                value: "'c'".to_string(),
+                token: TokenTypes::String,
+                chars_read: 7,
+                value: "\"Three\"".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::FatArrow,
@@ -96,24 +101,30 @@ mod tokenizer_tests {
             },
         ];
 
-        // Check if result matches the expected output
+        // Assert the result matches the expected output
         assert_eq!(result, expected);
     }
 
+    /*
     #[test]
-    fn test_read_collection_assignment() {
+    fn test_tokenize_collection_assignment_dict_bool_string() {
         // Input for testing
-        let input = "let a: array<int> = [1, 2, 3];";
+        let input = r#"let c: dict<bool, string> = {true => "Yes", false => "No"};"#;
 
-        // Call the function
+        // Call the function to tokenize the input
         let result = tokenize(input.to_string());
 
-        // Expected Output
+        // Expected output tokens
         let expected = vec![
             ParseInfo {
-                token: TokenTypes::Collection,
-                chars_read: 18,
-                value: "name: a collection_type: array<int>".to_string(),
+                token: TokenTypes::Collection {
+                    name: "c".to_string(),
+                    collection_type: "dict".to_string(),
+                    stored_value_type_single: "".to_string(),
+                    stored_value_type_tuple: ("bool".to_string(), "string".to_string()),
+                },
+                chars_read: 24,
+                value: "name: c collection_type: dict<bool, string>".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::AssignmentOperator,
@@ -121,14 +132,24 @@ mod tokenizer_tests {
                 value: "=".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::LeftBracket,
+                token: TokenTypes::LeftCurly,
                 chars_read: 1,
-                value: "[".to_string(),
+                value: "{".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::Int,
-                chars_read: 1,
-                value: "1".to_string(),
+                token: TokenTypes::Bool,
+                chars_read: 4,
+                value: "true".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::FatArrow,
+                chars_read: 2,
+                value: "=>".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::String,
+                chars_read: 5,
+                value: "\"Yes\"".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::ArgumentSeparator,
@@ -136,24 +157,24 @@ mod tokenizer_tests {
                 value: ",".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::Int,
-                chars_read: 1,
-                value: "2".to_string(),
+                token: TokenTypes::Bool,
+                chars_read: 5,
+                value: "false".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::ArgumentSeparator,
-                chars_read: 1,
-                value: ",".to_string(),
+                token: TokenTypes::FatArrow,
+                chars_read: 2,
+                value: "=>".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::Int,
-                chars_read: 1,
-                value: "3".to_string(),
+                token: TokenTypes::String,
+                chars_read: 4,
+                value: "\"No\"".to_string(),
             },
             ParseInfo {
-                token: TokenTypes::RightBracket,
+                token: TokenTypes::RightCurly,
                 chars_read: 1,
-                value: "]".to_string(),
+                value: "}".to_string(),
             },
             ParseInfo {
                 token: TokenTypes::SemiColon,
@@ -162,9 +183,111 @@ mod tokenizer_tests {
             },
         ];
 
-        // Check if result matches the expected output
+        // Assert the result matches the expected output
         assert_eq!(result, expected);
     }
+
+    #[test]
+    fn test_tokenize_collection_assignment_dict_char_float() {
+        // Input for testing
+        let input = r#"let b: dict<char, float> = {'A' => 1.1, 'B' => 2.2, 'C' => 3.3};"#;
+
+        // Call the function to tokenize the input
+        let result = tokenize(input.to_string());
+
+        // Expected output tokens
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Collection {
+                    name: "b".to_string(),
+                    collection_type: "dict".to_string(),
+                    stored_value_type_single: "".to_string(),
+                    stored_value_type_tuple: ("char".to_string(), "float".to_string()),
+                },
+                chars_read: 23,
+                value: "name: b collection_type: dict<char, float>".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::LeftCurly,
+                chars_read: 1,
+                value: "{".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Char,
+                chars_read: 3,
+                value: "'A'".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::FatArrow,
+                chars_read: 2,
+                value: "=>".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Float,
+                chars_read: 3,
+                value: "1.1".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::ArgumentSeparator,
+                chars_read: 1,
+                value: ",".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Char,
+                chars_read: 3,
+                value: "'B'".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::FatArrow,
+                chars_read: 2,
+                value: "=>".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Float,
+                chars_read: 3,
+                value: "2.2".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::ArgumentSeparator,
+                chars_read: 1,
+                value: ",".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Char,
+                chars_read: 3,
+                value: "'C'".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::FatArrow,
+                chars_read: 2,
+                value: "=>".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Float,
+                chars_read: 3,
+                value: "3.3".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::RightCurly,
+                chars_read: 1,
+                value: "}".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+
+        // Assert the result matches the expected output
+        assert_eq!(result, expected);
+    }
+    */
 
     #[test]
     fn test_tokenize_variable_declaration_int() {

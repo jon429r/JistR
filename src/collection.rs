@@ -8,46 +8,51 @@
 
 pub mod collections {
     use crate::base_variable::base_types::BaseTypes;
-    use crate::node::nodes::ASTNode;
+    //use crate::node::nodes::ASTNode;
 
     pub struct Array {
         pub name: String,
-        pub data: Vec<ASTNode>,
+        pub data: Vec<BaseTypes>,
         pub value_type: BaseTypes,
     }
 
     // functions for arrays: new, push, pop, remove, get(i), set(i), to_string
 
     impl Array {
-        pub fn new(name: String, value_type: BaseTypes) -> Array {
+        pub fn new(name: String, value_type: BaseTypes, data: Vec<BaseTypes>) -> Array {
             Array {
                 name,
-                data: Vec::new(),
+                data,
                 value_type,
             }
         }
 
-        pub fn push(&mut self, value: ASTNode) {
+        pub fn push(&mut self, value: BaseTypes) {
             self.data.push(value);
         }
 
-        pub fn pop(&mut self) -> Option<ASTNode> {
+        pub fn pop(&mut self) -> Option<BaseTypes> {
             self.data.pop()
         }
 
-        pub fn remove(&mut self, index: usize) -> Option<ASTNode> {
+        pub fn append(&mut self, value: &mut Vec<BaseTypes>) {
+            //add to end 
+            self.data.append(value);
+        }
+
+        pub fn remove(&mut self, index: usize){
             if index < self.data.len() {
-                Some(self.data.remove(index))
+                Some(self.data.remove(index));
             } else {
-                None
+                println!("Syntax Error, during removal")
             }
         }
 
-        pub fn get(&self, index: usize) -> Option<&ASTNode> {
-            self.data.get(index)
+        pub fn get(&self, index: usize) -> Option<BaseTypes> {
+            return self.data.get(index).clone().cloned();
         }
 
-        pub fn set(&mut self, index: usize, value: ASTNode) -> Option<ASTNode> {
+        pub fn set(&mut self, index: usize, value: BaseTypes) -> Option<BaseTypes> {
             if index < self.data.len() {
                 Some(std::mem::replace(&mut self.data[index], value))
             } else {
@@ -72,7 +77,7 @@ pub mod collections {
 
     pub struct Dictionary {
         pub name: String,
-        pub values: Vec<(ASTNode, ASTNode)>,
+        pub values: Vec<(BaseTypes, BaseTypes)>,
         pub types: (BaseTypes, BaseTypes),
     }
 
@@ -87,11 +92,16 @@ pub mod collections {
             }
         }
 
-        pub fn add(&mut self, key: ASTNode, value: ASTNode) {
+        pub fn add(&mut self, key: BaseTypes, value: BaseTypes) {
             self.values.push((key, value));
         }
 
-        pub fn remove(&mut self, key: ASTNode) -> Option<(ASTNode, ASTNode)> {
+        /*pub fn append(&mut self, key: ASTNode, value: ASTNode) {
+            // add to end of dict
+            self.values.add((key, value));
+        } */
+
+        pub fn remove(&mut self, key: BaseTypes) -> Option<(BaseTypes, BaseTypes)> {
             let mut index = None;
             for (i, (k, _)) in self.values.iter().enumerate() {
                 if k == &key {
@@ -106,11 +116,11 @@ pub mod collections {
             }
         }
 
-        pub fn get(&self, key: ASTNode) -> Option<&(ASTNode, ASTNode)> {
+        pub fn get(&self, key: BaseTypes) -> Option<&(BaseTypes, BaseTypes)> {
             self.values.iter().find(|(k, _)| k == &key)
         }
 
-        pub fn set(&mut self, key: ASTNode, value: ASTNode) -> Option<ASTNode> {
+        pub fn set(&mut self, key: BaseTypes, value: BaseTypes) -> Option<BaseTypes> {
             let mut index = None;
             for (i, (k, _)) in self.values.iter().enumerate() {
                 if k == &key {
@@ -125,11 +135,11 @@ pub mod collections {
             }
         }
 
-        pub fn keys(&self) -> Vec<&ASTNode> {
+        pub fn keys(&self) -> Vec<&BaseTypes> {
             self.values.iter().map(|(k, _)| k).collect()
         }
 
-        pub fn values(&self) -> Vec<&ASTNode> {
+        pub fn values(&self) -> Vec<&BaseTypes> {
             self.values.iter().map(|(_, v)| v).collect()
         }
 
