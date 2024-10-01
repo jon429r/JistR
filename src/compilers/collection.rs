@@ -4,7 +4,6 @@ use crate::collection::collections::{Array, Dictionary};
 use crate::node::nodes::{ASTNode, CollectionNode};
 
 pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
-    println!("Expression: {:?}", expression);
     
     // Check if the first node is a Collection
     if let Some(node) = expression.get(0) {
@@ -20,10 +19,10 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
             let value_type: BaseTypes = value_type_tuple.as_ref().map_or(BaseTypes::Null, |(_, v2)| v2.clone().into());
 
             // Print out the collected values for debugging
-            println!("Collection Name: {}", name);
-            println!("Collection Type: {}", collection_type);
-            println!("Single Value Type: {}", value_type_single);
-            println!("Tuple Value Types: {:?}", value_type_tuple);
+            //println!("Collection Name: {}", name);
+            //println!("Collection Type: {}", collection_type);
+            //println!("Single Value Type: {}", value_type_single);
+            //println!("Tuple Value Types: {:?}", value_type_tuple);
 
             match collection_type.as_str() {
                 "array" => {
@@ -46,7 +45,7 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                     }
 
                     let array = Array::new(name.clone(), key_type.clone(), values);
-                    println!("Created new Array: {}", array.to_string());
+                    //println!("Created new Array: {}", array.to_string());
                 }
                 "dict" => {
                     // Create a new Dictionary
