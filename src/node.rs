@@ -5,8 +5,9 @@
 
 pub mod nodes {
     use crate::base_variable::base_types::BaseTypes;
+    use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
     use crate::token_type::token_types::*;
-    use crate::tokenizer::tokenizers::ParseInfo;
+    use std::fmt;
 
     pub fn to_base_type(node: &ASTNode) -> Option<BaseTypes> {
         match node {
@@ -20,6 +21,7 @@ pub mod nodes {
             ASTNode::Bool(bool_node) => Some(BaseTypes::Bool(bool_node.value)),
             ASTNode::Float(float_node) => Some(BaseTypes::Float(float_node.value as f64)),
             ASTNode::Assignment(_) => Some(BaseTypes::Null),
+            ASTNode::Collection(_) => Some(BaseTypes::Null),
             ASTNode::VarTypeAssignment(_) => Some(BaseTypes::Null),
             ASTNode::Variable(_) => Some(BaseTypes::Null),
             ASTNode::Function(_) => Some(BaseTypes::Null),
@@ -37,11 +39,14 @@ pub mod nodes {
             ASTNode::ArgumentSeparator => Some(BaseTypes::Null),
             ASTNode::LeftCurly => Some(BaseTypes::Null),
             ASTNode::RightCurly => Some(BaseTypes::Null),
+            ASTNode::RightBracket => Some(BaseTypes::Null),
+            ASTNode::LeftBracket => Some(BaseTypes::Null),
+            ASTNode::FatArrow => Some(BaseTypes::Null),
             ASTNode::None => Some(BaseTypes::Null),
         }
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, PartialEq)]
     pub enum ASTNode {
         SemiColon,
         Operator(OperatorNode),
@@ -63,15 +68,109 @@ pub mod nodes {
         ReturnTypeAssignment(ReturnTypeAssignmentNode),
         Comment(CommentNode),
         FunctionCallArguments(FunctionArgumentsNode),
+        Collection(CollectionNode),
+        LeftBracket,
+        RightBracket,
         LeftParenthesis,
         RightParenthesis,
         ArgumentSeparator,
         LeftCurly,
         RightCurly,
+        FatArrow,
         None,
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for ASTNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match self {
+                ASTNode::Collection(c) => write!(f, "{:?}", c),
+                ASTNode::SemiColon => write!(f, "SemiColon"),
+                ASTNode::Operator(o) => write!(f, "{}", o),
+                ASTNode::Int(i) => write!(f, "{}", i),
+                ASTNode::String(s) => write!(f, "{}", s),
+                ASTNode::Char(c) => write!(f, "{}", c),
+                ASTNode::Bool(b) => write!(f, "{}", b),
+                ASTNode::Float(fl) => write!(f, "{}", fl),
+                ASTNode::Assignment(a) => write!(f, "{}", a),
+                ASTNode::VarTypeAssignment(v) => write!(f, "{}", v),
+                ASTNode::Variable(v) => write!(f, "{}", v),
+                ASTNode::Function(fun) => write!(f, "{}", fun),
+                ASTNode::FunctionCall(fun) => write!(f, "{}", fun),
+                ASTNode::VariableCall(v) => write!(f, "{}", v),
+                ASTNode::VariableType(v) => write!(f, "{}", v),
+                ASTNode::VariableValue(v) => write!(f, "{}", v),
+                ASTNode::AssignmentOperator(a) => write!(f, "{}", a),
+                ASTNode::ReturnTypeAssignment(r) => write!(f, "{}", r),
+                ASTNode::Comment(c) => write!(f, "{}", c),
+                ASTNode::LeftParenthesis => write!(f, "LeftParenthesis"),
+                ASTNode::RightParenthesis => write!(f, "RightParenthesis"),
+                ASTNode::ArgumentSeparator => write!(f, "ArgumentSeparator"),
+                ASTNode::LeftCurly => write!(f, "LeftCurly"),
+                ASTNode::RightCurly => write!(f, "RightCurly"),
+                ASTNode::RightBracket => write!(f, "RightBracket"),
+                ASTNode::LeftBracket => write!(f, "LeftBracket"),
+                ASTNode::FunctionCallArguments(call_args) => write!(f, "{}", call_args), // Call Display
+                ASTNode::FunctionArguments(args) => write!(f, "{}", args), // Call Display
+                ASTNode::FatArrow => write!(f, "FatArrow"),
+                ASTNode::None => write!(f, "None"),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FatArrowNode;
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct CollectionNode {
+        pub name: String,
+        pub collection_type: String,
+        pub value_type_tuple: Option<(String, String)>,
+        pub value_type_single: Option<String>,
+    }
+
+    impl CollectionNode {
+        pub fn new(
+            name: String,
+            collection_type: String,
+            value_type_tuple: Option<(String, String)>,
+            value_type_single: Option<String>,
+        ) -> Self {
+            CollectionNode {
+                name,
+                collection_type,
+                value_type_tuple,
+                value_type_single,
+            }
+        }
+
+        pub fn display_info(&self) {
+            println!("Collection: {}", self.name);
+            println!("Collection Type: {}", self.collection_type);
+            if let Some((value, value_type)) = &self.value_type_tuple {
+                println!("Value Type Tuple: {} {}", value, value_type);
+            }
+            if let Some(value) = &self.value_type_single {
+                println!("Value Type Single: {}", value);
+            }
+        }
+    }
+
+    impl fmt::Display for CollectionNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Collection: {}", self.name)?;
+            write!(f, "Collection Type: {}", self.collection_type)?;
+            if let Some((value, value_type)) = &self.value_type_tuple {
+                write!(f, "Value Type Tuple: {} {}", value, value_type)?;
+            }
+            if let Some(value) = &self.value_type_single {
+                write!(f, "Value Type Single: {}", value)?;
+            }
+            Ok(())
+        }
+    }
+
+    // BoolNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct BoolNode {
         pub value: bool,
     }
@@ -85,7 +184,101 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FloatNode {
+        pub value: f32,
+    }
+
+    impl FloatNode {
+        pub fn new(value: f32) -> Self {
+            FloatNode { value }
+        }
+        pub fn display_info(&self) {
+            println!("Float: {}", self.value);
+        }
+    }
+
+    impl fmt::Display for FloatNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Float: {}", self.value)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunctionArgumentsNode {
+        pub value: String,
+    }
+
+    impl FunctionArgumentsNode {
+        pub fn new(value: String) -> Self {
+            FunctionArgumentsNode { value }
+        }
+
+        pub fn display_info(&self) {
+            println!("Function Arguments: {}", self.value);
+        }
+    }
+
+    impl fmt::Display for FunctionArgumentsNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Function Arguments: {}", self.value)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct ArgumentCallNode {
+        pub name: String,
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunctionCallArgumentsNode {
+        pub value: String,
+    }
+
+    impl FunctionCallArgumentsNode {
+        pub fn new(value: String) -> Self {
+            FunctionCallArgumentsNode { value }
+        }
+        pub fn display_info(&self) {
+            println!("Function Call Arguments: {}", self.value);
+        }
+    }
+
+    impl fmt::Display for FunctionCallArgumentsNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Function Call Arguments: {}", self.value)
+        }
+    }
+
+    // CommentNode implementation
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct CommentNode {
+        pub value: String,
+    }
+
+    impl CommentNode {
+        pub fn new(value: String) -> Self {
+            CommentNode { value }
+        }
+        pub fn display_info(&self) {
+            println!("Comment: {}", self.value);
+        }
+    }
+
+    impl fmt::Display for CommentNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Comment: {}", self.value)
+        }
+    }
+
+    impl fmt::Display for BoolNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Bool: {}", self.value)
+        }
+    }
+
+    // SemiColonNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct SemiColonNode;
 
     impl SemiColonNode {
@@ -97,7 +290,55 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for SemiColonNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "SemiColon")
+        }
+    }
+
+    // AssignmentOperatorNode implementation
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct AssignmentOperatorNode {
+        pub operator: String,
+    }
+
+    impl AssignmentOperatorNode {
+        pub fn new(operator: String) -> Self {
+            AssignmentOperatorNode { operator }
+        }
+        pub fn display_info(&self) {
+            println!("Assignment Operator: {}", self.operator);
+        }
+    }
+
+    impl fmt::Display for AssignmentOperatorNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Assignment Operator: {}", self.operator)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct ReturnTypeAssignmentNode {
+        pub value: String,
+    }
+
+    impl ReturnTypeAssignmentNode {
+        pub fn new(value: String) -> Self {
+            ReturnTypeAssignmentNode { value }
+        }
+        pub fn display_info(&self) {
+            println!("Return Type Assignment: {}", self.value);
+        }
+    }
+
+    impl fmt::Display for ReturnTypeAssignmentNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Return Type Assignment: {}", self.value)
+        }
+    }
+
+    // OperatorNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct OperatorNode {
         pub operator: String,
     }
@@ -111,7 +352,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for OperatorNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Operator: {}", self.operator)
+        }
+    }
+
+    // IntNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct IntNode {
         pub value: i32,
     }
@@ -125,7 +373,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for IntNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Int: {}", self.value)
+        }
+    }
+
+    // StringNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct StringNode {
         pub value: String,
     }
@@ -139,7 +394,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for StringNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "String: {}", self.value)
+        }
+    }
+
+    // CharNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct CharNode {
         pub value: char,
     }
@@ -153,7 +415,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for CharNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Char: {}", self.value)
+        }
+    }
+
+    // AssignmentNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct AssignmentNode {
         pub value: String,
     }
@@ -167,7 +436,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for AssignmentNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Assignment: {}", self.value)
+        }
+    }
+
+    // VarTypeAssignmentNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct VarTypeAssignmentNode {
         pub value: String,
     }
@@ -181,7 +457,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for VarTypeAssignmentNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "VarTypeAssignment: {}", self.value)
+        }
+    }
+
+    // VariableNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct VariableNode {
         pub var_type: String,
         pub value: String,
@@ -196,7 +479,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for VariableNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Variable Type: {}, Value: {}", self.var_type, self.value)
+        }
+    }
+
+    // VariableValueNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct VariableValueNode {
         pub value: String,
     }
@@ -210,7 +500,14 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
+    impl fmt::Display for VariableValueNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Variable Value: {}", self.value)
+        }
+    }
+
+    // VariableTypeNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct VariableTypeNode {
         pub value: String,
     }
@@ -224,49 +521,13 @@ pub mod nodes {
         }
     }
 
-    #[derive(Debug, Clone)]
-    pub struct FunctionNode {
-        pub name: String,
-    }
-
-    impl FunctionNode {
-        pub fn new(name: String) -> Self {
-            FunctionNode { name }
-        }
-        pub fn display_info(&self) {
-            println!("Function Name: {}", self.name);
+    impl fmt::Display for VariableTypeNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Variable Type: {}", self.value)
         }
     }
-
-    #[derive(Debug, Clone)]
-    pub struct FunctionCallNode {
-        pub name: String,
-    }
-
-    impl FunctionCallNode {
-        pub fn new(name: String) -> Self {
-            FunctionCallNode { name }
-        }
-        pub fn display_info(&self) {
-            println!("Function Call Name: {}", self.name);
-        }
-    }
-
-    #[derive(Debug, Clone)]
-    pub struct FunctionArgumentsNode {
-        pub value: String,
-    }
-
-    impl FunctionArgumentsNode {
-        pub fn new(value: String) -> Self {
-            FunctionArgumentsNode { value }
-        }
-        pub fn display_info(&self) {
-            println!("Function Arguments: {}", self.value);
-        }
-    }
-
-    #[derive(Debug, Clone)]
+    // VariableCall    // VariableCallNode implementation
+    #[derive(Debug, Clone, PartialEq)]
     pub struct VariableCallNode {
         pub name: String,
     }
@@ -276,63 +537,55 @@ pub mod nodes {
             VariableCallNode { name }
         }
         pub fn display_info(&self) {
-            println!("Variable Call Name: {}", self.name);
+            println!("Variable Call: {}", self.name);
         }
     }
 
-    #[derive(Debug, Clone)]
-    pub struct AssignmentOperatorNode {
-        pub operator: String,
-    }
-
-    impl AssignmentOperatorNode {
-        pub fn new(operator: String) -> Self {
-            AssignmentOperatorNode { operator }
-        }
-        pub fn display_info(&self) {
-            println!("Assignment Operator: {}", self.operator);
+    impl fmt::Display for VariableCallNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Variable Call: {}", self.name)
         }
     }
 
-    #[derive(Debug, Clone)]
-    pub struct FloatNode {
-        pub value: f32,
+    // FunctionNode implementation
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunctionNode {
+        pub name: String,
     }
 
-    impl FloatNode {
-        pub fn new(value: f32) -> Self {
-            FloatNode { value }
+    impl FunctionNode {
+        pub fn new(name: String) -> Self {
+            FunctionNode { name }
         }
         pub fn display_info(&self) {
-            println!("Float: {}", self.value);
+            println!("Function: {}", self.name);
         }
     }
 
-    #[derive(Debug, Clone)]
-    pub struct ReturnTypeAssignmentNode {
-        pub value: String,
-    }
-
-    impl ReturnTypeAssignmentNode {
-        pub fn new(value: String) -> Self {
-            ReturnTypeAssignmentNode { value }
-        }
-        pub fn display_info(&self) {
-            println!("ReturnTypeAssignment: {}", self.value);
+    impl fmt::Display for FunctionNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Function: {}", self.name)
         }
     }
 
-    #[derive(Debug, Clone)]
-    pub struct CommentNode {
-        pub value: String,
+    // FunctionCallNode implementation
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FunctionCallNode {
+        pub name: String,
     }
 
-    impl CommentNode {
-        pub fn new(value: String) -> Self {
-            CommentNode { value }
+    impl FunctionCallNode {
+        pub fn new(name: String) -> Self {
+            FunctionCallNode { name }
         }
         pub fn display_info(&self) {
-            println!("Comment: {}", self.value);
+            println!("Function Call: {}", self.name);
+        }
+    }
+
+    impl fmt::Display for FunctionCallNode {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Function Call: {}", self.name)
         }
     }
 
@@ -389,6 +642,20 @@ pub mod nodes {
             TokenTypes::Comment => ASTNode::Comment(CommentNode::new(parse_info.value)),
             TokenTypes::SemiColon => ASTNode::SemiColon,
             TokenTypes::None => ASTNode::None,
+            TokenTypes::Collection {
+                name,
+                collection_type,
+                stored_value_type_single,
+                stored_value_type_tuple,
+            } => ASTNode::Collection(CollectionNode::new(
+                name,
+                collection_type,
+                Some(stored_value_type_tuple),
+                Some(stored_value_type_single),
+            )),
+            TokenTypes::LeftBracket => ASTNode::LeftBracket,
+            TokenTypes::RightBracket => ASTNode::RightBracket,
+            TokenTypes::FatArrow => ASTNode::FatArrow,
             _ => {
                 panic!("Unrecognized token: {:?}", parse_info.token);
             }

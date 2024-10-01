@@ -3,6 +3,7 @@
 * /compilers directory.
 */
 pub mod compilers {
+    use crate::compilers::collection::*;
     use crate::compilers::function::*;
 
     use crate::compilers::variable::parse_variable_call;
@@ -182,6 +183,11 @@ pub mod compilers {
 
                     let value = operation(expression); // Mutable reference
                     print!("Result: {:?}", value);
+                    break;
+                }
+                ASTNode::Collection(c) => {
+                    let value = parse_collection_declaration(expression);
+                    println!("Result: {:?}", value);
                     break;
                 }
                 ASTNode::LeftCurly => {

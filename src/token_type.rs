@@ -101,6 +101,27 @@ pub mod token_types {
          */
         Float,
         /*
+         *   Collection
+         */
+        Collection {
+            name: String,
+            collection_type: String,
+            stored_value_type_single: String,
+            stored_value_type_tuple: (String, String),
+        },
+        /*
+         * [
+         */
+        LeftBracket,
+        /*
+         * ]
+         */
+        RightBracket,
+        /*
+         * =>
+         */
+        FatArrow,
+        /*
         Used as a bad return value
         */
         None,
@@ -128,8 +149,27 @@ pub mod token_types {
                 (TokenTypes::LeftCurly, TokenTypes::LeftCurly) => true,
                 (TokenTypes::ReturnTypeAssignment, TokenTypes::ReturnTypeAssignment) => true,
                 (TokenTypes::Variable, TokenTypes::Variable) => true,
+
+                (
+                    TokenTypes::Collection {
+                        name: ref name_a,
+                        collection_type: ref type_a,
+                        stored_value_type_single: ref stored_a,
+                        stored_value_type_tuple: ref tuple_a,
+                    },
+                    TokenTypes::Collection {
+                        name: ref name_b,
+                        collection_type: ref type_b,
+                        stored_value_type_single: ref stored_b,
+                        stored_value_type_tuple: ref tuple_b,
+                    },
+                ) => name_a == name_b && type_a == type_b && stored_a == stored_b,
+
                 (TokenTypes::Comment, TokenTypes::Comment) => true,
                 (TokenTypes::Bool, TokenTypes::Bool) => true,
+                (TokenTypes::LeftBracket, TokenTypes::LeftBracket) => true,
+                (TokenTypes::RightBracket, TokenTypes::RightBracket) => true,
+                (TokenTypes::FatArrow, TokenTypes::FatArrow) => true,
                 (TokenTypes::None, TokenTypes::None) => true,
                 _ => false,
             }
@@ -141,6 +181,7 @@ pub mod token_types {
     impl TokenTypes {
         pub fn to_string(&self) -> String {
             match self {
+                TokenTypes::FatArrow => "FatArrow".to_string(),
                 TokenTypes::FunctionCallArguments => "FunctionCallArguments".to_string(),
                 TokenTypes::Float => "Float".to_string(),
                 TokenTypes::SemiColon => "SemiColon".to_string(),
@@ -161,9 +202,22 @@ pub mod token_types {
                 TokenTypes::Assignment => "Assignment".to_string(),
                 TokenTypes::VarTypeAssignment => "VarTypeAssignment".to_string(),
                 TokenTypes::RightCurly => "RightCurly".to_string(),
+                TokenTypes::Collection {
+                    name,
+                    collection_type,
+                    stored_value_type_single,
+                    stored_value_type_tuple,
+                } => {
+                    format!(
+                        "Collection: {} {} {} {:?}",
+                        name, collection_type, stored_value_type_single, stored_value_type_tuple
+                    )
+                }
                 TokenTypes::LeftCurly => "LeftCurly".to_string(),
                 TokenTypes::ReturnTypeAssignment => "ReturnTypeAssignment".to_string(),
                 TokenTypes::Comment => "Comment".to_string(),
+                TokenTypes::RightBracket => "RightBracket".to_string(),
+                TokenTypes::LeftBracket => "LeftBracket".to_string(),
                 TokenTypes::None => "None".to_string(),
             }
         }
