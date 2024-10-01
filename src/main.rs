@@ -5,13 +5,23 @@ pub mod compiler;
 mod function_map;
 mod node;
 pub mod token_type;
-mod tokenizer;
+//mod tokenizer;
 
 mod compilers {
     pub mod function;
     pub mod operation;
     pub mod variable;
 }
+
+mod statement_tokenizer {
+    pub mod basic_tokenizer;
+    pub mod collection_tokenizer;
+    pub mod function_tokenizer;
+    pub mod tests;
+    pub mod tokenizer;
+    pub mod variable_tokenizer;
+}
+use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
 
 use std::env;
 use std::error::Error;
@@ -24,7 +34,7 @@ use base_variable::variables::VARIABLE_STACK;
 use compiler::compilers::route_to_parser;
 use node::nodes::match_token_to_node;
 use node::nodes::ASTNode;
-use tokenizer::tokenizers::tokenize;
+use statement_tokenizer::tokenizer::tokenizers::tokenize;
 
 ///
 /// This function checks if the file extension is valid. IE: .jist
@@ -68,13 +78,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     for line in lines {
         let tokens = tokenize(line);
-        //println!("Tokens {:?}", tokens);
+        println!("Tokens {:?}", tokens);
         //
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();
-        for parse_info in tokens {
-            let node = match_token_to_node(parse_info);
-            println!("Node: {:?}", node);
+        for parsed_info in tokens {
+            let node = match_token_to_node(parsed_info);
+            //println!("Node: {:?}", node);
             match node {
                 ASTNode::SemiColon => {
                     if !hasroot {

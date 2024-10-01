@@ -105,13 +105,17 @@ pub mod token_types {
          */
         Collection,
         /*
-* [
-*/
+         * [
+         */
         LeftBracket,
         /*
-* ]
-*/
+         * ]
+         */
         RightBracket,
+        /*
+         * =>
+         */
+        FatArrow,
         /*
         Used as a bad return value
         */
@@ -143,8 +147,9 @@ pub mod token_types {
                 (TokenTypes::Comment, TokenTypes::Comment) => true,
                 (TokenTypes::Bool, TokenTypes::Bool) => true,
                 (TokenTypes::Collection, TokenTypes::Collection) => true,
-                (TokenTypes::LeftBracket, TokenTypes:: LeftBracket) => true,
-                (TokenTypes::RightBracket, TokenTypes:: RightBracket) => true,
+                (TokenTypes::LeftBracket, TokenTypes::LeftBracket) => true,
+                (TokenTypes::RightBracket, TokenTypes::RightBracket) => true,
+                (TokenTypes::FatArrow, TokenTypes::FatArrow) => true,
                 (TokenTypes::None, TokenTypes::None) => true,
                 _ => false,
             }
@@ -156,6 +161,7 @@ pub mod token_types {
     impl TokenTypes {
         pub fn to_string(&self) -> String {
             match self {
+                TokenTypes::FatArrow => "FatArrow".to_string(),
                 TokenTypes::FunctionCallArguments => "FunctionCallArguments".to_string(),
                 TokenTypes::Float => "Float".to_string(),
                 TokenTypes::SemiColon => "SemiColon".to_string(),

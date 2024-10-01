@@ -3,6 +3,7 @@
 * These tokens can then be used to create an AST
 */
 
+/*
 pub mod tokenizers {
 
     use std::char;
@@ -141,15 +142,17 @@ pub mod tokenizers {
 
     pub fn read_token(expression: &String, index: usize) -> ParseInfo {
         let none: ParseInfo = ParseInfo::new(TokenTypes::None, 0, "none".to_string());
-
+        //println!("Reading token at index: {}", index);
         let mut j = index;
         let mut decimals = 0;
 
         // check for [ and ]
         if expression.chars().nth(j).unwrap() == '[' {
             let info: ParseInfo = ParseInfo::new(TokenTypes::LeftBracket, 1, "[".to_string());
-        } else if expression.chars().nth(j). unwrap() == ']' {
+            return info;
+        } else if expression.chars().nth(j).unwrap() == ']' {
             let info: ParseInfo = ParseInfo::new(TokenTypes::RightBracket, 1, "]".to_string());
+            return info;
         }
 
         // Loop through the expression
@@ -199,8 +202,6 @@ pub mod tokenizers {
         if info.token != none.token {
             return info;
         }
-
-
 
         let info = read_function_declaration(expression, index);
         // Handle number or function parsing if no matches yet
@@ -417,103 +418,109 @@ pub mod tokenizers {
         ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
-
-
     static mut VARIABLE_DECLARATION: bool = false;
-    static mut COLLECTION_DECLARATION: bool = false;
-fn read_variable_declaration(expression: &String, index: usize) -> ParseInfo {
-    let mut j = index;
-    let mut variable: String = String::new();
-    let let_compare = "let";
-    let mut variable_name = String::new();
 
-    // Collect characters to check for the "let" keyword
-    while j < expression.len() {
-        if let Some(char) = expression.chars().nth(j) {
-            if char.is_alphabetic() {
-                variable.push(char);
-            } else {
-                break;
-            }
-        }
-        j += 1;
+    fn read_variable_declaration(expression: &String, index: usize) -> ParseInfo {
+        let mut j = index;
+        let let_compare = "let";
+        let mut variable: String = String::new();
+        let mut variable_name = String::new();
 
-        // Check if the collected string equals "let"
-        if variable.len() == 3 && variable == let_compare {
-            // Reset variable to start collecting the actual variable name
-            variable.clear();
-            while j < expression.len() {
-                if let Some(char) = expression.chars().nth(j) {
-                    if char.is_alphabetic() || char == '_' {
-                        variable_name.push(char);
-                    } else if char == ':' {
-                        // Found the type declaration, break to parse the type
-                        break;
-                    } else if !char.is_whitespace() {
-                        // If it's neither whitespace nor ':', exit
-                        return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
-                    }
+        // Collect characters to check for the "let" keyword
+        while j < expression.len() {
+            if let Some(char) = expression.chars().nth(j) {
+                if char.is_alphabetic() {
+                    variable.push(char);
+                } else {
+                    break;
                 }
-                j += 1;
             }
+            j += 1;
 
-            // After the variable name, check for ':'
-            while j < expression.len() {
-                if expression.chars().nth(j) == Some(':') {
-                    j += 1; // Move past ':'
-                    // Skip whitespace
-                    while j < expression.len() && expression.chars().nth(j).unwrap().is_whitespace() {
-                        j += 1;
+            // Check if the collected string equals "let"
+            if variable.len() == 3 && variable == let_compare {
+                // Reset variable to start collecting the actual variable name
+                variable.clear();
+                while j < expression.len() {
+                    if let Some(char) = expression.chars().nth(j) {
+                        if char.is_alphabetic() || char == '_' {
+                            variable_name.push(char);
+                        } else if char == ':' {
+                            // Found the type declaration, break to parse the type
+                            break;
+                        } else if !char.is_whitespace() {
+                            // If it's neither whitespace nor ':', exit
+                            return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+                        }
                     }
-                    // Check for a collection
-                    if expression.chars().nth(j) == Some('<') {
-                        // Start of a collection
-                        j += 1; // Move past '<'
-                        let collection_name_start = j;
-                        while j < expression.len() && expression.chars().nth(j) != Some('>') {
+                    j += 1;
+                }
+
+                // Check for ':' and potentially a collection type
+                while j < expression.len() {
+                    if expression.chars().nth(j) == Some(':') {
+                        j += 1; // Move past ':'
+                                // Skip whitespace after ':'
+                        while j < expression.len()
+                            && expression.chars().nth(j).unwrap().is_whitespace()
+                        {
                             j += 1;
                         }
-                        if j < expression.len() {
-                            // Now we should be at '>'
-                            let collection_name = &expression[collection_name_start..j];
-                            unsafe { COLLECTION_DECLARATION = true }; // Update global state
-                            print!("Collection Name: {}", collection_name);
-                            j += 1; // Move past '>'
-                            // Return collection token
+
+                        // Check for '<' indicating a collection
+                        if expression.chars().nth(j) == Some('<') {
+                            println!(
+                                "Invalid variable declaration for collections: {}",
+                                variable_name
+                            );
+                            // Return None for invalid declaration
+                            return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+                        } else {
+                            // Handle normal variable type (no collection)
+                            let type_declaration_start = j;
+                            while j < expression.len()
+                                && expression.chars().nth(j).unwrap().is_alphabetic()
+                            {
+                                j += 1;
+                            }
+
+                            let mut next_char = expression.chars().nth(j).unwrap_or('\0');
+                            let type_declaration = &expression[type_declaration_start..j];
+
+                            if type_declaration.contains('<') || next_char == '<' {
+                                return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+                            }
+
+                            unsafe {
+                                VARIABLE_DECLARATION = true; // Update global state
+                            }
+
+                            println!(
+                                "Variable Name: '{}', Type Declaration: '{}'",
+                                variable_name, type_declaration
+                            );
                             return ParseInfo::new(
-                                TokenTypes::Collection,
-                                (j - index).try_into().unwrap(),
-                                collection_name.to_string(),
+                                TokenTypes::Variable,
+                                variable_name.len().try_into().unwrap(),
+                                variable_name,
                             );
                         }
-                    } else {
-                        // Handle variable type (e.g., int, bool)
-                        let type_declaration_start = j;
-                        while j < expression.len() && expression.chars().nth(j).unwrap().is_alphabetic() {
-                            j += 1;
-                        }
-                        let type_declaration = &expression[type_declaration_start..j];
-                        unsafe { VARIABLE_DECLARATION = true }; // Update global state
-                        return ParseInfo::new(
-                            TokenTypes::Variable,
-                            variable_name.len().try_into().unwrap(),
-                            variable_name,
-                        );
                     }
+                    j += 1; // Continue scanning
                 }
-                j += 1;
+                // Return None if we reach here without valid declarations
+                return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
             }
-            return ParseInfo::new(TokenTypes::Variable, variable_name.len().try_into().unwrap(), variable_name);
+            // Remove the first character if more than 3 characters are collected
+            if variable.len() > 3 {
+                variable.remove(0);
+            }
         }
-        // Remove the first character if more than 3 characters are collected
-        if variable.len() > 3 {
-            variable.remove(0);
-        }
+
+        // Return default ParseInfo if function not found
+        ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
-    // Return default ParseInfo if function not found
-    ParseInfo::new(TokenTypes::None, 0, "none".to_string())
-}
     fn read_function_assignment(expression: &String, index: usize) -> ParseInfo {
         let chars: Vec<char> = expression.chars().collect();
         let mut j = index;
@@ -567,94 +574,124 @@ fn read_variable_declaration(expression: &String, index: usize) -> ParseInfo {
         let mut j = index;
         let original_index = index;
 
+        let mut variable = String::new();
+        let mut variable_name = String::new();
+        let mut collection_type = String::new();
+        let mut stored_value_type = String::new();
+
+        //println!("Starting to parse expression: '{}', j={}", expression, j);
+
+        // Check for "let" keyword
+        while j < expression.len() {
+            let char = chars[j];
+            if char.is_alphabetic() {
+                variable.push(char);
+                //println!("Collecting keyword: '{}'", variable);
+            } else {
+                break;
+            }
+            j += 1;
+        }
+
+        // Check if the collected string equals "let"
+        if variable != "let" {
+            //println!("Expected 'let', found '{}'. Exiting.", variable);
+            return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+        }
+        println!("Found 'let', proceeding to collect collection name.");
+        variable.clear(); // Reset variable for the actual variable name
+
+        // Collect the variable name
+        while j < expression.len() {
+            let char = chars[j];
+            if char.is_alphabetic() || char == '_' {
+                variable_name.push(char);
+                //println!("Collecting collection name character: '{}'", char);
+            } else if char == ':' {
+                println!("Found ':' indicating end of collection name.");
+                break; // Break on type declaration
+            } else if !char.is_whitespace() {
+                println!("Invalid character encountered: '{}'. Exiting.", char);
+                return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+            }
+            j += 1;
+        }
+
         // Look for ':' pattern
         while j < chars.len() {
             let current_char = chars[j];
-            println!("Current index: {}, Current char: '{}'", j, current_char);
-
             if current_char == ':' {
-                println!("Found ':' at index {}", j);
+                println!("Found ':' at index {}. Collecting type...", j);
                 j += 1; // Move past `:`
 
                 // Skip whitespace after `:`
                 while j < chars.len() && chars[j].is_whitespace() {
-                    println!("Skipping whitespace at index {}", j);
+                    //println!("Skipping whitespace at index {}", j);
                     j += 1;
                 }
 
-                // Collect the type (assuming it is lowercase or an identifier)
-                let mut collection_type = String::new();
+                // Collect the collection type (assuming it is lowercase or an identifier)
                 while j < chars.len() {
                     let char = chars[j];
-                    if char.is_lowercase() || char.is_alphanumeric() || char == '_' {
+                    if char.is_alphabetic() || char == '_' {
                         collection_type.push(char);
-                        println!("Collecting type character: '{}'", char);
+                        //println!("Collecting collection type character: '{}'", char);
                         j += 1;
+                    } else if char == '<' {
+                        println!("Found '<' indicating stored value type.");
+                        // Start collecting the stored value type
+                        j += 1; // Move past '<'
+                        while j < chars.len() && chars[j] != '>' {
+                            stored_value_type.push(chars[j]);
+                            //println!("Collecting stored value type character: '{}'", chars[j]);
+                            j += 1;
+                        }
+                        if j < chars.len() && chars[j] == '>' {
+                            println!("Found '>' at index {}. Completed stored value type.", j);
+                            j += 1; // Move past '>'
+                            break; // Exit the type collection loop
+                        } else {
+                            println!("Error: No '>' found. Exiting.");
+                            return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+                            // No '>' found
+                        }
                     } else {
-                        println!("Non-type character encountered: '{}'", char);
-                        break;
+                        println!("Stopping collection of type at character: '{}'", char);
+                        break; // Stop collecting type
                     }
                 }
 
-                // Skip whitespace after the type and check for `<`
+                // Skip whitespace after the type
                 while j < chars.len() && chars[j].is_whitespace() {
-                    println!("Skipping whitespace after type at index {}", j);
+                    //println!("Skipping whitespace after type at index {}", j);
                     j += 1;
                 }
 
-                if j < chars.len() && chars[j] == '<' {
-                    println!("Found '<' indicating collection type at index {}", j);
-                    // Debug print statement for collection type
-                    let mut collection_type = String::new();
-                    j += 1; // Move past '<'
-                    while j < chars.len() {
-                        let char = chars[j];
-                        if char != '>' {
-                            collection_type.push(char);
-                            j += 1;
-                        //if char = '>' print then break
-                        } else if char == '>' {
-                            println!("Found '>' at index {}", j);
-                            j += 1;
-
-
-                            println!(
-                                "Collection Type: '{}', Length: {}",
-                                collection_type,
-                                j - original_index
-                            );
-                            unsafe {
-                                COLLECTION_DECLARATION = false;
-                            }
-                            return ParseInfo::new(
-                                TokenTypes::Collection,
-                                (j - original_index).try_into().unwrap(),
-                                collection_type,
-                            );
-                        } else {
-                            break;
-                        }
-                    }
-
-                    // Set collection declaration state
-                    unsafe {
-                        COLLECTION_DECLARATION = true;
-                    }
-                } else {
-                    println!("Expected '<' not found after type. That means its a variable");
-                    //return none
+                // Now we should have a valid variable declaration with type
+                if collection_type.is_empty() {
+                    println!("Error: No collection type found. Exiting.");
                     return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
-                    
+                    // No collection type found
                 }
+
+                // Print the collection name and type
+                println!(
+                    "Collection Name: '{}', Collection Type: '{}<{}>'",
+                    variable_name, collection_type, stored_value_type
+                );
+
+                // Return collected information about the variable declaration
+                return ParseInfo::new(
+                    TokenTypes::Collection,
+                    (j - original_index).try_into().unwrap(),
+                    format!("{}<{}>", collection_type, stored_value_type), // Return type
+                );
             }
             j += 1; // Continue scanning if `:` not found
         }
 
         // If we finish the loop without finding a valid collection declaration
-        unsafe {
-            COLLECTION_DECLARATION = false; // Reset state
-        }
-        println!("No valid collection declaration found.");
+        println!("No valid collection declaration found. Exiting.");
         ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
@@ -1358,4 +1395,44 @@ mod tokenizer_tests {
         let result = tokenizers::tokenize(input);
         assert_eq!(result, expected);
     }
+
+    /*
+    #[test]
+    fn test_tokenize_array_collection_declaration() {
+        let input = "let a: array<int> = [1, 2, 3];".to_string();
+        let expected = vec![
+            ParseInfo {
+                token: TokenTypes::Collection,
+                chars_read: 1,
+                value: "a".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Array,
+                chars_read: 10,
+                value: "array".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::ArrayType,
+                chars_read: 3,
+                value: "int".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::AssignmentOperator,
+                chars_read: 1,
+                value: "=".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::Collection,
+                chars_read: 7,
+                value: "[1, 2, 3]".to_string(),
+            },
+            ParseInfo {
+                token: TokenTypes::SemiColon,
+                chars_read: 1,
+                value: ";".to_string(),
+            },
+        ];
+    }
+    */
 }
+*/

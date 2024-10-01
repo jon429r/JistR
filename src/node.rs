@@ -5,10 +5,9 @@
 
 pub mod nodes {
     use crate::base_variable::base_types::BaseTypes;
+    use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
     use crate::token_type::token_types::*;
-    use crate::tokenizer::tokenizers::ParseInfo;
     use std::fmt;
-    use std::fmt::Write;
 
     pub fn to_base_type(node: &ASTNode) -> Option<BaseTypes> {
         match node {
