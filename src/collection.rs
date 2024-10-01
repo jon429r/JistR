@@ -84,10 +84,10 @@ pub mod collections {
     // functions for dictionaries: new, add, remove, get, set(key), keys, values, to_string
 
     impl Dictionary {
-        pub fn new(name: String, key_type: BaseTypes, value_type: BaseTypes) -> Dictionary {
+        pub fn new(name: String, key_type: BaseTypes, value_type: BaseTypes, values: Vec<(BaseTypes, BaseTypes)>) -> Dictionary {
             Dictionary {
                 name,
-                values: Vec::new(),
+                values,
                 types: (key_type, value_type),
             }
         }
