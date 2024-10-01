@@ -6,16 +6,15 @@ pub mod collection_tokenizers {
         let chars: Vec<char> = expression.chars().collect();
         let mut j = index;
 
-        let mut variable_name = String::new();
+        let mut collection_name = String::new();
         let mut collection_type = String::new();
         let mut stored_value_type_tuple = (String::new(), String::new());
         let mut inside_angle_brackets = false;
         let mut found_comma = false;
 
         // Check for "let" keyword
-        while j < expression.len() && expression[j..].starts_with("let") {
+        if j < expression.len() && expression[j..].starts_with("let") {
             j += 3; // Move past "let"
-            break;
         }
 
         // Skip any spaces after "let"
@@ -23,11 +22,11 @@ pub mod collection_tokenizers {
             j += 1;
         }
 
-        // Collect the variable name
+        // Collect the collection name
         while j < expression.len() {
             let char = chars[j];
             if char.is_alphabetic() || char == '_' {
-                variable_name.push(char);
+                collection_name.push(char);
             } else if char == ':' {
                 break; // Break on type declaration
             } else if !char.is_whitespace() {
@@ -36,7 +35,7 @@ pub mod collection_tokenizers {
             j += 1;
         }
 
-        // Skip spaces after the variable name
+        // Skip spaces after the collection name
         while j < chars.len() && chars[j].is_whitespace() {
             j += 1;
         }
@@ -97,14 +96,20 @@ pub mod collection_tokenizers {
                     return ParseInfo::new(
                         TokenTypes::Collection,
                         (j - index).try_into().unwrap(),
-                        format!("{}<{}>", collection_type, stored_value_type_tuple.0.trim()),
+                        format!(
+                            "name: {} collection_type: {}<{}>",
+                            collection_name,
+                            collection_type,
+                            stored_value_type_tuple.0.trim()
+                        ),
                     );
                 } else {
                     return ParseInfo::new(
                         TokenTypes::Collection,
                         (j - index).try_into().unwrap(),
                         format!(
-                            "{}<{}, {}>",
+                            "name: {} collection_type: {}<{}, {}>",
+                            collection_name,
                             collection_type,
                             stored_value_type_tuple.0.trim(),
                             stored_value_type_tuple.1.trim()

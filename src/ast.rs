@@ -22,6 +22,7 @@ pub mod ast {
         pub fn display_node(&self, node: &ASTNode, depth: usize) {
             let indent = " ".repeat(depth * 4);
             match node {
+                ASTNode::FatArrow => println!("{}FatArrowNode", indent),
                 ASTNode::Float(f) => println!("{}FloatNode: Value: {}", indent, f.value),
                 ASTNode::SemiColon => println!("{}SemiColonNode", indent),
                 ASTNode::Bool(b) => println!("{}BoolNode: Value: {}", indent, b.value),

@@ -41,6 +41,7 @@ pub mod nodes {
             ASTNode::RightCurly => Some(BaseTypes::Null),
             ASTNode::RightBracket => Some(BaseTypes::Null),
             ASTNode::LeftBracket => Some(BaseTypes::Null),
+            ASTNode::FatArrow => Some(BaseTypes::Null),
             ASTNode::None => Some(BaseTypes::Null),
         }
     }
@@ -75,6 +76,7 @@ pub mod nodes {
         ArgumentSeparator,
         LeftCurly,
         RightCurly,
+        FatArrow,
         None,
     }
 
@@ -109,28 +111,60 @@ pub mod nodes {
                 ASTNode::LeftBracket => write!(f, "LeftBracket"),
                 ASTNode::FunctionCallArguments(call_args) => write!(f, "{}", call_args), // Call Display
                 ASTNode::FunctionArguments(args) => write!(f, "{}", args), // Call Display
+                ASTNode::FatArrow => write!(f, "FatArrow"),
                 ASTNode::None => write!(f, "None"),
             }
         }
     }
 
     #[derive(Debug, Clone, PartialEq)]
+    pub struct FatArrowNode;
+
+    #[derive(Debug, Clone, PartialEq)]
     pub struct CollectionNode {
         pub name: String,
+        pub collection_type: String,
+        pub value_type_tuple: Option<(String, String)>,
+        pub value_type_single: Option<String>,
     }
 
     impl CollectionNode {
-        pub fn new(name: String) -> Self {
-            CollectionNode { name }
+        pub fn new(
+            name: String,
+            collection_type: String,
+            value_type_tuple: Option<(String, String)>,
+            value_type_single: Option<String>,
+        ) -> Self {
+            CollectionNode {
+                name,
+                collection_type,
+                value_type_tuple,
+                value_type_single,
+            }
         }
         pub fn display_info(&self) {
             println!("Collection: {}", self.name);
+            println!("Collection Type: {}", self.collection_type);
+            if let Some((value, value_type)) = &self.value_type_tuple {
+                println!("Value Type Tuple: {} {}", value, value_type);
+            }
+            if let Some(value) = &self.value_type_single {
+                println!("Value Type Single: {}", value);
+            }
         }
     }
 
     impl fmt::Display for CollectionNode {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-            write!(f, "Collection: {}", self.name)
+            write!(f, "Collection: {}", self.name)?;
+            write!(f, "Collection Type: {}", self.collection_type)?;
+            if let Some((value, value_type)) = &self.value_type_tuple {
+                write!(f, "Value Type Tuple: {} {}", value, value_type)?;
+            }
+            if let Some(value) = &self.value_type_single {
+                write!(f, "Value Type Single: {}", value)?;
+            }
+            Ok(())
         }
     }
 
@@ -607,7 +641,12 @@ pub mod nodes {
             TokenTypes::Comment => ASTNode::Comment(CommentNode::new(parse_info.value)),
             TokenTypes::SemiColon => ASTNode::SemiColon,
             TokenTypes::None => ASTNode::None,
-            TokenTypes::Collection => ASTNode::Collection(CollectionNode::new(parse_info.value)),
+            TokenTypes::Collection => ASTNode::Collection(CollectionNode::new(
+                parse_info.value,
+                "".to_string(),
+                None,
+                None,
+            )),
             TokenTypes::LeftBracket => ASTNode::LeftBracket,
             TokenTypes::RightBracket => ASTNode::RightBracket,
             _ => {
