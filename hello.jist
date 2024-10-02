@@ -1,2 +1,1 @@
-let i: int = 1;
-echo(i);
+let a: char = 'a';

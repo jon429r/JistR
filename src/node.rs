@@ -595,7 +595,7 @@ pub mod nodes {
                 if let Ok(value) = parse_info.value.parse::<i32>() {
                     ASTNode::Int(IntNode::new(value))
                 } else if let Ok(value) = parse_info.value.parse::<i32>() {
-                    ASTNode::Int(IntNode::new(value as i32))
+                    ASTNode::Int(IntNode::new(value))
                 } else {
                     panic!("Failed to parse Int: {}", parse_info.value);
                 }
@@ -607,9 +607,12 @@ pub mod nodes {
             TokenTypes::Float => ASTNode::Float(FloatNode::new(
                 parse_info.value.parse::<f32>().expect("Invalid float"),
             )),
-            TokenTypes::Char => ASTNode::Char(CharNode::new(
-                parse_info.value.chars().next().expect("Invalid char"),
-            )),
+            TokenTypes::Char => {
+                // cut out ' and ' from the string to get the value
+                let char_value = parse_info.value.chars().nth(1).unwrap();
+
+                ASTNode::Char(CharNode::new(char_value))
+            }
             TokenTypes::Operator => ASTNode::Operator(OperatorNode::new(parse_info.value)),
             TokenTypes::AssignmentOperator => {
                 ASTNode::AssignmentOperator(AssignmentOperatorNode::new(parse_info.value))

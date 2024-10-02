@@ -187,7 +187,7 @@ pub mod compilers {
                 }
                 ASTNode::Collection(_c) => {
                     let _value = parse_collection_declaration(expression);
-                    return();
+                    return ();
                 }
                 ASTNode::LeftCurly => {
                     println!("Parsing LeftCurlyNode");

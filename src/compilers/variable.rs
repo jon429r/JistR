@@ -80,10 +80,11 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             }
             ASTNode::FunctionCall(c) => {
                 if inside_assignment {
-                    println!(
-                        "Function call found within variable declaration. Expression: {:?}",
-                        exp_stack
-                    );
+                    /*println!(
+                                            "Function call found within variable declaration. Expression: {:?}",
+                                            exp_stack
+                                        );
+                    */
                     let mut function_call_stack = exp_stack.clone();
                     function_call_stack.reverse();
                     function_call_stack.pop();
@@ -91,18 +92,19 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                     function_call_stack.pop();
                     function_call_stack.reverse();
 
-                    println!("Function call stack: {:?}", function_call_stack);
+                    //println!("Function call stack: {:?}", function_call_stack);
 
                     let result = parse_function_call(&function_call_stack);
                     // TODO set value to result
                     value = result.into();
 
-                    println!(
-                        "New variable = name: {}, value: {:?}, type: {:?}",
-                        var_name.clone().unwrap(),
-                        value,
-                        var_type.clone().unwrap()
-                    );
+                    /*println!(
+                                            "New variable = name: {}, value: {:?}, type: {:?}",
+                                            var_name.clone().unwrap(),
+                                            value,
+                                            var_type.clone().unwrap()
+                                        );
+                    */
 
                     let _variable = Variable::new(var_name.unwrap(), value, var_type.unwrap());
                     return true;
@@ -153,7 +155,7 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             }
             ASTNode::String(s) => {
                 if inside_assignment {
-                    print!("String: {}", s.value);
+                    //print!("String: {}", s.value);
                     first = Some(ASTNode::String(s.clone()));
                     var_value = operation(exp_stack);
                     if let ASTNode::String(s) = var_value {
@@ -167,29 +169,18 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             }
             ASTNode::Bool(b) => {
                 if inside_assignment {
-                    first = Some(ASTNode::Bool(b.clone()));
-                    var_value = operation(exp_stack);
-                    if let ASTNode::Bool(b) = var_value {
-                        value = BaseTypes::Bool(b.value);
-                    } else {
-                        println!("Syntax Error: Expected a bool after the operator.");
-                        return false;
-                    }
-                    break;
+                    value = BaseTypes::Bool(b.value);
+                } else {
+                    println!("Syntax Error: Bool outside of assignment.");
+                    return false;
                 }
             }
             ASTNode::Char(c) => {
                 if inside_assignment {
-                    first = Some(ASTNode::Char(c.clone()));
-                    var_value = c.value.into();
-                    //var_value = operation(exp_stack);
-                    if let ASTNode::Char(c) = var_value {
-                        value = BaseTypes::Char(c.value);
-                    } else {
-                        println!("Syntax Error: Expected a char after the operator.");
-                        return false;
-                    }
-                    break;
+                    value = BaseTypes::Char(c.value);
+                } else {
+                    println!("Syntax Error: Char outside of assignment.");
+                    return false;
                 }
             }
             ASTNode::LeftParenthesis => {

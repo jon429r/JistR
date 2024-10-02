@@ -80,8 +80,8 @@ pub mod variable_tokenizers {
                             }
 
                             println!(
-                                "Variable Name: '{}', Type Declaration: '{}'",
-                                variable_name, type_declaration
+                                /*"Variable Name: '{}', Type Declaration: '{}'",
+                                variable_name, type_declaration */
                             );
                             return ParseInfo::new(
                                 TokenTypes::Variable,

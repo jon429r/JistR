@@ -1,1 +1,1 @@
-let num: array<int> = [1, 2, 3];
+let booleans: array<bool> = [true, false, true];

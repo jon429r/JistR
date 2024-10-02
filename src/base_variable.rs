@@ -3,12 +3,13 @@ pub mod variables {
     // use super::base_variables::BaseVariables::{Pi, E};
 
     pub static mut VARIABLE_STACK: Vec<Variable> = Vec::new();
-
 }
 
 pub mod variable {
     use super::base_types::BaseTypes;
     use super::variables::VARIABLE_STACK;
+    use crate::base_variable::base_types::GetType;
+    use std::fmt;
 
     #[derive(Debug, Clone)]
     pub struct Variable {
@@ -182,7 +183,7 @@ pub mod variable {
 
     impl Variable {
         pub fn new(name: String, value: BaseTypes, var_type: BaseTypes) -> Variable {
-            println!("Variable info: {}, {:?}, {:?}", name, value, var_type);
+            //println!("Variable info: {}, {:?}, {:?}", name, value, var_type);
 
             // Ensure the value type matches the variable type
             let checked_value = match var_type {
@@ -268,14 +269,16 @@ pub mod variable {
             &self.value
         }
 
-        pub fn get_type(&self) -> &BaseTypes {
-            &self.var_type
-        }
-
         pub fn print(&self) {
             println!("Variable Name: {}", self.name);
-            println!("Variable Type: {:?}", self.var_type);
-            println!("Variable Value: {:?}", self.value);
+            println!("Variable Type: {}", self.var_type.GetType());
+            println!("Variable Value: {}", self.value);
+        }
+    }
+
+    impl fmt::Display for Variable {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.name)
         }
     }
 
@@ -385,15 +388,15 @@ pub mod variable {
         }
     }
 
-    impl ToString for BaseTypes {
-        fn to_string(&self) -> String {
+    impl fmt::Display for BaseTypes {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
-                BaseTypes::Int(i) => i.to_string(),
-                BaseTypes::Float(f) => f.to_string(),
-                BaseTypes::StringWrapper(s) => s.to_string(),
-                BaseTypes::Bool(b) => b.to_string(),
-                BaseTypes::Char(c) => c.to_string(),
-                BaseTypes::Null => String::from("null"),
+                BaseTypes::Int(i) => write!(f, "{}", i),
+                BaseTypes::Float(flt) => write!(f, "{}", flt),
+                BaseTypes::StringWrapper(s) => write!(f, "{}", s),
+                BaseTypes::Bool(b) => write!(f, "{}", b),
+                BaseTypes::Char(c) => write!(f, "{}", c),
+                BaseTypes::Null => write!(f, "null"),
             }
         }
     }
@@ -458,6 +461,8 @@ pub mod base_variables {
 }
 
 pub mod base_types {
+    //use std::fmt;
+
     #[derive(Debug, Clone)]
     pub enum BaseTypes {
         Int(i32),
@@ -466,6 +471,23 @@ pub mod base_types {
         Bool(bool),
         Char(char),
         Null,
+    }
+
+    pub trait GetType {
+        fn GetType(&self) -> String;
+    }
+
+    impl GetType for BaseTypes {
+        fn GetType(&self) -> String {
+            match self {
+                BaseTypes::Int(_) => "Int".to_string(),
+                BaseTypes::Float(_) => "Float".to_string(),
+                BaseTypes::StringWrapper(_) => "String".to_string(),
+                BaseTypes::Bool(_) => "Bool".to_string(),
+                BaseTypes::Char(_) => "Char".to_string(),
+                BaseTypes::Null => "Null".to_string(),
+            }
+        }
     }
 
     pub struct Int {

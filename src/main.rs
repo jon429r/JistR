@@ -30,7 +30,7 @@ use std::fs;
 use std::path::Path;
 use std::process::exit;
 
-use crate::collection::collections::{Array, Dictionary};
+//use crate::collection::collections::{Array, Dictionary};
 use base_variable::variables::VARIABLE_STACK;
 use compiler::compilers::route_to_parser;
 use node::nodes::match_token_to_node;
@@ -38,8 +38,8 @@ use node::nodes::ASTNode;
 use statement_tokenizer::tokenizer::tokenizers::tokenize;
 
 use crate::collection::{ARRAY_STACK, DICTIONARY_STACK};
-use lazy_static::lazy_static;
-use std::sync::Mutex;
+//use lazy_static::lazy_static;
+//use std::sync::Mutex;
 
 ///
 /// This function checks if the file extension is valid. IE: .jist
@@ -218,7 +218,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                "Variable info: a, StringWrapper(\"\\\"Hello World\\\"\"), StringWrapper(\"\")",
+                r#"Variable Name: a\nVariable Type: StringWrapper(\"\")\nVariable Value: StringWrapper(\"\\\"Hello World\\\"\")"#,
             ));
     }
 
@@ -230,7 +230,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                "Variable Name: a\nVariable Type: Bool(0)\nVariable Value: Bool(true)",
+                "Variable Name: a\nVariable Type: Bool(false)\nVariable Value: Bool(true)",
             ));
     }
 
@@ -242,7 +242,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                "Variable info: a, CharWrapper('a'), CharWrapper('')",
+                "Variable Name: a\nVariable Type: Char(\'\\0\')\nVariable Value: Char(\'\\\'\')",
             ));
     }
 
@@ -280,7 +280,7 @@ mod test_input_output {
         .assert()
         .success()
         .stdout(predicate::str::contains(
-            r#"Array { name: a, data: [Boolean(True), Boolean(False), Boolean(True)], value_type: StringWrapper("boolean") }"#,
+            r#"Array { name: \"a\", data: [Bool(true), Bool(false), Bool(true)], value_type: StringWrapper(\"bool\") }"#,
         ));
     }
 
@@ -327,7 +327,7 @@ mod test_input_output {
         cmd.arg(file_path)
             .assert()
             .success()
-            .stdout(predicate::str::contains(r#"Boolean(True)"#));
+            .stdout(predicate::str::contains(r#"Bool(true)"#));
     }
 
     #[test]

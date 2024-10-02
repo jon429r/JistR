@@ -1,9 +1,8 @@
-
 use crate::base_variable::base_types::BaseTypes;
 use crate::collection::collections::{Array, Dictionary};
-use crate::node::nodes::ASTNode;
 use crate::collection::ARRAY_STACK;
 use crate::collection::DICTIONARY_STACK;
+use crate::node::nodes::ASTNode;
 //use std::sync::Mutex;
 //use lazy_static::lazy_static;
 
@@ -15,12 +14,11 @@ fn add_to_dictionary_stack(dict: Dictionary) {
 
 fn add_to_array_stack(array: Array) {
     ARRAY_STACK.lock().unwrap().push(array.clone());
-
 }
 
 pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
     //println!("Expression: {:?}", expression);
-    
+
     //let mut array_stack = ARRAY_STACK.lock().unwrap();
     //let mut dict_stack = DICTIONARY_STACK.lock().unwrap();
 
@@ -31,12 +29,19 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
             let name = &collection_node.name;
             let collection_type = &collection_node.collection_type;
             let value_type_single = collection_node.value_type_single.as_deref().unwrap_or("");
-            let value_type_tuple = collection_node.value_type_tuple.as_ref().map(|(v1, v2)| (v1.clone(), v2.clone()));
+            let value_type_tuple = collection_node
+                .value_type_tuple
+                .as_ref()
+                .map(|(v1, v2)| (v1.clone(), v2.clone()));
 
             // Convert the tuple elements to BaseTypes
             let single_key_type: BaseTypes = value_type_single.clone().into();
-            let key_type: BaseTypes = value_type_tuple.as_ref().map_or(BaseTypes::Null, |(v1, _)| v1.clone().into());
-            let value_type: BaseTypes = value_type_tuple.as_ref().map_or(BaseTypes::Null, |(_, v2)| v2.clone().into());
+            let key_type: BaseTypes = value_type_tuple
+                .as_ref()
+                .map_or(BaseTypes::Null, |(v1, _)| v1.clone().into());
+            let value_type: BaseTypes = value_type_tuple
+                .as_ref()
+                .map_or(BaseTypes::Null, |(_, v2)| v2.clone().into());
 
             // Print out the collected values for debugging
             /*
@@ -53,17 +58,26 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                     for node in &expression[1..] {
                         match node {
                             ASTNode::Int(int) => values.push(BaseTypes::Int(int.value)),
-                            ASTNode::Float(float) => values.push(BaseTypes::Float(float.value.into())),
-                            ASTNode::String(string) => values.push(BaseTypes::StringWrapper(string.value.clone())),
+                            ASTNode::Float(float) => {
+                                values.push(BaseTypes::Float(float.value.into()))
+                            }
+                            ASTNode::String(string) => {
+                                values.push(BaseTypes::StringWrapper(string.value.clone()))
+                            }
                             ASTNode::Char(char) => values.push(BaseTypes::Char(char.value)),
-                            ASTNode::Bool(bool) => values.push(BaseTypes::Bool(bool.value)),
-                            ASTNode::AssignmentOperator(_) | ASTNode::ArgumentSeparator | ASTNode::LeftBracket => {},
+                            ASTNode::Bool(bool) => {
+                                //println!("Bool: {}", bool.value);
+                                values.push(BaseTypes::Bool(bool.value));
+                            }
+                            ASTNode::AssignmentOperator(_)
+                            | ASTNode::ArgumentSeparator
+                            | ASTNode::LeftBracket => {}
                             ASTNode::RightBracket => break,
                             _ => {
                                 println!("Syntax Error: Value type not recognized.");
                                 return false;
                             }
-                        }                 
+                        }
                     }
 
                     let array = Array::new(name.clone(), single_key_type.clone(), values);
@@ -170,9 +184,10 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                                     key = Some(base_bool);
                                 }
                             }
-                            ASTNode::FatArrow => { have_fat_arrow = true;}
-                            ASTNode::AssignmentOperator(_) => {
+                            ASTNode::FatArrow => {
+                                have_fat_arrow = true;
                             }
+                            ASTNode::AssignmentOperator(_) => {}
                             ASTNode::RightCurly => {
                                 break;
                             }
@@ -190,7 +205,7 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                     // Create and print the dictionary with the parsed values
                     let dict = Dictionary::new(name.clone(), key_type, value_type, values);
                     // add dict to the stack
-                    
+
                     //println!("Before pushing to stack");
                     add_to_dictionary_stack(dict.clone());
                     //println!("Created new Dictionary with values: {}", dict.to_string());
@@ -210,4 +225,3 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
         return false;
     }
 }
-
