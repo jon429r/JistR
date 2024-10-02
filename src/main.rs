@@ -57,45 +57,82 @@ fn check_file_extension(file_path: String) -> Result<bool, Box<dyn Error>> {
 fn print_array_stack() {
     let array_stack = ARRAY_STACK.lock().unwrap(); // Lock the mutex
     for array in array_stack.iter() {
-        println!("{:?}", array); // Now we can iterate over the Vec
+        println!("{}", array); // Now we can iterate over the Vec
     }
 }
 
 fn print_dictionary_stack() {
     let dict_stack = DICTIONARY_STACK.lock().unwrap(); // Lock the mutex
     for dict in dict_stack.iter() {
-        println!("{:?}", dict); // Now we can iterate over the Vec
+        println!("{}", dict); // Now we can iterate over the Vec
     }
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
-    // Collect command-line arguments
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        return Err("No file path provided".into());
-    }
-    let file_path = &args[1];
-    match check_file_extension(file_path.to_owned()) {
-        Ok(true) => {
-            //println!("File path is valid");
-        }
-        Err(_) => {
-            return Err("File path not valid: Does not have extension .jist".into());
-        }
-        _ => {
-            return Err("Some error occurred".into());
-        }
-    }
-
-    // Read the file contents
+fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
-    //println!("{}", contents);
+    // println!("{}", contents); // Uncomment to debug the contents
 
-    // Tokenize each line and collect AST nodes
     let lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
+
+    let mut brace_count = 0; // To track curly braces
+    let mut bracket_count = 0; // To track square brackets
+    let mut current_line = String::new();
+    let mut number_of_lines = 0;
+    let mut finished_lines: Vec<String> = Vec::new();
+
+    for line in lines.clone() {
+        for ch in line.chars() {
+            match ch {
+                '{' => {
+                    brace_count += 1;
+                    current_line.push(ch);
+                }
+                '}' => {
+                    brace_count -= 1;
+
+                    current_line.push(ch);
+                    if brace_count < 0 {
+                        eprintln!("Error: Unmatched closing curly brace");
+                        return Err("Unmatched closing curly brace".into());
+                    }
+                }
+                '[' => {
+                    bracket_count += 1;
+
+                    current_line.push(ch);
+                }
+                ']' => {
+                    bracket_count -= 1;
+
+                    current_line.push(ch);
+                    if bracket_count < 0 {
+                        eprintln!("Error: Unmatched closing square bracket");
+                        return Err("Unmatched closing square bracket".into());
+                    }
+                }
+                ';' => {
+                    // Check for balanced braces and brackets before finishing the line
+                    if brace_count == 0 && bracket_count == 0 {
+                        current_line.push(ch);
+                        println!("Finished statement: {}", current_line.trim());
+                        finished_lines.push(current_line.clone());
+                        //current_line.clear(); // Clear for the next statement
+                        number_of_lines += 1;
+                    } else {
+                        current_line.push(ch);
+                    }
+                }
+                _ => current_line.push(ch), // Add other characters to the current line
+            }
+        }
+
+        // If the line ends but we haven't found a semicolon, continue to next line
+        // (Optional: handle multiline statements if needed)
+    }
+
     let _ast_nodes: Vec<ASTNode> = Vec::new();
 
-    for line in lines {
+    for line in finished_lines {
         let tokens = tokenize(line);
         //println!("Tokens {:?}", tokens);
         //
@@ -125,39 +162,85 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-
-        // Display the collected AST nodes
-        /*
-        for node in &ast_nodes {
-            let indent = " ".repeat(4);
-            match node {
-                ASTNode::Bool(b) => println!("{}BoolNode: Value: {}", indent, b.value),
-                ASTNode::Variable(v) => println!("{}VariableNode: Type: {}, Value: {}", indent, v.var_type, v.value),
-                ASTNode::Int(n) => println!("{}IntNode: Value: {}", indent, n.value),
-                ASTNode::Operator(o) => println!("{}OperatorNode: Operator: {}", indent, o.operator),
-                ASTNode::Function(f) => println!("{}FunctionNode: Name: {}", indent, f.name),
-                ASTNode::String(s) => println!("{}StringNode: Value: {}", indent, s.value),
-                ASTNode::Char(c) => println!("{}CharNode: Value: {}", indent, c.value),
-                ASTNode::Assignment(a) => println!("{}AssignmentNode: Value: {}", indent, a.value),
-                ASTNode::VarTypeAssignment(v) => println!("{}VarTypeAssignmentNode: Value: {}", indent, v.value),
-                ASTNode::FunctionCall(f) => println!("{}FunctionCallNode: Value: {}", indent, f.name),
-                ASTNode::VariableCall(v) => println!("{}VariableCallNode: Value: {}", indent, v.name),
-                ASTNode::VariableType(v) => println!("{}VariableTypeNode: Value: {}", indent, v.value),
-                ASTNode::VariableValue(v) => println!("{}VariableValueNode: Value: {}", indent, v.value),
-                ASTNode::FunctionArguments(f) => println!("{}FunctionArgumentsNode: Value: {}", indent, f.value),
-                ASTNode::AssignmentOperator(a) => println!("{}AssignmentOperatorNode: Value: {}", indent, a.operator),
-                ASTNode::ReturnTypeAssignment(r) => println!("{}ReturnTypeAssignmentNode: Value: {}", indent, r.value),
-                ASTNode::Comment(c) => println!("{}CommentNode: Value: {}", indent, c.value),
-                ASTNode::SemiColon => println!("{}SemicolonNode", indent),
-                ASTNode::LeftParenthesis => println!("{}LeftParenthesisNode", indent),
-                ASTNode::RightParenthesis => println!("{}RightParenthesisNode", indent),
-                ASTNode::ArgumentSeparator => println!("{}ArgumentSeparatorNode", indent),
-                ASTNode::LeftCurly => println!("{}LeftCurlyNode", indent),
-                ASTNode::RightCurly => println!("{}RightCurlyNode", indent),
-                ASTNode::None => println!("{}NoneNode", indent),
-            }
-        }*/
     }
+
+    // After processing all lines, check for any unclosed braces or brackets
+    if brace_count > 0 {
+        eprintln!("Error: Unmatched opening curly brace");
+        return Err("Unmatched opening curly brace".into());
+    }
+    if bracket_count > 0 {
+        eprintln!("Error: Unmatched opening square bracket");
+        return Err("Unmatched opening square bracket".into());
+    }
+
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn Error>> {
+    // Collect command-line arguments
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        return Err("No file path provided".into());
+    }
+    let file_path = &args[1];
+    match check_file_extension(file_path.to_owned()) {
+        Ok(true) => {
+            //println!("File path is valid");
+        }
+        Err(_) => {
+            return Err("File path not valid: Does not have extension .jist".into());
+        }
+        _ => {
+            return Err("Some error occurred".into());
+        }
+    }
+
+    // Read the file contents
+    //let contents = fs::read_to_string(file_path)?;
+    //println!("{}", contents);
+    //
+    //curly braces take priority, then square braces then ;
+    //keep track of braces and make sure all are closed before finishing line and check for ; as
+    //next,
+    //if none go until ;
+    if let Err(e) = parse_file(file_path) {
+        eprintln!("Failed to parse file: {}", e);
+    }
+
+    // Tokenize each line and collect AST nodes
+
+    // Display the collected AST nodes
+    /*
+    for node in &ast_nodes {
+        let indent = " ".repeat(4);
+        match node {
+            ASTNode::Bool(b) => println!("{}BoolNode: Value: {}", indent, b.value),
+            ASTNode::Variable(v) => println!("{}VariableNode: Type: {}, Value: {}", indent, v.var_type, v.value),
+            ASTNode::Int(n) => println!("{}IntNode: Value: {}", indent, n.value),
+            ASTNode::Operator(o) => println!("{}OperatorNode: Operator: {}", indent, o.operator),
+            ASTNode::Function(f) => println!("{}FunctionNode: Name: {}", indent, f.name),
+            ASTNode::String(s) => println!("{}StringNode: Value: {}", indent, s.value),
+            ASTNode::Char(c) => println!("{}CharNode: Value: {}", indent, c.value),
+            ASTNode::Assignment(a) => println!("{}AssignmentNode: Value: {}", indent, a.value),
+            ASTNode::VarTypeAssignment(v) => println!("{}VarTypeAssignmentNode: Value: {}", indent, v.value),
+            ASTNode::FunctionCall(f) => println!("{}FunctionCallNode: Value: {}", indent, f.name),
+            ASTNode::VariableCall(v) => println!("{}VariableCallNode: Value: {}", indent, v.name),
+            ASTNode::VariableType(v) => println!("{}VariableTypeNode: Value: {}", indent, v.value),
+            ASTNode::VariableValue(v) => println!("{}VariableValueNode: Value: {}", indent, v.value),
+            ASTNode::FunctionArguments(f) => println!("{}FunctionArgumentsNode: Value: {}", indent, f.value),
+            ASTNode::AssignmentOperator(a) => println!("{}AssignmentOperatorNode: Value: {}", indent, a.operator),
+            ASTNode::ReturnTypeAssignment(r) => println!("{}ReturnTypeAssignmentNode: Value: {}", indent, r.value),
+            ASTNode::Comment(c) => println!("{}CommentNode: Value: {}", indent, c.value),
+            ASTNode::SemiColon => println!("{}SemicolonNode", indent),
+            ASTNode::LeftParenthesis => println!("{}LeftParenthesisNode", indent),
+            ASTNode::RightParenthesis => println!("{}RightParenthesisNode", indent),
+            ASTNode::ArgumentSeparator => println!("{}ArgumentSeparatorNode", indent),
+            ASTNode::LeftCurly => println!("{}LeftCurlyNode", indent),
+            ASTNode::RightCurly => println!("{}RightCurlyNode", indent),
+            ASTNode::None => println!("{}NoneNode", indent),
+        }
+    }*/
     //print variable stack
     println!("\nVariable stack:");
     for variable in unsafe { VARIABLE_STACK.iter() } {
@@ -204,7 +287,7 @@ mod test_input_output {
             .assert()
             .success() // Asserting that the command was successful
             .stdout(predicate::str::contains(
-                "Variable Name: a\nVariable Type: Int(0)\nVariable Value: Int(1)",
+                "Variable Name: a\nVariable Type: Int\nVariable Value: 1",
             ));
     }
 
@@ -218,7 +301,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                r#"Variable Name: a\nVariable Type: StringWrapper(\"\")\nVariable Value: StringWrapper(\"\\\"Hello World\\\"\")"#,
+                "Variable Name: a\nVariable Type: String\nVariable Value: \"Hello World\"",
             ));
     }
 
@@ -230,7 +313,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                "Variable Name: a\nVariable Type: Bool(false)\nVariable Value: Bool(true)",
+                "Variable Name: a\nVariable Type: Bool\nVariable Value: true",
             ));
     }
 
@@ -242,7 +325,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                "Variable Name: a\nVariable Type: Char(\'\\0\')\nVariable Value: Char(\'\\\'\')",
+                "Variable Name: a\nVariable Type: Char\nVariable Value: a",
             ));
     }
 
@@ -256,7 +339,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                "Variable info: a, Float(3.141590118408203), Float(0.0)",
+                "Variable Name: a\nVariable Type: Float\nVariable Value: 3.141590118408203",
             ));
     }
 
@@ -327,7 +410,7 @@ mod test_input_output {
         cmd.arg(file_path)
             .assert()
             .success()
-            .stdout(predicate::str::contains(r#"Bool(true)"#));
+            .stdout(predicate::str::contains(r#"true"#));
     }
 
     #[test]

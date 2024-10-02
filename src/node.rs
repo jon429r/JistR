@@ -600,7 +600,10 @@ pub mod nodes {
                     panic!("Failed to parse Int: {}", parse_info.value);
                 }
             }
-            TokenTypes::String => ASTNode::String(StringNode::new(parse_info.value)),
+            TokenTypes::String => {
+                let value = &parse_info.value[1..parse_info.value.len() - 1]; // Removes the first and last characters (quotes)
+                ASTNode::String(StringNode::new(value.to_string()))
+            }
             TokenTypes::Bool => ASTNode::Bool(BoolNode::new(
                 parse_info.value.parse::<bool>().expect("Invalid bool"),
             )),
