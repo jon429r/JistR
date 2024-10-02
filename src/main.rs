@@ -70,17 +70,16 @@ fn print_dictionary_stack() {
 
 fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
-    // println!("{}", contents); // Uncomment to debug the contents
 
     let lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
-
-    let mut brace_count = 0; // To track curly braces
-    let mut bracket_count = 0; // To track square brackets
+    let mut brace_count = 0;
+    let mut bracket_count = 0;
     let mut current_line = String::new();
     let mut number_of_lines = 0;
     let mut finished_lines: Vec<String> = Vec::new();
 
-    for line in lines.clone() {
+    for line in &lines {
+        // No need to clone `lines`, just borrow
         for ch in line.chars() {
             match ch {
                 '{' => {
@@ -89,88 +88,73 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                 }
                 '}' => {
                     brace_count -= 1;
-
                     current_line.push(ch);
                     if brace_count < 0 {
-                        eprintln!("Error: Unmatched closing curly brace");
                         return Err("Unmatched closing curly brace".into());
                     }
                 }
                 '[' => {
                     bracket_count += 1;
-
                     current_line.push(ch);
                 }
                 ']' => {
                     bracket_count -= 1;
-
                     current_line.push(ch);
                     if bracket_count < 0 {
-                        eprintln!("Error: Unmatched closing square bracket");
                         return Err("Unmatched closing square bracket".into());
                     }
                 }
                 ';' => {
-                    // Check for balanced braces and brackets before finishing the line
                     if brace_count == 0 && bracket_count == 0 {
                         current_line.push(ch);
                         println!("Finished statement: {}", current_line.trim());
                         finished_lines.push(current_line.clone());
-                        //current_line.clear(); // Clear for the next statement
+                        current_line.clear();
                         number_of_lines += 1;
                     } else {
                         current_line.push(ch);
                     }
                 }
-                _ => current_line.push(ch), // Add other characters to the current line
+                _ => current_line.push(ch),
             }
         }
-
-        // If the line ends but we haven't found a semicolon, continue to next line
-        // (Optional: handle multiline statements if needed)
     }
 
+    // Tokenization and AST generation
     let _ast_nodes: Vec<ASTNode> = Vec::new();
+
+    //println!("Number of lines: {}", finished_lines.len());
 
     for line in finished_lines {
         let tokens = tokenize(line);
-        //println!("Tokens {:?}", tokens);
-        //
+        //println!("Tokens: {:?}", tokens);
+
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();
         for parsed_info in tokens {
             let node = match_token_to_node(parsed_info);
-            //println!("Node: {:?}", node);
             match node {
                 ASTNode::SemiColon => {
                     if !hasroot {
-                        //throw syntax error
-                        print!("Syntax error expression must be more than semicolon");
+                        println!("Syntax error: expression must be more than a semicolon");
                         exit(1);
                     } else {
-                        //send to compiler.rs
                         route_to_parser(&mut tokenized_expression);
                     }
                 }
                 _ => {
-                    if !hasroot {
-                        hasroot = true;
-                        tokenized_expression.push(node);
-                    } else {
-                        tokenized_expression.push(node);
-                    }
+                    hasroot = true;
+                    tokenized_expression.push(node);
                 }
             }
         }
     }
 
-    // After processing all lines, check for any unclosed braces or brackets
+    // Check for unmatched braces and brackets
     if brace_count > 0 {
-        eprintln!("Error: Unmatched opening curly brace");
         return Err("Unmatched opening curly brace".into());
     }
     if bracket_count > 0 {
-        eprintln!("Error: Unmatched opening square bracket");
         return Err("Unmatched opening square bracket".into());
     }
 
@@ -301,7 +285,7 @@ mod test_input_output {
             .assert()
             .success()
             .stdout(predicate::str::contains(
-                "Variable Name: a\nVariable Type: String\nVariable Value: \"Hello World\"",
+                "Variable Name: a\nVariable Type: String\nVariable Value: Hello World",
             ));
     }
 
@@ -351,7 +335,7 @@ mod test_input_output {
         .assert()
         .success()
         .stdout(predicate::str::contains(
-            r#"Dict { name: a, data: {true: "true", false: "false", true: "not false"}, key_type: StringWrapper("boolean"), value_type: StringWrapper("string") }"#,
+            r#"a: Dict<bool, string> = {"true" => true, "false" => false, "true" => not false}"#,
         ));
     }
 
@@ -360,11 +344,11 @@ mod test_input_output {
         let file_path = "test_files/array_boolean_collection_declaration.jist";
         let mut cmd = Command::cargo_bin("jist").unwrap();
         cmd.arg(file_path)
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            r#"Array { name: \"a\", data: [Bool(true), Bool(false), Bool(true)], value_type: StringWrapper(\"bool\") }"#,
-        ));
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                r#"a: Array<bool> = [true, false, true]"#,
+            ));
     }
 
     #[test]
@@ -372,11 +356,9 @@ mod test_input_output {
         let file_path = "test_files/array_char_collection_declaration.jist";
         let mut cmd = Command::cargo_bin("jist").unwrap();
         cmd.arg(file_path)
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            r#"Array { name: a, data: [Char('a'), Char('b'), Char('c')], value_type: StringWrapper("char") }"#,
-        ));
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(r#"a: Array<char> = [a, b, c]"#));
     }
 
     #[test]
@@ -384,11 +366,11 @@ mod test_input_output {
         let file_path = "test_files/array_float_collection_declaration.jist";
         let mut cmd = Command::cargo_bin("jist").unwrap();
         cmd.arg(file_path)
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            r#"Array { name: "a", data: [Float(1.2300000190734863), Float(2.2300000190734863), Float(3.2300000190734863)], value_type: StringWrapper("float") }"#,
-        ));
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                r#"a: Array<float> = [1.2300000190734863, 2.2300000190734863, 3.2300000190734863]"#,
+            ));
     }
 
     #[test]
@@ -396,11 +378,9 @@ mod test_input_output {
         let file_path = "test_files/array_int_collection_declaration.jist";
         let mut cmd = Command::cargo_bin("jist").unwrap();
         cmd.arg(file_path)
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            r#"Array { name: "a", data: [Int(1), Int(2), Int(3)], value_type: StringWrapper("int") }"#,
-        ));
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(r#"a: Array<int> = [1, 2, 3]"#));
     }
 
     #[test]
@@ -421,7 +401,7 @@ mod test_input_output {
         .assert()
         .success()
         .stdout(predicate::str::contains(
-            r#"Dictionary { name: "a", values: [(Float(1.100000023841858), Int(1)), (Float(2.0999999046325684), Int(2)), (Float(3.9000000953674316), Int(4))], types: (StringWrapper("float"), StringWrapper("int")) }"#,
+            r#"a: Dict<float, int> = {"1.100000023841858" => 1, "2.0999999046325684" => 2, "3.9000000953674316" => 4}"#,
         ));
     }
 
@@ -430,11 +410,11 @@ mod test_input_output {
         let file_path = "test_files/dict_int_char_collection_declaration.jist";
         let mut cmd = Command::cargo_bin("jist").unwrap();
         cmd.arg(file_path)
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            r#"Dict { name: a, data: {1: Char('a'), 2: Char('b'), 3: Char('c')}, key_type: StringWrapper("int"), value_type: StringWrapper("char") }"#,
-        ));
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                r#"a: Dict<int, char> = {"1" => a, "2" => b, "3" => c}"#,
+            ));
     }
 
     #[test]
@@ -442,11 +422,11 @@ mod test_input_output {
         let file_path = "test_files/dict_int_string_collection_declaration.jist";
         let mut cmd = Command::cargo_bin("jist").unwrap();
         cmd.arg(file_path)
-        .assert()
-        .success()
-        .stdout(predicate::str::contains(
-            r#"Dictionary { name: "a", values: [(Int(1), StringWrapper("\"one\"")), (Int(2), StringWrapper("\"two\"")), (Int(3), StringWrapper("\"three\""))], types: (StringWrapper("int"), StringWrapper("string")) }"#,
-        ));
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                r#"a: Dict<int, string> = {"1" => one, "2" => two, "3" => three}"#,
+            ));
     }
 
     #[test]
@@ -457,7 +437,7 @@ mod test_input_output {
         .assert()
         .success()
         .stdout(predicate::str::contains(
-            r#"Dictionary { name: "a", values: [(StringWrapper("\"one\""), Float(1.100000023841858)), (StringWrapper("\"two\""), Float(2.0999999046325684)), (StringWrapper("\"three\""), Float(3.0999999046325684))], types: (StringWrapper("string"), StringWrapper("float")) }"#,
+            r#"a: Dict<string, float> = {"one" => 1.100000023841858, "two" => 2.0999999046325684, "three" => 3.0999999046325684}"#,
         ));
     }
 }

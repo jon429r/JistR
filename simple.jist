@@ -1,3 +1,3 @@
-let booleans: array<bool> = [true,
-false,
-true];
+let a1: int = 1;
+let a2: int = 2;
+let a3: int = 3;
