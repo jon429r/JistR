@@ -60,7 +60,7 @@ pub mod function_tokenizers {
         // Collect the function name
         while j < chars.len() {
             let char = chars[j];
-            let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
+            //let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
 
             if char == '=' {
                 return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
@@ -86,7 +86,7 @@ pub mod function_tokenizers {
 
             while j < chars.len() {
                 let char = chars[j];
-                let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
+                //let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
 
                 if char == ')' {
                     // End of function call parameters

@@ -155,13 +155,13 @@ pub mod token_types {
                         name: ref name_a,
                         collection_type: ref type_a,
                         stored_value_type_single: ref stored_a,
-                        stored_value_type_tuple: ref tuple_a,
+                        stored_value_type_tuple: ref _tuple_a,
                     },
                     TokenTypes::Collection {
                         name: ref name_b,
                         collection_type: ref type_b,
                         stored_value_type_single: ref stored_b,
-                        stored_value_type_tuple: ref tuple_b,
+                        stored_value_type_tuple: ref _tuple_b,
                     },
                 ) => name_a == name_b && type_a == type_b && stored_a == stored_b,
 

@@ -12,7 +12,7 @@ use crate::function_map::{
 };
 
 pub fn parse_function_declaration(expression: &Vec<ASTNode>) -> bool {
-    let mut function_name: String = "None".to_string();
+    let mut function_name: String;
     let parameters: Vec<Variable> = Vec::new();
     let mut number_of_curly_braces = 0;
     let return_type: BaseTypes = BaseTypes::Null;

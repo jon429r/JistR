@@ -1,1 +1,1 @@
-let NumNum: dict<int, string> = {1 => "one", 2 => "two", 3 => "three"};
+let num: array<int> = [1, 2, 3];

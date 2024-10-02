@@ -22,7 +22,6 @@ mod statement_tokenizer {
     pub mod tokenizer;
     pub mod variable_tokenizer;
 }
-use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
 
 use std::env;
 use std::error::Error;
@@ -31,11 +30,16 @@ use std::fs;
 use std::path::Path;
 use std::process::exit;
 
+use crate::collection::collections::{Array, Dictionary};
 use base_variable::variables::VARIABLE_STACK;
 use compiler::compilers::route_to_parser;
 use node::nodes::match_token_to_node;
 use node::nodes::ASTNode;
 use statement_tokenizer::tokenizer::tokenizers::tokenize;
+
+use crate::collection::{ARRAY_STACK, DICTIONARY_STACK};
+use lazy_static::lazy_static;
+use std::sync::Mutex;
 
 ///
 /// This function checks if the file extension is valid. IE: .jist
@@ -47,6 +51,20 @@ fn check_file_extension(file_path: String) -> Result<bool, Box<dyn Error>> {
         Ok(true)
     } else {
         Err("Invalid file extension".into())
+    }
+}
+
+fn print_array_stack() {
+    let array_stack = ARRAY_STACK.lock().unwrap(); // Lock the mutex
+    for array in array_stack.iter() {
+        println!("{:?}", array); // Now we can iterate over the Vec
+    }
+}
+
+fn print_dictionary_stack() {
+    let dict_stack = DICTIONARY_STACK.lock().unwrap(); // Lock the mutex
+    for dict in dict_stack.iter() {
+        println!("{:?}", dict); // Now we can iterate over the Vec
     }
 }
 
@@ -145,12 +163,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     for variable in unsafe { VARIABLE_STACK.iter() } {
         variable.print();
     }
+
+    print_array_stack();
+    print_dictionary_stack();
     Ok(())
 }
 
 #[cfg(test)]
 mod main_test {
-    use assert_cmd::Command;
 
     #[test]
     fn test_check_file_extension() {
@@ -201,34 +221,34 @@ mod test_input_output {
                 "Variable info: a, StringWrapper(\"\\\"Hello World\\\"\"), StringWrapper(\"\")",
             ));
     }
-    /*
-        #[test]
-        fn test_bool_variable_declaration() {
-            let file_path = "test_files/boolean_variable_declaration.jist";
-            let mut cmd = Command::cargo_bin("jist").unwrap();
-            cmd.arg(file_path)
-                .assert()
-                .success()
-                .stdout(predicate::str::contains(
-                    "Variable Name: a\nVariable Type: Bool(0)\nVariable Value: Bool(true)",
-                ));
-        }
 
-        #[test]
-        fn test_char_variable_declaration() {
-            let file_path = "test_files/char_variable_declaration.jist";
-            let mut cmd = Command::cargo_bin("jist").unwrap();
-            cmd.arg(file_path)
-                .assert()
-                .success()
-                .stdout(predicate::str::contains(
-                    "Variable info: a, CharWrapper('a'), CharWrapper('')",
-                ));
-        }
-    */
+    #[test]
+    fn test_bool_variable_declaration() {
+        let file_path = "test_files/boolean_variable_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                "Variable Name: a\nVariable Type: Bool(0)\nVariable Value: Bool(true)",
+            ));
+    }
+
+    #[test]
+    fn test_char_variable_declaration() {
+        let file_path = "test_files/char_variable_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(
+                "Variable info: a, CharWrapper('a'), CharWrapper('')",
+            ));
+    }
+
     #[test]
     fn test_float_variable_declaration() {
-        let file_path = "test_files/float_variable_declaration.jist";
+        let file_path = "test_files/float_variable_declartion.jist";
 
         let mut cmd = Command::cargo_bin("jist").unwrap();
 
@@ -238,5 +258,123 @@ mod test_input_output {
             .stdout(predicate::str::contains(
                 "Variable info: a, Float(3.141590118408203), Float(0.0)",
             ));
+    }
+
+    #[test]
+    fn test_dict_boolean_string_collection_declaration() {
+        let file_path = "test_files/dict_boolean_string_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Dict { name: a, data: {true: "true", false: "false", true: "not false"}, key_type: StringWrapper("boolean"), value_type: StringWrapper("string") }"#,
+        ));
+    }
+
+    #[test]
+    fn test_array_boolean_collection_declaration() {
+        let file_path = "test_files/array_boolean_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Array { name: a, data: [Boolean(True), Boolean(False), Boolean(True)], value_type: StringWrapper("boolean") }"#,
+        ));
+    }
+
+    #[test]
+    fn test_array_char_collection_declaration() {
+        let file_path = "test_files/array_char_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Array { name: a, data: [Char('a'), Char('b'), Char('c')], value_type: StringWrapper("char") }"#,
+        ));
+    }
+
+    #[test]
+    fn test_array_float_collection_declaration() {
+        let file_path = "test_files/array_float_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Array { name: "a", data: [Float(1.2300000190734863), Float(2.2300000190734863), Float(3.2300000190734863)], value_type: StringWrapper("float") }"#,
+        ));
+    }
+
+    #[test]
+    fn test_array_int_collection_declaration() {
+        let file_path = "test_files/array_int_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Array { name: "a", data: [Int(1), Int(2), Int(3)], value_type: StringWrapper("int") }"#,
+        ));
+    }
+
+    #[test]
+    fn test_boolean_variable_declaration() {
+        let file_path = "test_files/boolean_variable_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+            .assert()
+            .success()
+            .stdout(predicate::str::contains(r#"Boolean(True)"#));
+    }
+
+    #[test]
+    fn test_dict_float_int_collection_declaration() {
+        let file_path = "test_files/dict_float_int_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Dictionary { name: "a", values: [(Float(1.100000023841858), Int(1)), (Float(2.0999999046325684), Int(2)), (Float(3.9000000953674316), Int(4))], types: (StringWrapper("float"), StringWrapper("int")) }"#,
+        ));
+    }
+
+    #[test]
+    fn test_dict_int_char_collection_declaration() {
+        let file_path = "test_files/dict_int_char_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Dict { name: a, data: {1: Char('a'), 2: Char('b'), 3: Char('c')}, key_type: StringWrapper("int"), value_type: StringWrapper("char") }"#,
+        ));
+    }
+
+    #[test]
+    fn test_dict_int_string_collection_declaration() {
+        let file_path = "test_files/dict_int_string_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Dictionary { name: "a", values: [(Int(1), StringWrapper("\"one\"")), (Int(2), StringWrapper("\"two\"")), (Int(3), StringWrapper("\"three\""))], types: (StringWrapper("int"), StringWrapper("string")) }"#,
+        ));
+    }
+
+    #[test]
+    fn test_dict_string_float_collection_declaration() {
+        let file_path = "test_files/dict_string_float_collection_declaration.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            r#"Dictionary { name: "a", values: [(StringWrapper("\"one\""), Float(1.100000023841858)), (StringWrapper("\"two\""), Float(2.0999999046325684)), (StringWrapper("\"three\""), Float(3.0999999046325684))], types: (StringWrapper("string"), StringWrapper("float")) }"#,
+        ));
     }
 }

@@ -1,11 +1,29 @@
 
 use crate::base_variable::base_types::BaseTypes;
 use crate::collection::collections::{Array, Dictionary};
-use crate::node::nodes::{ASTNode, CollectionNode};
+use crate::node::nodes::ASTNode;
+use crate::collection::ARRAY_STACK;
+use crate::collection::DICTIONARY_STACK;
+//use std::sync::Mutex;
+//use lazy_static::lazy_static;
+
+fn add_to_dictionary_stack(dict: Dictionary) {
+    DICTIONARY_STACK.lock().unwrap().push(dict.clone());
+    // You can still use `dict` after this line because we cloned it
+    //println!("dict pushed to stack")
+}
+
+fn add_to_array_stack(array: Array) {
+    ARRAY_STACK.lock().unwrap().push(array.clone());
+
+}
 
 pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
-    println!("Expression: {:?}", expression);
+    //println!("Expression: {:?}", expression);
     
+    //let mut array_stack = ARRAY_STACK.lock().unwrap();
+    //let mut dict_stack = DICTIONARY_STACK.lock().unwrap();
+
     // Check if the first node is a Collection
     if let Some(node) = expression.get(0) {
         if let ASTNode::Collection(collection_node) = node {
@@ -16,14 +34,17 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
             let value_type_tuple = collection_node.value_type_tuple.as_ref().map(|(v1, v2)| (v1.clone(), v2.clone()));
 
             // Convert the tuple elements to BaseTypes
+            let single_key_type: BaseTypes = value_type_single.clone().into();
             let key_type: BaseTypes = value_type_tuple.as_ref().map_or(BaseTypes::Null, |(v1, _)| v1.clone().into());
             let value_type: BaseTypes = value_type_tuple.as_ref().map_or(BaseTypes::Null, |(_, v2)| v2.clone().into());
 
             // Print out the collected values for debugging
+            /*
             println!("Collection Name: {}", name);
             println!("Collection Type: {}", collection_type);
             println!("Single Value Type: {}", value_type_single);
             println!("Tuple Value Types: {:?}", value_type_tuple);
+            */
 
             match collection_type.as_str() {
                 "array" => {
@@ -45,8 +66,9 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                         }                 
                     }
 
-                    let array = Array::new(name.clone(), key_type.clone(), values);
-                    println!("Created new Array: {}", array.to_string());
+                    let array = Array::new(name.clone(), single_key_type.clone(), values);
+                    add_to_array_stack(array);
+                    //println!("Added array to stack");
                 }
                 "dict" => {
                     // Create a new Dictionary
@@ -167,7 +189,11 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
 
                     // Create and print the dictionary with the parsed values
                     let dict = Dictionary::new(name.clone(), key_type, value_type, values);
-                    println!("Created new Dictionary with values: {}", dict.to_string());
+                    // add dict to the stack
+                    
+                    //println!("Before pushing to stack");
+                    add_to_dictionary_stack(dict.clone());
+                    //println!("Created new Dictionary with values: {}", dict.to_string());
                 }
                 _ => {
                     println!("Collection type not recognized.");

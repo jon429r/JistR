@@ -5,11 +5,23 @@
 /// declared at runtime
 /// arrays are declared with [a, b, c]
 /// dictionaries are declared with {a=>1, b=>2, c=>3}
+///
+
+use std::sync::Mutex;
+use lazy_static::lazy_static;
+use crate::collection::collections::Array;
+use crate::collection::collections::Dictionary;
+
+lazy_static! {
+    pub static ref ARRAY_STACK: Mutex<Vec<Array>> = Mutex::new(Vec::new());
+    pub static ref DICTIONARY_STACK: Mutex<Vec<Dictionary>> = Mutex::new(Vec::new());
+}
 
 pub mod collections {
     use crate::base_variable::base_types::BaseTypes;
     //use crate::node::nodes::ASTNode;
 
+    #[derive(Clone, Debug)]
     pub struct Array {
         pub name: String,
         pub data: Vec<BaseTypes>,
@@ -17,7 +29,6 @@ pub mod collections {
     }
 
     // functions for arrays: new, push, pop, remove, get(i), set(i), to_string
-
     impl Array {
         pub fn new(name: String, value_type: BaseTypes, data: Vec<BaseTypes>) -> Array {
             Array {
@@ -75,6 +86,7 @@ pub mod collections {
         }
     }
 
+    #[derive(Clone, Debug)]
     pub struct Dictionary {
         pub name: String,
         pub values: Vec<(BaseTypes, BaseTypes)>,

@@ -1,0 +1,1 @@
+let a: dict<bool, string> = {true => "true", false => "false", true => "not false"};

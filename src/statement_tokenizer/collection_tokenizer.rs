@@ -66,7 +66,7 @@ pub mod collection_tokenizers {
             while j < chars.len() && inside_angle_brackets {
                 let char = chars[j];
                 if char == '>' {
-                    inside_angle_brackets = false;
+                    //inside_angle_brackets = false;
                     j += 1; // Move past '>'
                     break;
                 } else if char == ',' {

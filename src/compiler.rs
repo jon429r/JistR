@@ -137,7 +137,7 @@ pub mod compilers {
             let next_node = expression.get(index + 1);
 
             match node {
-                ASTNode::Variable(v) => {
+                ASTNode::Variable(_v) => {
                     let end = parse_variable_declaration(expression); // Pass mutable reference
                     if end {
                         return;
@@ -156,7 +156,7 @@ pub mod compilers {
                         break;
                     }
                 }
-                ASTNode::Function(f) => {
+                ASTNode::Function(_f) => {
                     let end = parse_function_declaration(expression); // Mutable reference
                     if end {
                         return;
@@ -168,27 +168,26 @@ pub mod compilers {
                 ASTNode::Char(c) => {
                     println!("Char: {}", c.value);
                 }
-                ASTNode::FunctionCall(f) => {
-                    let end = parse_function_call(expression); // Mutable reference
+                ASTNode::FunctionCall(_f) => {
+                    let _end = parse_function_call(expression); // Mutable reference
                     return;
                 }
-                ASTNode::VariableCall(v) => {
-                    let call_result = parse_variable_call(&node); // Mutable reference
+                ASTNode::VariableCall(_v) => {
+                    let _call_result = parse_variable_call(&node); // Mutable reference
                 }
-                ASTNode::Comment(c) => {
+                ASTNode::Comment(_c) => {
                     return;
                 }
                 ASTNode::LeftParenthesis => {
-                    let first: Option<ASTNode> = next_node.cloned();
+                    let _first: Option<ASTNode> = next_node.cloned();
 
                     let value = operation(expression); // Mutable reference
                     print!("Result: {:?}", value);
                     break;
                 }
-                ASTNode::Collection(c) => {
-                    let value = parse_collection_declaration(expression);
-                    println!("Result: {:?}", value);
-                    break;
+                ASTNode::Collection(_c) => {
+                    let _value = parse_collection_declaration(expression);
+                    return();
                 }
                 ASTNode::LeftCurly => {
                     println!("Parsing LeftCurlyNode");

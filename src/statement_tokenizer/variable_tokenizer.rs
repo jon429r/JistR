@@ -68,7 +68,7 @@ pub mod variable_tokenizers {
                                 j += 1;
                             }
 
-                            let mut next_char = expression.chars().nth(j).unwrap_or('\0');
+                            let next_char = expression.chars().nth(j).unwrap_or('\0');
                             let type_declaration = &expression[type_declaration_start..j];
 
                             if type_declaration.contains('<') || next_char == '<' {
