@@ -6,64 +6,126 @@ use std::process::exit;
 
 use crate::base_variable::base_types::BaseTypes;
 use crate::base_variable::variables::VARIABLE_STACK;
-use crate::function_map::function::Function;
+use crate::function::functions::Function;
+use crate::function::FUNCTION_STACK;
 use crate::function_map::{
     STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE, USER_FUNCTIONS,
 };
 
+fn add_to_function_stack(func: Function) {
+    FUNCTION_STACK.lock().unwrap().push(func);
+    //USER_FUNCTIONS.lock().unwrap().push(func);
+    // You can still use `dict` after this line because we cloned it
+    //println!("dict pushed to stack")
+}
+
 pub fn parse_function_declaration(expression: &Vec<ASTNode>) -> bool {
-    let mut function_name: String;
-    let parameters: Vec<Variable> = Vec::new();
-    let mut number_of_curly_braces = 0;
-    let return_type: BaseTypes = BaseTypes::Null;
+    let mut function_name: String = String::new();
+    let mut parameters: Vec<Variable> = Vec::new();
+    let mut return_type: BaseTypes = BaseTypes::Null;
+    let mut function_body: Vec<ASTNode> = Vec::new();
 
     let mut i = 0;
     while i < expression.len() {
         match &expression[i] {
             ASTNode::Function(f) => {
+                // Store function name and return type
                 function_name = f.name.clone();
-                i += 1;
-                while i < expression.len() {
-                    match &expression[i] {
-                        ASTNode::LeftCurly => number_of_curly_braces += 1,
-                        ASTNode::RightCurly => {
-                            if number_of_curly_braces == 0 {
-                                println!("Syntax Error: Unmatched closing curly brace.");
-                                return false;
+                return_type = BaseTypes::StringWrapper(f.return_type.clone());
+
+                for arg in &f.arguments {
+                    let var_type = match arg.2.clone().as_str() {
+                        "int" => BaseTypes::Int(0),
+                        "float" => BaseTypes::Float(0.0),
+                        "string" => BaseTypes::StringWrapper(String::new()),
+                        "boolean" => BaseTypes::Bool(false),
+                        "char" => BaseTypes::Char('\0'),
+                        "null" => BaseTypes::Null,
+                        _ => {
+                            println!("Syntax Error: Unrecognized type '{}'", arg.2);
+                            return false; // Exit if an unrecognized type is found
+                        }
+                    };
+
+                    let var_value = match arg.2.clone().as_str() {
+                        "int" => arg
+                            .1
+                            .parse::<i32>()
+                            .map(BaseTypes::Int)
+                            .unwrap_or(BaseTypes::Null),
+                        "float" => arg
+                            .1
+                            .parse::<f64>()
+                            .map(BaseTypes::Float)
+                            .unwrap_or(BaseTypes::Null),
+                        "string" => BaseTypes::StringWrapper(arg.1.clone()),
+                        "boolean" => arg
+                            .1
+                            .parse::<bool>()
+                            .map(BaseTypes::Bool)
+                            .unwrap_or(BaseTypes::Null),
+                        "char" => {
+                            if let Some(first_char) = arg.1.chars().next() {
+                                BaseTypes::Char(first_char)
                             } else {
-                                number_of_curly_braces -= 1;
-                                if number_of_curly_braces == 0 {
-                                    if function_name == "None" {
-                                        println!("Syntax Error: Missing function name.");
-                                        return false;
-                                    }
-                                    let function = Function::new(
-                                        function_name.clone(),
-                                        parameters.clone(),
-                                        return_type.clone(),
-                                        expression.clone(),
-                                    );
-                                    let mut user_functions = USER_FUNCTIONS.lock().unwrap();
-                                    user_functions.insert(function_name.clone(), function);
-                                    break;
-                                }
+                                BaseTypes::Null // Handle empty char case
                             }
                         }
+                        "null" => BaseTypes::Null,
                         _ => {
-                            println!(
-                                "Unhandled node in function declaration: {:?}",
-                                expression[i]
-                            );
-                            return false;
+                            println!("Syntax Error: Unrecognized type '{}'", arg.2);
+                            return false; // Exit if an unrecognized type is found
                         }
+                    };
+
+                    // Create the variable and add it to the parameters
+                    let var = Variable::new(
+                        arg.0.clone(), // Variable name
+                        var_type,      // Variable type
+                        var_value,     // Variable value
+                    );
+                    parameters.push(var);
+                }
+            }
+            ASTNode::LeftCurly => {
+                // Now we need to store the function body
+                function_body.clear(); // Clear any previous function body
+                i += 1; // Move to the next node after '{'
+
+                // Collect nodes until we reach the matching right curly brace
+                let mut curly_brace_count = 1; // We've encountered one '{'
+
+                while i < expression.len() {
+                    match &expression[i] {
+                        ASTNode::LeftCurly => curly_brace_count += 1,
+                        ASTNode::RightCurly => {
+                            curly_brace_count -= 1;
+                            if curly_brace_count == 0 {
+                                break; // Found matching '}'
+                            }
+                        }
+                        _ => {}
                     }
+                    function_body.push(expression[i].clone());
                     i += 1;
                 }
+
+                // After collecting the function body, create the Function object
+                let function = Function::new(
+                    function_name.clone(),
+                    return_type.clone(),
+                    parameters.clone(),
+                    function_body.clone(),
+                );
+                // add to FUNCTION_STACK
+                println!("Function: {}", function);
+                add_to_function_stack(function);
             }
             _ => println!("Unhandled node: {:?}", expression[i]),
         }
         i += 1;
     }
+    // Placeholder return value, should likely be more meaningful
     true
 }
 

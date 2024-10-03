@@ -91,6 +91,7 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                     let mut have_fat_arrow = false;
 
                     for node in &expression[1..] {
+                        //println!("Node: {:?}", node);
                         match node {
                             ASTNode::Int(int) => {
                                 let base_int = BaseTypes::Int(int.value);
@@ -188,13 +189,14 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                                 have_fat_arrow = true;
                             }
                             ASTNode::AssignmentOperator(_) => {}
-                            ASTNode::RightCurly => {
-                                break;
-                            }
                             ASTNode::LeftCurly => {}
+                            ASTNode::RightCurly => {
+                                //println!("found right curly");
+                            }
                             ASTNode::ArgumentSeparator => {
                                 // Continue to the next key-value pair
                             }
+                            ASTNode::SemiColon => {}
                             _ => {
                                 println!("Syntax Error: Unexpected node type:{} ", node);
                                 return false;

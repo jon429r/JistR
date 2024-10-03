@@ -216,7 +216,6 @@ pub mod tokenizers {
         if info.token != none.token {
             return info;
         }
-
         let info = read_function_declaration(expression, index);
         // Handle number or function parsing if no matches yet
         if info.token != none.token {

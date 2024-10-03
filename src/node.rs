@@ -551,14 +551,34 @@ pub mod nodes {
     #[derive(Debug, Clone, PartialEq)]
     pub struct FunctionNode {
         pub name: String,
+        pub return_type: String,
+        pub arguments: Vec<(String, String, String)>,
     }
 
     impl FunctionNode {
-        pub fn new(name: String) -> Self {
-            FunctionNode { name }
+        pub fn new(
+            name: String,
+            return_type: String,
+            arguments: Vec<(String, String, String)>,
+        ) -> Self {
+            FunctionNode {
+                name,
+                return_type: return_type,
+                arguments: arguments,
+            }
         }
         pub fn display_info(&self) {
-            println!("Function: {}", self.name);
+            let mut args_str = String::new();
+            for (i, (arg_name, arg_type, arg_value)) in self.arguments.iter().enumerate() {
+                if i > 0 {
+                    args_str.push_str(", ");
+                }
+                args_str.push_str(&format!("{}: {} = {}", arg_name, arg_type, arg_value));
+            }
+            println!(
+                "Function: {} Return Type: {}, Arguments: {}",
+                self.name, self.return_type, args_str
+            );
         }
     }
 
@@ -622,7 +642,12 @@ pub mod nodes {
             }
             TokenTypes::LeftParenthesis => ASTNode::LeftParenthesis,
             TokenTypes::RightParenthesis => ASTNode::RightParenthesis,
-            TokenTypes::Function => ASTNode::Function(FunctionNode::new(parse_info.value)),
+
+            TokenTypes::Function {
+                name,
+                return_type,
+                arguments,
+            } => ASTNode::Function(FunctionNode::new(name, return_type, arguments)),
             TokenTypes::FunctionArguments => {
                 ASTNode::FunctionArguments(FunctionArgumentsNode::new(parse_info.value))
             }

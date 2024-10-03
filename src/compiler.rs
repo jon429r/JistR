@@ -117,7 +117,10 @@ pub mod compilers {
                     }
                 }
                 _ => {
-                    println!("Syntax Error: Expected operator or number.");
+                    println!(
+                        "Syntax Error: Expected operator or number, found {:?}",
+                        next_node
+                    );
                     exit(1);
                 }
             }
@@ -129,7 +132,7 @@ pub mod compilers {
     }
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
-        //println!("Expression: {:?}", expression);
+        println!("Expression: {:?}", expression);
 
         let mut index = 0; // Start with index-based iteration
         while index < expression.len() {
@@ -137,6 +140,10 @@ pub mod compilers {
             let next_node = expression.get(index + 1);
 
             match node {
+                ASTNode::Collection(_c) => {
+                    let _value = parse_collection_declaration(expression);
+                    return;
+                }
                 ASTNode::Variable(_v) => {
                     let end = parse_variable_declaration(expression); // Pass mutable reference
                     if end {
@@ -185,10 +192,7 @@ pub mod compilers {
                     print!("Result: {:?}", value);
                     break;
                 }
-                ASTNode::Collection(_c) => {
-                    let _value = parse_collection_declaration(expression);
-                    return ();
-                }
+
                 ASTNode::LeftCurly => {
                     println!("Parsing LeftCurlyNode");
                 }

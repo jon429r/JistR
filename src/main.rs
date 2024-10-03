@@ -2,6 +2,7 @@ mod ast;
 pub mod base_variable;
 mod collection;
 pub mod compiler;
+pub mod function;
 mod function_map;
 mod node;
 pub mod token_type;
@@ -38,6 +39,7 @@ use node::nodes::ASTNode;
 use statement_tokenizer::tokenizer::tokenizers::tokenize;
 
 use crate::collection::{ARRAY_STACK, DICTIONARY_STACK};
+use crate::function::FUNCTION_STACK;
 //use lazy_static::lazy_static;
 //use std::sync::Mutex;
 
@@ -65,6 +67,13 @@ fn print_dictionary_stack() {
     let dict_stack = DICTIONARY_STACK.lock().unwrap(); // Lock the mutex
     for dict in dict_stack.iter() {
         println!("{}", dict); // Now we can iterate over the Vec
+    }
+}
+
+fn print_function_stack() {
+    let function_stack = FUNCTION_STACK.lock().unwrap(); // Lock the mutex
+    for function in function_stack.iter() {
+        println!("{}", function); // Now we can iterate over the Vec
     }
 }
 
@@ -107,7 +116,7 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                 ';' => {
                     if brace_count == 0 && bracket_count == 0 {
                         current_line.push(ch);
-                        println!("Finished statement: {}", current_line.trim());
+                        //println!("Finished statement: {}", current_line.trim());
                         finished_lines.push(current_line.clone());
                         current_line.clear();
                         number_of_lines += 1;
@@ -127,7 +136,7 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
 
     for line in finished_lines {
         let tokens = tokenize(line);
-        //println!("Tokens: {:?}", tokens);
+        println!("Tokens: {:?}", tokens);
 
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();
@@ -226,13 +235,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }*/
     //print variable stack
-    println!("\nVariable stack:");
+    println!("\nStack:");
     for variable in unsafe { VARIABLE_STACK.iter() } {
         variable.print();
     }
 
     print_array_stack();
     print_dictionary_stack();
+    print_function_stack();
     Ok(())
 }
 
