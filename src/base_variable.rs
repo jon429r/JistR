@@ -189,6 +189,8 @@ pub mod variable {
             let checked_value = match var_type {
                 BaseTypes::Int(_) => match value {
                     BaseTypes::Int(_) => value,
+                    BaseTypes::Null => BaseTypes::Int(0),
+                    BaseTypes::Float(_) => BaseTypes::Int(value.into()),
                     _ => {
                         println!(
                             "Warning: Value type mismatch for '{}'. Setting default Int value.",
@@ -200,6 +202,8 @@ pub mod variable {
                 BaseTypes::Float(_) => {
                     match value {
                         BaseTypes::Float(_) => value,
+                        BaseTypes::Null => BaseTypes::Float(0.0),
+                        BaseTypes::Int(_) => BaseTypes::Float(value.into()),
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default Float value.", name);
                             BaseTypes::Float(0.0)

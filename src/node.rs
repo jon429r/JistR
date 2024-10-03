@@ -81,6 +81,9 @@ pub mod nodes {
     }
 
     impl fmt::Display for ASTNode {
+        ///
+        ///Formats the ASTNode for printing
+        ///
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
                 ASTNode::Collection(c) => write!(f, "{:?}", c),
@@ -609,6 +612,13 @@ pub mod nodes {
         }
     }
 
+    ///
+    ///Checks to see if the parse info token is a valid ASTNode
+    ///
+    ///args: parse_info: ParseInfo, the tokenized info to be checked
+    ///
+    ///returns: ASTNode, the ASTNode that corresponds to the token
+    ///
     pub fn match_token_to_node(parse_info: ParseInfo) -> ASTNode {
         match parse_info.token {
             TokenTypes::Int => {

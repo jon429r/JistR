@@ -6,7 +6,6 @@ pub mod function;
 mod function_map;
 mod node;
 pub mod token_type;
-//mod tokenizer;
 
 mod compilers {
     pub mod collection;
@@ -56,6 +55,9 @@ fn check_file_extension(file_path: String) -> Result<bool, Box<dyn Error>> {
     }
 }
 
+///
+///This function prints the array stack for dev purposes
+///
 fn print_array_stack() {
     let array_stack = ARRAY_STACK.lock().unwrap(); // Lock the mutex
     for array in array_stack.iter() {
@@ -63,6 +65,9 @@ fn print_array_stack() {
     }
 }
 
+///
+///This function prints the dictionary stack for dev purposes
+///
 fn print_dictionary_stack() {
     let dict_stack = DICTIONARY_STACK.lock().unwrap(); // Lock the mutex
     for dict in dict_stack.iter() {
@@ -70,6 +75,9 @@ fn print_dictionary_stack() {
     }
 }
 
+///
+///This function prints the function stack for dev purposes
+///
 fn print_function_stack() {
     let function_stack = FUNCTION_STACK.lock().unwrap(); // Lock the mutex
     for function in function_stack.iter() {
@@ -77,6 +85,10 @@ fn print_function_stack() {
     }
 }
 
+///
+///This function reads the file and parses it, it was added to support multiple lines of code,
+///multiline coding statements and later multiple files
+///
 fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
 

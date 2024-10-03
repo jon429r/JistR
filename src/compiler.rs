@@ -108,7 +108,7 @@ pub mod compilers {
                     operator = ASTNode::Operator(o.clone());
                 }
                 ASTNode::Int(n2) => {
-                    if first_found == false {
+                    if !first_found {
                         left = ASTNode::Int(n2.clone());
                         first_found = true;
                     } else {
@@ -127,12 +127,12 @@ pub mod compilers {
         }
 
         let result = parse_operator(&left, &operator, &right);
-        println!("Parsed expression result: {:?}", result);
+        //println!("Parsed expression result: {:?}", result);
         return result;
     }
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
-        println!("Expression: {:?}", expression);
+        //println!("Expression: {:?}", expression);
 
         let mut index = 0; // Start with index-based iteration
         while index < expression.len() {
