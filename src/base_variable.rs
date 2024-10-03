@@ -213,6 +213,8 @@ pub mod variable {
                 BaseTypes::StringWrapper(_) => {
                     match value {
                         BaseTypes::StringWrapper(_) => value,
+                        BaseTypes::Null => BaseTypes::StringWrapper(String::new()),
+
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default String value.", name);
                             BaseTypes::StringWrapper(String::new())
@@ -222,6 +224,8 @@ pub mod variable {
                 BaseTypes::Bool(_) => {
                     match value {
                         BaseTypes::Bool(_) => value,
+                        BaseTypes::Null => BaseTypes::Bool(false),
+
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default Bool value.", name);
                             BaseTypes::Bool(false)
@@ -231,6 +235,8 @@ pub mod variable {
                 BaseTypes::Char(_) => {
                     match value {
                         BaseTypes::Char(_) => value,
+                        BaseTypes::Null => BaseTypes::Char('\0'),
+
                         _ => {
                             println!("Warning: Value type mismatch for '{}'. Setting default Char value.", name);
                             BaseTypes::Char('\0')
