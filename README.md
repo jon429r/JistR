@@ -12,9 +12,10 @@ Welcome to **Jist**, a lightweight and efficient programming language built in *
 5. [Control Structures](#control-structures)
 6. [Functions](#functions)
 7. [Error Handling](#error-handling)
-8. [Examples](#examples)
-9. [Contributing](#contributing)
-10. [License](#license)
+8. [Standard Library](#standard-library)
+9. [Examples](#examples)
+10. [Contributing](#contributing)
+11. [License](#license)
 
 ---
 
@@ -85,6 +86,16 @@ Complex Types:
 Arrays
 Dictionaries
 Custom Structs
+
+Jist will also try it's best to avoid type conflicts, meaning that the following
+
+```jist
+let a: float = 3.1;
+let b: int = a;
+```
+
+Will result in b having a value of 3 instead of throwing an error
+
 ```jist
 //Copy code
 let age: int = 25        // Integer
@@ -131,6 +142,46 @@ try {
     // code that may fail
 } catch error {
     // handle error
+```
+
+### Standard Library
+
+Jist has an extessive built in library which does even need an import.
+These are called by using standard function call syntax
+
+IE
+```jist
+let a: string = to_uppercase("hello world");
+echo(a);
+```
+Output:
+HELLO WORLD
+
+```rust
+fn max(a: f64, b: f64) -> f64  
+fn min(a: f64, b: f64) -> f64  
+fn rand() -> f64  
+fn floor(a: f64) -> f64  
+fn ceil(a: f64) -> f64  
+fn round(a: f64) -> f64  
+fn add(a: f64, b: f64) -> f64  
+fn sub(a: f64, b: f64) -> f64  
+fn mult(a: f64, b: f64) -> f64  
+fn divide(a: f64, b: f64) -> f64  
+fn echo(a: String)  
+fn abs(a: f64) -> f64  
+fn pow(a: f64, b: f64) -> f64  
+fn sqrt(a: f64) -> f64  
+fn log(a: f64, base: f64) -> f64  
+fn sin(a: f64) -> f64  
+fn cos(a: f64) -> f64  
+fn tan(a: f64) -> f64  
+fn concat(a: String, b: String) -> String  
+fn len(s: String) -> usize  
+fn to_uppercase(s: String) -> String  
+fn to_lowercase(s: String) -> String  
+fn trim(s: String) -> String  
+fn input(s: String) -> String
 ```
 
 ## Contributing
