@@ -19,6 +19,19 @@ fn add_to_function_stack(func: Function) {
     //println!("dict pushed to stack")
 }
 
+fn find_function_in_stack(function_name: &str) -> Function {
+    let function_stack = FUNCTION_STACK.lock().unwrap(); // Lock the Mutex, unwrap if the lock is successful
+
+    for function in function_stack.iter() {
+        if function_name == function.name {
+            return function.clone(); // If Function is Clone, clone it and return
+        }
+    }
+
+    eprintln!("Function not in user functions");
+    exit(1);
+}
+
 pub fn parse_function_declaration(expression: &Vec<ASTNode>) -> bool {
     let mut function_name: String = String::new();
     let mut parameters: Vec<Variable> = Vec::new();
@@ -291,6 +304,10 @@ pub fn get_function_result(
     // Function not found
 
     println!("Function call is not in any of the STD_FUNCTIONS.");
+
+    // Check if the function is a user-defined function
+    // If it is, call the function parse the ASTNodes in the body and return result
+
     exit(1);
 }
 

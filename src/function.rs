@@ -13,6 +13,7 @@ pub mod functions {
     use crate::{base_variable::variable::Variable, token_type::token_types::TokenTypes};
     use std::fmt;
 
+    #[derive(Clone, Debug)]
     pub struct Function {
         pub name: String,
         pub return_type: BaseTypes,

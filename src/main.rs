@@ -148,7 +148,7 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
 
     for line in finished_lines {
         let tokens = tokenize(line);
-        println!("Tokens: {:?}", tokens);
+        //println!("Tokens: {:?}", tokens);
 
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();
