@@ -21,9 +21,42 @@ pub mod functions {
         StringFn(fn(String)),
         DoubleStringFn(fn(String, String) -> String),
         SingleStringFn(fn(String) -> String),
+        EchoFn(fn(String)),
     }
 
     use std::any::Any;
+
+    impl PartialEq for FunctionTypes {
+        fn eq(&self, other: &Self) -> bool {
+            match (self, other) {
+                (FunctionTypes::FloatFn(f1), FunctionTypes::FloatFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                (FunctionTypes::DoubleFloatFn(f1), FunctionTypes::DoubleFloatFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                (FunctionTypes::SingleFloatFn(f1), FunctionTypes::SingleFloatFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                (FunctionTypes::NoArgFloatFn(f1), FunctionTypes::NoArgFloatFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                (FunctionTypes::StringFn(f1), FunctionTypes::StringFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                (FunctionTypes::DoubleStringFn(f1), FunctionTypes::DoubleStringFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                (FunctionTypes::SingleStringFn(f1), FunctionTypes::SingleStringFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                (FunctionTypes::EchoFn(f1), FunctionTypes::EchoFn(f2)) => {
+                    f1 as *const _ == f2 as *const _
+                }
+                _ => false, // Different types cannot be equal
+            }
+        }
+    }
 
     pub fn call_function(func: &FunctionTypes, arguments: Vec<Box<dyn Any>>) -> Box<dyn Any> {
         match func {
@@ -96,6 +129,26 @@ pub mod functions {
                     panic!("Expected exactly one argument for SingleStringFn");
                 }
             }
+
+            FunctionTypes::EchoFn(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0].downcast_ref::<String>().expect(&format!(
+                        "Expected String, found {:?}",
+                        arguments[0].type_id()
+                    ));
+
+                    f(arg.clone());
+                    println!("EchoFn called with: {}", arg);
+                    return Box::new(());
+                } else {
+                    println!("Arguments: {:?}", arguments);
+                    panic!(
+                        "Expected exactly one argument for EchoFn, but got {}",
+                        arguments.len()
+                    );
+                }
+            }
+
             _ => {
                 panic!("Function not implemented");
             }

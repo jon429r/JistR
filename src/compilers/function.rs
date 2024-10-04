@@ -8,6 +8,7 @@ use crate::base_variable::base_types::BaseTypes;
 use crate::base_variable::variables::VARIABLE_STACK;
 use crate::function::functions::call_function;
 use crate::function::functions::Function;
+use crate::function::functions::FunctionTypes;
 use crate::function::FUNCTION_STACK;
 use crate::function_map::{
     FUNCTIONS, STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE,
@@ -225,28 +226,55 @@ pub fn get_function_result(
                 *param = BaseTypes::Float(x as f64);
             }
         }
+        /*
+                // Ensure at least two parameters are provided
+                if parameter_and_value.len() < 2 {
+                    println!(
+                        "Syntax Error: Not enough parameters supplied to function, {}/2 Provided.",
+                        parameter_and_value.len()
+                    );
+                    exit(1);
+                }
+        */
 
-        // Ensure at least two parameters are provided
-        if parameter_and_value.len() < 2 {
-            println!(
-                "Syntax Error: Not enough parameters supplied to function, {}/2 Provided.",
-                parameter_and_value.len()
-            );
-            exit(1);
+        let mut params: Vec<Box<dyn Any>> = Vec::new();
+
+        if function_name == "echo" {
+            // Check if there's at least one parameter
+            if parameter_and_value.len() < 1 {
+                println!("Syntax Error: Not enough parameters supplied to function, 0/1 Provided.");
+                exit(1);
+            }
+
+            // Convert only the first parameter to a String and box it
+            let boxed_param: Box<dyn Any> = match &parameter_and_value[0] {
+                BaseTypes::Int(x) => Box::new(x.to_string()),
+                BaseTypes::Float(x) => Box::new(x.to_string()),
+                BaseTypes::StringWrapper(x) => Box::new(x.clone()),
+                BaseTypes::Bool(x) => Box::new(x.to_string()),
+                BaseTypes::Char(x) => Box::new(x.to_string()),
+                _ => panic!("Unknown parameter type"),
+            };
+
+            params.push(boxed_param);
+        } else {
+            // Call the function and return the result
+            for param in parameter_and_value.iter() {
+                println!("Parameter: {:?}", param);
+                let boxed_param: Box<dyn Any> = match param {
+                    BaseTypes::Int(x) => Box::new(*x),
+                    BaseTypes::Float(x) => Box::new(*x),
+                    BaseTypes::StringWrapper(x) => Box::new(x.clone()),
+                    BaseTypes::Bool(x) => Box::new(*x),
+                    BaseTypes::Char(x) => Box::new(*x),
+                    _ => panic!("Unknown parameter type"),
+                };
+
+                params.push(boxed_param);
+            }
         }
 
-        // Call the function and return the result
-        let param1: f64 = parameter_and_value[0]
-            .clone()
-            .try_into()
-            .expect("Failed to convert parameter 1 to f64");
-        let param2: f64 = parameter_and_value[1]
-            .clone()
-            .try_into()
-            .expect("Failed to convert parameter 2 to f64");
-
         // Create a vector of Box<dyn Any> for parameters
-        let params: Vec<Box<dyn Any>> = vec![Box::new(param1), Box::new(param2)];
 
         // Call the function and handle the result
         let result = call_function(func, params);
@@ -270,9 +298,12 @@ pub fn get_function_result(
         if result.is::<char>() {
             println!("Result of Function: {:?} of type char", result);
             return BaseTypes::Char(*result.downcast::<char>().unwrap());
+        } else {
+            return BaseTypes::Null;
         }
     }
 
+    /*
     if let Some(func) = std_double.get(function_name.as_str()) {
         println!(
             "Function call is in STD_FUNCTIONS_DOUBLE: {}",
@@ -364,6 +395,7 @@ pub fn get_function_result(
 
         return BaseTypes::Float(result);
     }
+    */
 
     // Function not found
 

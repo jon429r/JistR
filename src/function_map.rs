@@ -32,7 +32,7 @@ lazy_static::lazy_static! {
         map.insert("ceil", FunctionTypes::SingleFloatFn(FunctionMap::ceil as fn(f64) -> f64));
         map.insert("round", FunctionTypes::SingleFloatFn(FunctionMap::round as fn(f64) -> f64));
         map.insert("rand", FunctionTypes::NoArgFloatFn(FunctionMap::rand as fn() -> f64));
-        map.insert("echo", FunctionTypes::StringFn(FunctionMap::echo as fn(String)));
+        map.insert("echo", FunctionTypes::EchoFn(FunctionMap::echo as fn(String)));
         map.insert("abs", FunctionTypes::SingleFloatFn(FunctionMap::abs as fn(f64) -> f64));
         map.insert("pow", FunctionTypes::DoubleFloatFn(FunctionMap::pow as fn(f64, f64) -> f64));
         map.insert("sqrt", FunctionTypes::SingleFloatFn(FunctionMap::sqrt as fn(f64) -> f64));

@@ -1,1 +1,2 @@
 let c: int = add(1, 2);
+echo(c);
