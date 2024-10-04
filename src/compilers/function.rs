@@ -160,8 +160,10 @@ pub fn parse_function_call(expression: &Vec<ASTNode>) -> BaseTypes {
                     ASTNode::FunctionCallArguments(_) => {
                         parameter_and_value = parse_function_call_arguments(&expression[i + 1..]);
                     }
+                    ASTNode::RightParenthesis => {}
                     ASTNode::LeftParenthesis => {
                         parameter_and_value = parse_function_call_arguments(&expression[i + 1..]);
+                        break;
                     }
                     /*ASTNode::VariableCall(v) => {
                                             let mut arg1_value = BaseTypes::StringWrapper(String::new());
@@ -218,7 +220,7 @@ pub fn get_function_result(
     };
 
     if let Some(func) = std_functions.get(function_name.as_str()) {
-        println!("Function call is in STD_FUNCTIONS: {}", function_name);
+        //println!("Function call is in STD_FUNCTIONS: {}", function_name);
 
         // Convert Int to Float for the first two parameters
         for param in parameter_and_value.iter_mut().take(2) {
@@ -260,7 +262,7 @@ pub fn get_function_result(
         } else {
             // Call the function and return the result
             for param in parameter_and_value.iter() {
-                println!("Parameter: {:?}", param);
+                //println!("Parameter: {:?}", param);
                 let boxed_param: Box<dyn Any> = match param {
                     BaseTypes::Int(x) => Box::new(*x),
                     BaseTypes::Float(x) => Box::new(*x),
@@ -280,23 +282,23 @@ pub fn get_function_result(
         let result = call_function(func, params);
         // convert the result to the appropriate type
         if result.is::<f64>() {
-            println!("Result of Function: {:?} of type float", result);
+            //println!("Result of Function: {:?} of type float", result);
             return BaseTypes::Float(*result.downcast::<f64>().unwrap());
         }
         if result.is::<i32>() {
-            println!("Result of Function: {:?} of type int", result);
+            //println!("Result of Function: {:?} of type int", result);
             return BaseTypes::Int(*result.downcast::<i32>().unwrap());
         }
         if result.is::<String>() {
-            println!("Result of Function: {:?} of type string", result);
+            //println!("Result of Function: {:?} of type string", result);
             return BaseTypes::StringWrapper(result.downcast::<String>().unwrap().to_string());
         }
         if result.is::<bool>() {
-            println!("Result of Function: {:?} of type bool", result);
+            //println!("Result of Function: {:?} of type bool", result);
             return BaseTypes::Bool(*result.downcast::<bool>().unwrap());
         }
         if result.is::<char>() {
-            println!("Result of Function: {:?} of type char", result);
+            //println!("Result of Function: {:?} of type char", result);
             return BaseTypes::Char(*result.downcast::<char>().unwrap());
         } else {
             return BaseTypes::Null;

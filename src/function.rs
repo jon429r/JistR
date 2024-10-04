@@ -65,7 +65,7 @@ pub mod functions {
                     let arg1 = arguments[0].downcast_ref::<f64>().expect("Expected f64");
                     let arg2 = arguments[1].downcast_ref::<f64>().expect("Expected f64");
                     let result = f(*arg1, *arg2);
-                    println!("DoubleFn result: {}", result);
+                    //println!("DoubleFn result: {}", result);
                     return Box::new(result);
                 } else {
                     panic!("Expected exactly two arguments for DoubleFn");
@@ -75,7 +75,7 @@ pub mod functions {
                 if arguments.len() == 1 {
                     let arg = arguments[0].downcast_ref::<f64>().expect("Expected f64");
                     let result = f(*arg);
-                    println!("SingleFn result: {}", result);
+                    //println!("SingleFn result: {}", result);
                     return Box::new(result);
                 } else {
                     panic!("Expected exactly one argument for SingleFn");
@@ -84,7 +84,7 @@ pub mod functions {
             FunctionTypes::NoArgFloatFn(f) => {
                 if arguments.is_empty() {
                     let result = f();
-                    println!("NoArgFn result: {}", result);
+                    //println!("NoArgFn result: {}", result);
                     return Box::new(result);
                 } else {
                     panic!("Expected no arguments for NoArgFn");
@@ -96,7 +96,7 @@ pub mod functions {
                         .downcast_ref::<String>()
                         .expect("Expected String");
                     f(arg.clone());
-                    println!("StringFn called with: {}", arg);
+                    //println!("StringFn called with: {}", arg);
                     return Box::new(());
                 } else {
                     panic!("Expected exactly one argument for StringFn");
@@ -111,7 +111,7 @@ pub mod functions {
                         .downcast_ref::<String>()
                         .expect("Expected String");
                     let result = f(arg1.clone(), arg2.clone());
-                    println!("DoubleStringFn result: {}", result);
+                    //println!("DoubleStringFn result: {}", result);
                     return Box::new(result);
                 } else {
                     panic!("Expected exactly two arguments for DoubleStringFn");
@@ -123,7 +123,7 @@ pub mod functions {
                         .downcast_ref::<String>()
                         .expect("Expected String");
                     let result = f(arg.clone());
-                    println!("SingleStringFn result: {}", result);
+                    //println!("SingleStringFn result: {}", result);
                     return Box::new(result);
                 } else {
                     panic!("Expected exactly one argument for SingleStringFn");
@@ -138,7 +138,7 @@ pub mod functions {
                     ));
 
                     f(arg.clone());
-                    println!("EchoFn called with: {}", arg);
+                    //println!("EchoFn called with: {}", arg);
                     return Box::new(());
                 } else {
                     println!("Arguments: {:?}", arguments);

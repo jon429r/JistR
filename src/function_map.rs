@@ -158,7 +158,7 @@ impl FunctionMap {
     }
 
     fn echo(a: String) {
-        print!("String: {:?}", a);
+        print!("{}", a);
         //println!("After echo");
     }
 

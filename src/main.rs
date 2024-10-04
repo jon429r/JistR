@@ -4,6 +4,7 @@ mod collection;
 pub mod compiler;
 pub mod function;
 mod function_map;
+pub mod highlighter;
 mod node;
 pub mod token_type;
 
@@ -91,6 +92,9 @@ fn print_function_stack() {
 ///
 fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
+
+    //let highlighted_code = highlighter::highlight_code(&contents);
+    //highlighter::display_highlighted_code(highlighted_code);
 
     let lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
     let mut brace_count = 0;
@@ -247,7 +251,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }*/
     //print variable stack
-    println!("\nStack:");
+    println!("\n\nStack:");
     for variable in unsafe { VARIABLE_STACK.iter() } {
         variable.print();
     }

@@ -8,8 +8,10 @@ name = "jist"
 path = "src/main.rs"
 
 [dependencies]
+crossterm = "0.26"
 rand = "0.8"
 lazy_static = "1.4"
+ansi_term = "0.12"
 
 [dev-dependencies]
 assert_cmd = "2.0"

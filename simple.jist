@@ -1,2 +1,2 @@
-let a: string = input("Say hello to Jist!");
+let a: string = to_uppercase("hello");
 echo(a);
