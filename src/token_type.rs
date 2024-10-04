@@ -5,6 +5,9 @@
 
 pub mod token_types {
 
+    use crate::base_variable::base_types::BaseTypes;
+    use crate::base_variable::variable::Variable;
+
     #[derive(Debug, Clone)]
     pub enum TokenTypes {
         /*
@@ -47,7 +50,11 @@ pub mod token_types {
         /*
          * func
          */
-        Function,
+        Function {
+            name: String,
+            return_type: String,
+            arguments: Vec<(String, String, String)>,
+        },
         /*
          * funcname()
          */
@@ -139,7 +146,6 @@ pub mod token_types {
                 (TokenTypes::AssignmentOperator, TokenTypes::AssignmentOperator) => true,
                 (TokenTypes::LeftParenthesis, TokenTypes::LeftParenthesis) => true,
                 (TokenTypes::RightParenthesis, TokenTypes::RightParenthesis) => true,
-                (TokenTypes::Function, TokenTypes::Function) => true,
                 (TokenTypes::FunctionCall, TokenTypes::FunctionCall) => true,
                 (TokenTypes::VariableCall, TokenTypes::VariableCall) => true,
                 (TokenTypes::ArgumentSeparator, TokenTypes::ArgumentSeparator) => true,
@@ -151,17 +157,30 @@ pub mod token_types {
                 (TokenTypes::Variable, TokenTypes::Variable) => true,
 
                 (
+                    TokenTypes::Function {
+                        name: ref name_a,
+                        return_type: ref return_a,
+                        arguments: ref args_a,
+                    },
+                    TokenTypes::Function {
+                        name: ref name_b,
+                        return_type: ref return_b,
+                        arguments: ref args_b,
+                    },
+                ) => name_a == name_b && return_a == return_b,
+
+                (
                     TokenTypes::Collection {
                         name: ref name_a,
                         collection_type: ref type_a,
                         stored_value_type_single: ref stored_a,
-                        stored_value_type_tuple: ref tuple_a,
+                        stored_value_type_tuple: ref _tuple_a,
                     },
                     TokenTypes::Collection {
                         name: ref name_b,
                         collection_type: ref type_b,
                         stored_value_type_single: ref stored_b,
-                        stored_value_type_tuple: ref tuple_b,
+                        stored_value_type_tuple: ref _tuple_b,
                     },
                 ) => name_a == name_b && type_a == type_b && stored_a == stored_b,
 
@@ -181,6 +200,18 @@ pub mod token_types {
     impl TokenTypes {
         pub fn to_string(&self) -> String {
             match self {
+                TokenTypes::Function {
+                    name,
+                    return_type,
+                    arguments,
+                } => {
+                    let mut arguments_str = String::new();
+                    for arg in arguments {
+                        arguments_str.push_str(&format!("{:?} ", arg));
+                    }
+
+                    format!("Function: {} {} {:?}", name, return_type, arguments_str)
+                }
                 TokenTypes::FatArrow => "FatArrow".to_string(),
                 TokenTypes::FunctionCallArguments => "FunctionCallArguments".to_string(),
                 TokenTypes::Float => "Float".to_string(),
@@ -194,7 +225,6 @@ pub mod token_types {
                 TokenTypes::Bool => "Bool".to_string(),
                 TokenTypes::LeftParenthesis => "LeftParenthesis".to_string(),
                 TokenTypes::RightParenthesis => "RightParenthesis".to_string(),
-                TokenTypes::Function => "Function".to_string(),
                 TokenTypes::FunctionCall => "FunctionCall".to_string(),
                 TokenTypes::Variable => "Variable".to_string(),
                 TokenTypes::VariableCall => "VariableCall".to_string(),

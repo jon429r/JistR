@@ -83,7 +83,7 @@ String
 Boolean
 Complex Types:
 Arrays
-Hashmaps
+Dictionaries
 Custom Structs
 ```jist
 //Copy code
@@ -118,7 +118,7 @@ while (condition) {
 
 ```jist
 //Copy code
-func add(a: Integer, b: Integer) -> Integer {
+func add(a: int, b: int) -> int {
     return a + b;
 ```
 ### Error Handling
@@ -132,16 +132,7 @@ try {
 } catch error {
     // handle error
 ```
-### Examples
 
-```jist
-Copy code
-func factorial(n: Integer) -> Integer {
-    if n <= 1 {
-        return 1
-    }
-    return n * factorial(n - 1)
-```
 ## Contributing
 
 We welcome contributions! Please follow these steps if you would like to contribute:

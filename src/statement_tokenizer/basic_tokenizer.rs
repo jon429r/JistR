@@ -7,6 +7,8 @@ pub mod basic_tokenizers {
         let mut boolean: String = String::new();
         let bool_compare1 = "True";
         let bool_compare2 = "False";
+        let bool_compare3 = "true";
+        let bol_compare4 = "false";
 
         while j < expression.len() {
             if let Some(char) = expression.chars().nth(j) {
@@ -21,7 +23,11 @@ pub mod basic_tokenizers {
             }
         }
 
-        if boolean == bool_compare1 || boolean == bool_compare2 {
+        if boolean == bool_compare1
+            || boolean == bool_compare2
+            || boolean == bool_compare3
+            || boolean == bol_compare4
+        {
             return ParseInfo::new(TokenTypes::Bool, (j - index).try_into().unwrap(), boolean);
         }
 

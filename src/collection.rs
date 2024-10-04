@@ -1,3 +1,6 @@
+use crate::collection::collections::Array;
+use crate::collection::collections::Dictionary;
+use lazy_static::lazy_static;
 /// this file will store code for collections
 /// there are 2 types, arrays and dictoinaries
 /// arrays are unordered collections of variable amounts, can store one type of data declared at initialization
@@ -5,19 +8,40 @@
 /// declared at runtime
 /// arrays are declared with [a, b, c]
 /// dictionaries are declared with {a=>1, b=>2, c=>3}
+///
+use std::sync::Mutex;
+
+lazy_static! {
+    pub static ref ARRAY_STACK: Mutex<Vec<Array>> = Mutex::new(Vec::new());
+    pub static ref DICTIONARY_STACK: Mutex<Vec<Dictionary>> = Mutex::new(Vec::new());
+}
 
 pub mod collections {
     use crate::base_variable::base_types::BaseTypes;
     //use crate::node::nodes::ASTNode;
+    use std::fmt;
 
+    #[derive(Clone, Debug)]
     pub struct Array {
         pub name: String,
         pub data: Vec<BaseTypes>,
         pub value_type: BaseTypes,
     }
 
-    // functions for arrays: new, push, pop, remove, get(i), set(i), to_string
+    impl fmt::Display for Array {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "{}: Array<{}> = [", self.name, self.value_type)?;
+            for (i, value) in self.data.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{}", value)?;
+            }
+            write!(f, "]")
+        }
+    }
 
+    // functions for arrays: new, push, pop, remove, get(i), set(i), to_string
     impl Array {
         pub fn new(name: String, value_type: BaseTypes, data: Vec<BaseTypes>) -> Array {
             Array {
@@ -36,11 +60,11 @@ pub mod collections {
         }
 
         pub fn append(&mut self, value: &mut Vec<BaseTypes>) {
-            //add to end 
+            //add to end
             self.data.append(value);
         }
 
-        pub fn remove(&mut self, index: usize){
+        pub fn remove(&mut self, index: usize) {
             if index < self.data.len() {
                 Some(self.data.remove(index));
             } else {
@@ -59,32 +83,41 @@ pub mod collections {
                 None
             }
         }
-
-        pub fn to_string(&self) -> String {
-            let mut output = String::new();
-            output.push_str(&self.name);
-            output.push_str(" = [");
-            for (i, value) in self.data.iter().enumerate() {
-                if i > 0 {
-                    output.push_str(", ");
-                }
-                output.push_str(&value.to_string());
-            }
-            output.push_str("]");
-            output
-        }
     }
 
+    #[derive(Clone, Debug)]
     pub struct Dictionary {
         pub name: String,
         pub values: Vec<(BaseTypes, BaseTypes)>,
         pub types: (BaseTypes, BaseTypes),
     }
 
+    impl fmt::Display for Dictionary {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(
+                f,
+                "{}: Dict<{}, {}> = {{",
+                self.name, self.types.0, self.types.1
+            )?;
+            for (i, (key, value)) in self.values.iter().enumerate() {
+                if i > 0 {
+                    write!(f, ", ")?;
+                }
+                write!(f, "\"{}\" => {}", key, value)?;
+            }
+            write!(f, "}}")
+        }
+    }
+
     // functions for dictionaries: new, add, remove, get, set(key), keys, values, to_string
 
     impl Dictionary {
-        pub fn new(name: String, key_type: BaseTypes, value_type: BaseTypes, values: Vec<(BaseTypes, BaseTypes)>) -> Dictionary {
+        pub fn new(
+            name: String,
+            key_type: BaseTypes,
+            value_type: BaseTypes,
+            values: Vec<(BaseTypes, BaseTypes)>,
+        ) -> Dictionary {
             Dictionary {
                 name,
                 values,
@@ -143,20 +176,21 @@ pub mod collections {
             self.values.iter().map(|(_, v)| v).collect()
         }
 
-        pub fn to_string(&self) -> String {
-            let mut output = String::new();
-            output.push_str(&self.name);
-            output.push_str(" = {");
-            for (i, (key, value)) in self.values.iter().enumerate() {
-                if i > 0 {
-                    output.push_str(", ");
+        /*pub fn to_string(&self) -> String {
+                    let mut output = String::new();
+                    output.push_str(&self.name);
+                    output.push_str(" = {");
+                    for (i, (key, value)) in self.values.iter().enumerate() {
+                        if i > 0 {
+                            output.push_str(", ");
+                        }
+                        output.push_str(&key.to_string());
+                        output.push_str("=>");
+                        output.push_str(&value.to_string());
+                    }
+                    output.push_str("}");
+                    output
                 }
-                output.push_str(&key.to_string());
-                output.push_str("=>");
-                output.push_str(&value.to_string());
-            }
-            output.push_str("}");
-            output
-        }
+        */
     }
 }

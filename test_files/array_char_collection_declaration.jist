@@ -1,0 +1,1 @@
+let a: array<char> = ['a', 'b', 'c'];

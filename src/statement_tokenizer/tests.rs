@@ -105,7 +105,6 @@ mod tokenizer_tests {
         assert_eq!(result, expected);
     }
 
-    /*
     #[test]
     fn test_tokenize_collection_assignment_dict_bool_string() {
         // Input for testing
@@ -123,7 +122,7 @@ mod tokenizer_tests {
                     stored_value_type_single: "".to_string(),
                     stored_value_type_tuple: ("bool".to_string(), "string".to_string()),
                 },
-                chars_read: 24,
+                chars_read: 26,
                 value: "name: c collection_type: dict<bool, string>".to_string(),
             },
             ParseInfo {
@@ -204,7 +203,7 @@ mod tokenizer_tests {
                     stored_value_type_single: "".to_string(),
                     stored_value_type_tuple: ("char".to_string(), "float".to_string()),
                 },
-                chars_read: 23,
+                chars_read: 25,
                 value: "name: b collection_type: dict<char, float>".to_string(),
             },
             ParseInfo {
@@ -287,7 +286,6 @@ mod tokenizer_tests {
         // Assert the result matches the expected output
         assert_eq!(result, expected);
     }
-    */
 
     #[test]
     fn test_tokenize_variable_declaration_int() {
@@ -751,43 +749,4 @@ mod tokenizer_tests {
         let result = tokenizers::tokenize(input);
         assert_eq!(result, expected);
     }
-
-    /*
-    #[test]
-    fn test_tokenize_array_collection_declaration() {
-        let input = "let a: array<int> = [1, 2, 3];".to_string();
-        let expected = vec![
-            ParseInfo {
-                token: TokenTypes::Collection,
-                chars_read: 1,
-                value: "a".to_string(),
-            },
-            ParseInfo {
-                token: TokenTypes::Array,
-                chars_read: 10,
-                value: "array".to_string(),
-            },
-            ParseInfo {
-                token: TokenTypes::ArrayType,
-                chars_read: 3,
-                value: "int".to_string(),
-            },
-            ParseInfo {
-                token: TokenTypes::AssignmentOperator,
-                chars_read: 1,
-                value: "=".to_string(),
-            },
-            ParseInfo {
-                token: TokenTypes::Collection,
-                chars_read: 7,
-                value: "[1, 2, 3]".to_string(),
-            },
-            ParseInfo {
-                token: TokenTypes::SemiColon,
-                chars_read: 1,
-                value: ";".to_string(),
-            },
-        ];
-    }
-    */
 }

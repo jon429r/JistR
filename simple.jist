@@ -1,1 +1,3 @@
-let NumNum: dict<int, string> = {1 => "one", 2 => "two", 3 => "three"};
+let a: int = 1;
+let b: int = 2;
+let c: int = add(a, b);

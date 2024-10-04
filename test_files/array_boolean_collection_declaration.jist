@@ -1,0 +1,1 @@
+let a: array<bool> = [ true, false, true ];
