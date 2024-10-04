@@ -6,11 +6,14 @@ use std::process::exit;
 
 use crate::base_variable::base_types::BaseTypes;
 use crate::base_variable::variables::VARIABLE_STACK;
+use crate::function::functions::call_function;
 use crate::function::functions::Function;
 use crate::function::FUNCTION_STACK;
 use crate::function_map::{
-    STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE, USER_FUNCTIONS,
+    FUNCTIONS, STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE,
+    USER_FUNCTIONS,
 };
+use std::any::Any;
 
 fn add_to_function_stack(func: Function) {
     FUNCTION_STACK.lock().unwrap().push(func);
@@ -208,6 +211,67 @@ pub fn get_function_result(
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(),
     };
+    let std_functions = match FUNCTIONS.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+
+    if let Some(func) = std_functions.get(function_name.as_str()) {
+        println!("Function call is in STD_FUNCTIONS: {}", function_name);
+
+        // Convert Int to Float for the first two parameters
+        for param in parameter_and_value.iter_mut().take(2) {
+            if let BaseTypes::Int(x) = *param {
+                *param = BaseTypes::Float(x as f64);
+            }
+        }
+
+        // Ensure at least two parameters are provided
+        if parameter_and_value.len() < 2 {
+            println!(
+                "Syntax Error: Not enough parameters supplied to function, {}/2 Provided.",
+                parameter_and_value.len()
+            );
+            exit(1);
+        }
+
+        // Call the function and return the result
+        let param1: f64 = parameter_and_value[0]
+            .clone()
+            .try_into()
+            .expect("Failed to convert parameter 1 to f64");
+        let param2: f64 = parameter_and_value[1]
+            .clone()
+            .try_into()
+            .expect("Failed to convert parameter 2 to f64");
+
+        // Create a vector of Box<dyn Any> for parameters
+        let params: Vec<Box<dyn Any>> = vec![Box::new(param1), Box::new(param2)];
+
+        // Call the function and handle the result
+        let result = call_function(func, params);
+        // convert the result to the appropriate type
+        if result.is::<f64>() {
+            println!("Result of Function: {:?} of type float", result);
+            return BaseTypes::Float(*result.downcast::<f64>().unwrap());
+        }
+        if result.is::<i32>() {
+            println!("Result of Function: {:?} of type int", result);
+            return BaseTypes::Int(*result.downcast::<i32>().unwrap());
+        }
+        if result.is::<String>() {
+            println!("Result of Function: {:?} of type string", result);
+            return BaseTypes::StringWrapper(result.downcast::<String>().unwrap().to_string());
+        }
+        if result.is::<bool>() {
+            println!("Result of Function: {:?} of type bool", result);
+            return BaseTypes::Bool(*result.downcast::<bool>().unwrap());
+        }
+        if result.is::<char>() {
+            println!("Result of Function: {:?} of type char", result);
+            return BaseTypes::Char(*result.downcast::<char>().unwrap());
+        }
+    }
 
     if let Some(func) = std_double.get(function_name.as_str()) {
         println!(

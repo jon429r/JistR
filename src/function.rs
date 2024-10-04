@@ -13,6 +13,95 @@ pub mod functions {
     use crate::{base_variable::variable::Variable, token_type::token_types::TokenTypes};
     use std::fmt;
 
+    pub enum FunctionTypes {
+        FloatFn(fn(f64)),
+        DoubleFloatFn(fn(f64, f64) -> f64),
+        SingleFloatFn(fn(f64) -> f64),
+        NoArgFloatFn(fn() -> f64),
+        StringFn(fn(String)),
+        DoubleStringFn(fn(String, String) -> String),
+        SingleStringFn(fn(String) -> String),
+    }
+
+    use std::any::Any;
+
+    pub fn call_function(func: &FunctionTypes, arguments: Vec<Box<dyn Any>>) -> Box<dyn Any> {
+        match func {
+            FunctionTypes::DoubleFloatFn(f) => {
+                if arguments.len() == 2 {
+                    let arg1 = arguments[0].downcast_ref::<f64>().expect("Expected f64");
+                    let arg2 = arguments[1].downcast_ref::<f64>().expect("Expected f64");
+                    let result = f(*arg1, *arg2);
+                    println!("DoubleFn result: {}", result);
+                    return Box::new(result);
+                } else {
+                    panic!("Expected exactly two arguments for DoubleFn");
+                }
+            }
+            FunctionTypes::SingleFloatFn(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0].downcast_ref::<f64>().expect("Expected f64");
+                    let result = f(*arg);
+                    println!("SingleFn result: {}", result);
+                    return Box::new(result);
+                } else {
+                    panic!("Expected exactly one argument for SingleFn");
+                }
+            }
+            FunctionTypes::NoArgFloatFn(f) => {
+                if arguments.is_empty() {
+                    let result = f();
+                    println!("NoArgFn result: {}", result);
+                    return Box::new(result);
+                } else {
+                    panic!("Expected no arguments for NoArgFn");
+                }
+            }
+            FunctionTypes::StringFn(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0]
+                        .downcast_ref::<String>()
+                        .expect("Expected String");
+                    f(arg.clone());
+                    println!("StringFn called with: {}", arg);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly one argument for StringFn");
+                }
+            }
+            FunctionTypes::DoubleStringFn(f) => {
+                if arguments.len() == 2 {
+                    let arg1 = arguments[0]
+                        .downcast_ref::<String>()
+                        .expect("Expected String");
+                    let arg2 = arguments[1]
+                        .downcast_ref::<String>()
+                        .expect("Expected String");
+                    let result = f(arg1.clone(), arg2.clone());
+                    println!("DoubleStringFn result: {}", result);
+                    return Box::new(result);
+                } else {
+                    panic!("Expected exactly two arguments for DoubleStringFn");
+                }
+            }
+            FunctionTypes::SingleStringFn(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0]
+                        .downcast_ref::<String>()
+                        .expect("Expected String");
+                    let result = f(arg.clone());
+                    println!("SingleStringFn result: {}", result);
+                    return Box::new(result);
+                } else {
+                    panic!("Expected exactly one argument for SingleStringFn");
+                }
+            }
+            _ => {
+                panic!("Function not implemented");
+            }
+        }
+    }
+
     #[derive(Clone, Debug)]
     pub struct Function {
         pub name: String,

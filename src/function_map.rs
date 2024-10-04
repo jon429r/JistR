@@ -1,46 +1,50 @@
 pub mod functions {
-    use crate::function_map::function::Function;
+    use crate::function::functions::Function;
 
     pub static mut FUNCTIONSTACK: Vec<Function> = Vec::new();
 }
 
-pub mod function {
-    use crate::base_variable::base_types::BaseTypes;
-    use crate::base_variable::variable::Variable;
-    use crate::node::nodes::ASTNode;
+use crate::base_variable::base_types::BaseTypes;
+use crate::base_variable::variable::Variable;
+use crate::function::functions::Function;
 
-    pub struct Function {
-        pub name: String,
-        pub arguments: Vec<Variable>,
-        pub return_type: BaseTypes,
-        pub body: Vec<ASTNode>,
-    }
-
-    impl Function {
-        pub fn new(
-            name: String,
-            arguments: Vec<Variable>,
-            return_type: BaseTypes,
-            body: Vec<ASTNode>,
-        ) -> Function {
-            Function {
-                name,
-                arguments,
-                return_type,
-                body,
-            }
-        }
-    }
-}
+use crate::function::functions::FunctionTypes;
+use crate::node::nodes::ASTNode;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use function::Function; // For thread safety
-
 lazy_static::lazy_static! {
     pub static ref USER_FUNCTIONS: Mutex<HashMap<String, Function>> = {
         let map = HashMap::new();
+        map.into()
+    };
+
+    pub static ref FUNCTIONS: Mutex<HashMap<&'static str, FunctionTypes>> = {
+        let mut map = HashMap::new();
+        map.insert("max", FunctionTypes::DoubleFloatFn(FunctionMap::max as fn(f64, f64) -> f64));
+        map.insert("min", FunctionTypes::DoubleFloatFn(FunctionMap::min as fn(f64, f64) -> f64));
+        map.insert("add", FunctionTypes::DoubleFloatFn(FunctionMap::add as fn(f64, f64) -> f64));
+        map.insert("sub", FunctionTypes::DoubleFloatFn(FunctionMap::sub as fn(f64, f64) -> f64));
+        map.insert("mult", FunctionTypes::DoubleFloatFn(FunctionMap::mult as fn(f64, f64) -> f64));
+        map.insert("divide", FunctionTypes::DoubleFloatFn(FunctionMap::divide as fn(f64, f64) -> f64));
+        map.insert("floor", FunctionTypes::SingleFloatFn(FunctionMap::floor as fn(f64) -> f64));
+        map.insert("ceil", FunctionTypes::SingleFloatFn(FunctionMap::ceil as fn(f64) -> f64));
+        map.insert("round", FunctionTypes::SingleFloatFn(FunctionMap::round as fn(f64) -> f64));
+        map.insert("rand", FunctionTypes::NoArgFloatFn(FunctionMap::rand as fn() -> f64));
+        map.insert("echo", FunctionTypes::StringFn(FunctionMap::echo as fn(String)));
+        map.insert("abs", FunctionTypes::SingleFloatFn(FunctionMap::abs as fn(f64) -> f64));
+        map.insert("pow", FunctionTypes::DoubleFloatFn(FunctionMap::pow as fn(f64, f64) -> f64));
+        map.insert("sqrt", FunctionTypes::SingleFloatFn(FunctionMap::sqrt as fn(f64) -> f64));
+        map.insert("log", FunctionTypes::DoubleFloatFn(FunctionMap::log as fn(f64, f64) -> f64));
+        map.insert("sin", FunctionTypes::SingleFloatFn(FunctionMap::sin as fn(f64) -> f64));
+        map.insert("cos", FunctionTypes::SingleFloatFn(FunctionMap::cos as fn(f64) -> f64));
+        map.insert("tan", FunctionTypes::SingleFloatFn(FunctionMap::tan as fn(f64) -> f64));
+        map.insert("concat", FunctionTypes::DoubleStringFn(FunctionMap::concat as fn(String, String) -> String));
+        //map.insert("len", FunctionTypes::SingleFn(FunctionMap::len as fn(String) -> usize));
+        map.insert("to_uppercase", FunctionTypes::SingleStringFn(FunctionMap::to_uppercase as fn(String) -> String));
+        map.insert("to_lowercase", FunctionTypes::SingleStringFn(FunctionMap::to_lowercase as fn(String) -> String));
+        map.insert("trim", FunctionTypes::SingleStringFn(FunctionMap::trim as fn(String) -> String));
         map.into()
     };
 
@@ -88,6 +92,18 @@ enum FunctionMap {
     Mult,
     Divide,
     Echo,
+    Abs,
+    Pow,
+    Sqrt,
+    Log,
+    Sin,
+    Cos,
+    Tan,
+    Concat,
+    Len,
+    ToUppercase,
+    ToLowercase,
+    Trim,
 }
 
 impl FunctionMap {
@@ -142,5 +158,53 @@ impl FunctionMap {
     fn echo(a: String) {
         print!("String: {:?}", a);
         //println!("After echo");
+    }
+
+    fn abs(a: f64) -> f64 {
+        a.abs()
+    }
+
+    fn pow(a: f64, b: f64) -> f64 {
+        a.powf(b)
+    }
+
+    fn sqrt(a: f64) -> f64 {
+        a.sqrt()
+    }
+
+    fn log(a: f64, base: f64) -> f64 {
+        a.log(base)
+    }
+
+    fn sin(a: f64) -> f64 {
+        a.sin()
+    }
+
+    fn cos(a: f64) -> f64 {
+        a.cos()
+    }
+
+    fn tan(a: f64) -> f64 {
+        a.tan()
+    }
+
+    fn concat(a: String, b: String) -> String {
+        [a, b].concat()
+    }
+
+    fn len(s: String) -> usize {
+        s.len()
+    }
+
+    fn to_uppercase(s: String) -> String {
+        s.to_uppercase()
+    }
+
+    fn to_lowercase(s: String) -> String {
+        s.to_lowercase()
+    }
+
+    fn trim(s: String) -> String {
+        s.trim().to_string()
     }
 }
