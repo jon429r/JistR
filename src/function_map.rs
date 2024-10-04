@@ -45,6 +45,7 @@ lazy_static::lazy_static! {
         map.insert("to_uppercase", FunctionTypes::SingleStringFn(FunctionMap::to_uppercase as fn(String) -> String));
         map.insert("to_lowercase", FunctionTypes::SingleStringFn(FunctionMap::to_lowercase as fn(String) -> String));
         map.insert("trim", FunctionTypes::SingleStringFn(FunctionMap::trim as fn(String) -> String));
+        map.insert("input", FunctionTypes::SingleStringFn(FunctionMap::input as fn(String) -> String));
         map.into()
     };
 
@@ -104,6 +105,7 @@ enum FunctionMap {
     ToUppercase,
     ToLowercase,
     Trim,
+    Input,
 }
 
 impl FunctionMap {
@@ -206,5 +208,12 @@ impl FunctionMap {
 
     fn trim(s: String) -> String {
         s.trim().to_string()
+    }
+
+    fn input(s: String) -> String {
+        print!("{}", s);
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input).unwrap();
+        return input;
     }
 }

@@ -1,2 +1,2 @@
-let c: int = add(1, 2);
-echo(c);
+let a: string = input("Say hello to Jist!");
+echo(a);
