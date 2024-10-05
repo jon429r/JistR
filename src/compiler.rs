@@ -4,6 +4,7 @@
 */
 pub mod compilers {
     use crate::compilers::collection::*;
+    use crate::compilers::conditional::conditional_compilers::compile_if_elif_else_statement;
     use crate::compilers::function::*;
 
     use crate::compilers::variable::parse_variable_call;
@@ -73,6 +74,83 @@ pub mod compilers {
                         }
                     }
                 }
+                ">" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value > right_val.value;
+                        let result = IntNode {
+                            value: result as i32,
+                        };
+                        return ASTNode::Int(result);
+                    }
+                }
+                "<" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value < right_val.value;
+                        let result = IntNode {
+                            value: result as i32,
+                        };
+                        return ASTNode::Int(result);
+                    }
+                }
+                ">=" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value >= right_val.value;
+                        let result = IntNode {
+                            value: result as i32,
+                        };
+                        return ASTNode::Int(result);
+                    }
+                }
+                "<=" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value <= right_val.value;
+                        let result = IntNode {
+                            value: result as i32,
+                        };
+                        return ASTNode::Int(result);
+                    }
+                }
+                "==" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value == right_val.value;
+                        let result = IntNode {
+                            value: result as i32,
+                        };
+                        return ASTNode::Int(result);
+                    }
+                }
+                "!=" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value != right_val.value;
+                        let result = IntNode {
+                            value: result as i32,
+                        };
+                        return ASTNode::Int(result);
+                    }
+                }
+                "!" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = !(left_val.value != 0 && right_val.value != 0);
+                        let result = IntNode {
+                            value: result as i32,
+                        };
+                        return ASTNode::Int(result);
+                    }
+                }
+                "++" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value + 1;
+                        let result = IntNode { value: result };
+                        return ASTNode::Int(result);
+                    }
+                }
+                "--" => {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                        let result = left_val.value - 1;
+                        let result = IntNode { value: result };
+                        return ASTNode::Int(result);
+                    }
+                }
                 _ => {
                     println!("Syntax Error: Unrecognized operator '{}'", o.operator);
                     exit(1);
@@ -140,6 +218,22 @@ pub mod compilers {
             let next_node = expression.get(index + 1);
 
             match node {
+                ASTNode::If(_i) => {
+                    println!("Parsing IfNode");
+                    let end = compile_if_elif_else_statement(expression);
+                    if end {
+                        return;
+                    }
+                }
+                ASTNode::For(_f) => {
+                    println!("Parsing ForNode");
+                }
+                ASTNode::While(_w) => {
+                    println!("Parsing WhileNode");
+                }
+                ASTNode::Try => {
+                    println!("Parsing TryNode");
+                }
                 ASTNode::Collection(_c) => {
                     let _value = parse_collection_declaration(expression);
                     return;

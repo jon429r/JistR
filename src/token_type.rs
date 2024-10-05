@@ -132,6 +132,59 @@ pub mod token_types {
         Used as a bad return value
         */
         None,
+
+        /*
+         * If statement
+         */
+        If {
+            statement: String,
+        },
+        /*
+         * Else statement
+         */
+        Else,
+        /*
+         * Elif statement
+         */
+        Elif {
+            statement: String,
+        },
+        /*
+         * While statement
+         */
+        While {
+            statement: String,
+        },
+        /*
+         * For statement
+         */
+        For {
+            statement: String,
+        },
+        /*
+         * Break statement
+         */
+        Break,
+        /*
+         * Continue statement
+         */
+        Continue,
+        /*
+         * Try statement
+         */
+        Try,
+        /*
+         * Catch statement
+         */
+        Catch,
+        /*
+         * Finally statement
+         */
+        Finally,
+        /*
+         * !
+         * */
+        Not,
     }
     impl PartialEq for TokenTypes {
         fn eq(&self, other: &Self) -> bool {
@@ -190,6 +243,36 @@ pub mod token_types {
                 (TokenTypes::RightBracket, TokenTypes::RightBracket) => true,
                 (TokenTypes::FatArrow, TokenTypes::FatArrow) => true,
                 (TokenTypes::None, TokenTypes::None) => true,
+                (
+                    TokenTypes::If {
+                        statement: ref statement_a,
+                    },
+                    TokenTypes::If {
+                        statement: ref statement_b,
+                    },
+                ) => statement_a == statement_b,
+                (TokenTypes::Else, TokenTypes::Else) => true,
+                (
+                    TokenTypes::Elif {
+                        statement: ref statement_a,
+                    },
+                    TokenTypes::Elif {
+                        statement: ref statement_b,
+                    },
+                ) => statement_a == statement_b,
+                (TokenTypes::Break, TokenTypes::Break) => true,
+                (TokenTypes::Continue, TokenTypes::Continue) => true,
+                (TokenTypes::Try, TokenTypes::Try) => true,
+                (TokenTypes::Catch, TokenTypes::Catch) => true,
+                (TokenTypes::Finally, TokenTypes::Finally) => true,
+                (TokenTypes::Not, TokenTypes::Not) => true,
+                (
+                    TokenTypes::While { statement: ref a },
+                    TokenTypes::While { statement: ref b },
+                ) => a == b,
+                (TokenTypes::For { statement: ref a }, TokenTypes::For { statement: ref b }) => {
+                    a == b
+                }
                 _ => false,
             }
         }
@@ -212,6 +295,17 @@ pub mod token_types {
 
                     format!("Function: {} {} {:?}", name, return_type, arguments_str)
                 }
+                TokenTypes::Not => "Not".to_string(),
+                TokenTypes::Else => "Else".to_string(),
+                TokenTypes::Elif { statement } => format!("Elif: {}", statement),
+                TokenTypes::If { statement } => format!("If: {}", statement),
+                TokenTypes::While { statement } => format!("While: {}", statement),
+                TokenTypes::For { statement } => format!("For: {}", statement),
+                TokenTypes::Break => "Break".to_string(),
+                TokenTypes::Continue => "Continue".to_string(),
+                TokenTypes::Try => "Try".to_string(),
+                TokenTypes::Catch => "Catch".to_string(),
+                TokenTypes::Finally => "Finally".to_string(),
                 TokenTypes::FatArrow => "FatArrow".to_string(),
                 TokenTypes::FunctionCallArguments => "FunctionCallArguments".to_string(),
                 TokenTypes::Float => "Float".to_string(),

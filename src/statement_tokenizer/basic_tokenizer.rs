@@ -36,7 +36,7 @@ pub mod basic_tokenizers {
 
     pub fn read_operators(expression: String, char: char, index: usize) -> ParseInfo {
         match char {
-            '+' | '-' | '*' | '/' => {
+            '+' | '-' | '*' | '/' | '>' | '<' | '!' => {
                 let chars_read = 1;
                 return ParseInfo::new(
                     TokenTypes::Operator,

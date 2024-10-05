@@ -42,12 +42,41 @@ pub mod nodes {
             ASTNode::RightBracket => Some(BaseTypes::Null),
             ASTNode::LeftBracket => Some(BaseTypes::Null),
             ASTNode::FatArrow => Some(BaseTypes::Null),
+            ASTNode::While(_) => Some(BaseTypes::Null),
+            ASTNode::For(_) => Some(BaseTypes::Null),
+            ASTNode::If(_) => Some(BaseTypes::Null),
+            ASTNode::Elif(_) => Some(BaseTypes::Null),
+            ASTNode::Try => Some(BaseTypes::Null),
+            ASTNode::Catch => Some(BaseTypes::Null),
+            ASTNode::Finally => Some(BaseTypes::Null),
+            ASTNode::Else => Some(BaseTypes::Null),
+
             ASTNode::None => Some(BaseTypes::Null),
+            _ => None,
+        }
+    }
+
+    pub fn from_base_type(base_type: BaseTypes) -> ASTNode {
+        match base_type {
+            BaseTypes::Int(value) => ASTNode::Int(IntNode::new(value)),
+            BaseTypes::StringWrapper(value) => ASTNode::String(StringNode::new(value)),
+            BaseTypes::Char(value) => ASTNode::Char(CharNode::new(value)),
+            BaseTypes::Bool(value) => ASTNode::Bool(BoolNode::new(value)),
+            BaseTypes::Float(value) => ASTNode::Float(FloatNode::new(value as f32)),
+            _ => ASTNode::None,
         }
     }
 
     #[derive(Debug, Clone, PartialEq)]
     pub enum ASTNode {
+        While(WhileNode),
+        For(ForNode),
+        If(IfNode),
+        Elif(ElifNode),
+        Else,
+        Try,
+        Catch,
+        Finally,
         SemiColon,
         Operator(OperatorNode),
         Int(IntNode),
@@ -86,6 +115,14 @@ pub mod nodes {
         ///
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
+                ASTNode::While(w) => write!(f, "{}", w),
+                ASTNode::For(fr) => write!(f, "{}", fr),
+                ASTNode::If(i) => write!(f, "{}", i),
+                ASTNode::Elif(e) => write!(f, "{}", e),
+                ASTNode::Else => write!(f, "Else"),
+                ASTNode::Try => write!(f, "Try"),
+                ASTNode::Catch => write!(f, "Catch"),
+                ASTNode::Finally => write!(f, "Finally"),
                 ASTNode::Collection(c) => write!(f, "{:?}", c),
                 ASTNode::SemiColon => write!(f, "SemiColon"),
                 ASTNode::Operator(o) => write!(f, "{}", o),
@@ -120,6 +157,133 @@ pub mod nodes {
         }
     }
 
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct WhileNode {
+        pub condition: String,
+    }
+
+    impl WhileNode {
+        pub fn new(condition: String) -> Self {
+            WhileNode { condition }
+        }
+    }
+
+    impl fmt::Display for WhileNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "While: {}", self.condition)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct ForNode {
+        pub condition: String,
+    }
+
+    impl ForNode {
+        pub fn new(condition: String) -> Self {
+            ForNode { condition }
+        }
+    }
+
+    impl fmt::Display for ForNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "For: {}", self.condition)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct IfNode {
+        pub condition: String,
+    }
+
+    impl IfNode {
+        pub fn new(condition: String) -> Self {
+            IfNode { condition }
+        }
+    }
+
+    impl fmt::Display for IfNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "If: {}", self.condition)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct ElifNode {
+        pub condition: String,
+    }
+
+    impl ElifNode {
+        pub fn new(condition: String) -> Self {
+            ElifNode { condition }
+        }
+    }
+
+    impl fmt::Display for ElifNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Elif: {}", self.condition)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct ElseNode;
+
+    impl ElseNode {
+        pub fn new() -> Self {
+            ElseNode
+        }
+    }
+
+    impl fmt::Display for ElseNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Else")
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct TryNode;
+
+    impl TryNode {
+        pub fn new() -> Self {
+            TryNode
+        }
+    }
+
+    impl fmt::Display for TryNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Try")
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct CatchNode;
+
+    impl CatchNode {
+        pub fn new() -> Self {
+            CatchNode
+        }
+    }
+
+    impl fmt::Display for CatchNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Catch")
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct FinallyNode;
+
+    impl FinallyNode {
+        pub fn new() -> Self {
+            FinallyNode
+        }
+    }
+
+    impl fmt::Display for FinallyNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Finally")
+        }
+    }
     #[derive(Debug, Clone, PartialEq)]
     pub struct FatArrowNode;
 
@@ -697,6 +861,15 @@ pub mod nodes {
             TokenTypes::LeftBracket => ASTNode::LeftBracket,
             TokenTypes::RightBracket => ASTNode::RightBracket,
             TokenTypes::FatArrow => ASTNode::FatArrow,
+            TokenTypes::While { statement } => ASTNode::While(WhileNode::new(statement)),
+            TokenTypes::For { statement } => ASTNode::For(ForNode::new(statement)),
+            TokenTypes::If { statement } => ASTNode::If(IfNode::new(statement)),
+            TokenTypes::Elif { statement } => ASTNode::Elif(ElifNode::new(statement)),
+            TokenTypes::Else => ASTNode::Else,
+            TokenTypes::Try => ASTNode::Try,
+            TokenTypes::Catch => ASTNode::Catch,
+            TokenTypes::Finally => ASTNode::Finally,
+
             _ => {
                 panic!("Unrecognized token: {:?}", parse_info.token);
             }

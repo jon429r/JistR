@@ -14,6 +14,13 @@ pub mod tokenizers {
     use crate::statement_tokenizer::variable_tokenizer::variable_tokenizers::{
         read_variable_assignment, read_variable_call, read_variable_declaration,
     };
+
+    use crate::statement_tokenizer::conditional_tokenizer::conditional_tokenizers::tokenize_if_elif_else_statement;
+
+    use crate::statement_tokenizer::conditional_tokenizer::conditional_tokenizers::tokenize_try_catch_finally_statement;
+    // Importing the tokenizer for for-while loops
+    use crate::statement_tokenizer::loop_tokenizer::loop_tokenizers::tokenize_for_while_statement;
+
     use crate::token_type::token_types::TokenTypes;
     use std::char;
 
@@ -70,7 +77,6 @@ pub mod tokenizers {
     static mut MULTLINECOMMENT: bool = false;
 
     pub fn tokenize(expression: String) -> Vec<ParseInfo> {
-        //print!("Tokenizing expression: {}\n", expression);
         let mut token_list: Vec<ParseInfo> = Vec::new();
         let none = ParseInfo::new(TokenTypes::None, 0, "none".to_string());
 
@@ -148,7 +154,6 @@ pub mod tokenizers {
 
     pub fn read_token(expression: &String, index: usize) -> ParseInfo {
         let none: ParseInfo = ParseInfo::new(TokenTypes::None, 0, "none".to_string());
-        //println!("Reading token at index: {}", index);
         let mut j = index;
         let mut decimals = 0;
 
@@ -211,6 +216,25 @@ pub mod tokenizers {
         if info.token != none.token {
             return info;
         }
+        let info = read_variable_assignment(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = tokenize_if_elif_else_statement(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = tokenize_for_while_statement(expression, index);
+        if info.token != none.token {
+            return info;
+        }
+
+        let info = tokenize_try_catch_finally_statement(expression, index);
+        if info != none {
+            return info;
+        }
 
         let info = read_variable_declaration(expression, index);
         if info.token != none.token {
@@ -232,17 +256,12 @@ pub mod tokenizers {
             return info;
         }
 
-        let info = read_variable_assignment(expression, index);
+        let info = read_variable_call(expression, index);
         if info.token != none.token {
             return info;
         }
 
         let info = read_collection_assignment(expression, index);
-        if info.token != none.token {
-            return info;
-        }
-
-        let info = read_variable_call(expression, index);
         if info.token != none.token {
             return info;
         }

@@ -33,6 +33,7 @@ lazy_static::lazy_static! {
         map.insert("round", FunctionTypes::SingleFloatFn(FunctionMap::round as fn(f64) -> f64));
         map.insert("rand", FunctionTypes::NoArgFloatFn(FunctionMap::rand as fn() -> f64));
         map.insert("echo", FunctionTypes::EchoFn(FunctionMap::echo as fn(String)));
+        map.insert("echoln", FunctionTypes::EchoFn(FunctionMap::echoln as fn(String)));
         map.insert("abs", FunctionTypes::SingleFloatFn(FunctionMap::abs as fn(f64) -> f64));
         map.insert("pow", FunctionTypes::DoubleFloatFn(FunctionMap::pow as fn(f64, f64) -> f64));
         map.insert("sqrt", FunctionTypes::SingleFloatFn(FunctionMap::sqrt as fn(f64) -> f64));
@@ -160,6 +161,10 @@ impl FunctionMap {
     fn echo(a: String) {
         print!("{}", a);
         //println!("After echo");
+    }
+
+    fn echoln(a: String) {
+        println!("{}", a);
     }
 
     fn abs(a: f64) -> f64 {

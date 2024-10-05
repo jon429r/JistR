@@ -10,7 +10,9 @@ pub mod token_type;
 
 mod compilers {
     pub mod collection;
+    pub mod conditional;
     pub mod function;
+    pub mod loops;
     pub mod operation;
     pub mod variable;
 }
@@ -18,7 +20,9 @@ mod compilers {
 mod statement_tokenizer {
     pub mod basic_tokenizer;
     pub mod collection_tokenizer;
+    pub mod conditional_tokenizer;
     pub mod function_tokenizer;
+    pub mod loop_tokenizer;
     pub mod tests;
     pub mod tokenizer;
     pub mod variable_tokenizer;
@@ -34,6 +38,7 @@ use std::process::exit;
 //use crate::collection::collections::{Array, Dictionary};
 use base_variable::variables::VARIABLE_STACK;
 use compiler::compilers::route_to_parser;
+use jist::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
 use node::nodes::match_token_to_node;
 use node::nodes::ASTNode;
 use statement_tokenizer::tokenizer::tokenizers::tokenize;
@@ -93,9 +98,6 @@ fn print_function_stack() {
 fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
 
-    //let highlighted_code = highlighter::highlight_code(&contents);
-    //highlighter::display_highlighted_code(highlighted_code);
-
     let lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
     let mut brace_count = 0;
     let mut bracket_count = 0;
@@ -103,8 +105,9 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let mut number_of_lines = 0;
     let mut finished_lines: Vec<String> = Vec::new();
 
-    for line in &lines {
-        // No need to clone `lines`, just borrow
+    for (line_number, line) in lines.iter().enumerate() {
+        println!("Line {}: {}", line_number + 1, line);
+        // Process each character in the line
         for ch in line.chars() {
             match ch {
                 '{' => {
@@ -113,9 +116,22 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                 }
                 '}' => {
                     brace_count -= 1;
-                    current_line.push(ch);
+                    if brace_count == 0 && bracket_count == 0 {
+                        current_line.push(ch);
+                        finished_lines.push(current_line.clone());
+                        current_line.clear();
+                        number_of_lines += 1;
+                    } else {
+                        current_line.push(ch);
+                        brace_count -= 1;
+                    }
+
                     if brace_count < 0 {
-                        return Err("Unmatched closing curly brace".into());
+                        return Err(format!(
+                            "Unmatched closing curly brace at line {}",
+                            line_number + 1
+                        )
+                        .into());
                     }
                 }
                 '[' => {
@@ -126,13 +142,16 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                     bracket_count -= 1;
                     current_line.push(ch);
                     if bracket_count < 0 {
-                        return Err("Unmatched closing square bracket".into());
+                        return Err(format!(
+                            "Unmatched closing square bracket at line {}",
+                            line_number + 1
+                        )
+                        .into());
                     }
                 }
                 ';' => {
                     if brace_count == 0 && bracket_count == 0 {
                         current_line.push(ch);
-                        //println!("Finished statement: {}", current_line.trim());
                         finished_lines.push(current_line.clone());
                         current_line.clear();
                         number_of_lines += 1;
@@ -147,8 +166,6 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
 
     // Tokenization and AST generation
     let _ast_nodes: Vec<ASTNode> = Vec::new();
-
-    //println!("Number of lines: {}", finished_lines.len());
 
     for line in finished_lines {
         let tokens = tokenize(line);

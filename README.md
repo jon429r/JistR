@@ -169,6 +169,7 @@ fn sub(a: f64, b: f64) -> f64
 fn mult(a: f64, b: f64) -> f64  
 fn divide(a: f64, b: f64) -> f64  
 fn echo(a: String)  
+fn echoln(a: String)  
 fn abs(a: f64) -> f64  
 fn pow(a: f64, b: f64) -> f64  
 fn sqrt(a: f64) -> f64  

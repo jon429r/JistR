@@ -1,2 +1,1 @@
-let a: string = to_uppercase("hello");
-echo(a);
+let a: int = 1;
