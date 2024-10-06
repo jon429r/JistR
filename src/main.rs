@@ -184,8 +184,6 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                 first_node = node.clone();
             }
 
-            print!("if_else_skip: {}", unsafe { IF_ELSE_SKIP });
-
             match node {
                 ASTNode::SemiColon => {
                     if !hasroot {

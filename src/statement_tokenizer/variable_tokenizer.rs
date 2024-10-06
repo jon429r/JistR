@@ -5,6 +5,7 @@ pub mod variable_tokenizers {
 
     static mut VARIABLE_DECLARATION: bool = false;
     pub fn read_variable_declaration(expression: &String, index: usize) -> ParseInfo {
+        println!("Reading variable declaration");
         let mut j = index;
         let let_compare = "let";
         let mut variable: String = String::new();
