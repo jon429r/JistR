@@ -1,6 +1,4 @@
-# Jist Programming Language
-
-Welcome to **Jist**, a lightweight and efficient programming language built in **Rust**. Jist is designed for simplicity and flexibility, offering fast performance with a clean and readable syntax. This README provides an overview of the language, its features, syntax, and installation instructions.
+# Welcome to **Jist**, a lightweight and efficient programming language built in **Rust**. Jist is designed for simplicity and flexibility, offering fast performance with a clean and readable syntax. This README provides an overview of the language, its features, syntax, and installation instructions.
 
 ---
 
