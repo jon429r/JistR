@@ -4,6 +4,7 @@ mod collection;
 pub mod compiler;
 pub mod function;
 mod function_map;
+pub mod globals;
 pub mod highlighter;
 mod node;
 pub mod token_type;
@@ -95,6 +96,9 @@ fn print_function_stack() {
 ///This function reads the file and parses it, it was added to support multiple lines of code,
 ///multiline coding statements and later multiple files
 ///
+// Global var if_else_skip
+use crate::globals::IF_ELSE_SKIP;
+
 fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
 
@@ -106,7 +110,6 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let mut finished_lines: Vec<String> = Vec::new();
 
     for (line_number, line) in lines.iter().enumerate() {
-        println!("Line {}: {}", line_number + 1, line);
         // Process each character in the line
         for ch in line.chars() {
             match ch {
@@ -173,15 +176,46 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
 
         let mut hasroot = false;
         let mut tokenized_expression = Vec::new();
+        let mut first_node: ASTNode = ASTNode::None;
+        let mut i = 0;
         for parsed_info in tokens {
             let node = match_token_to_node(parsed_info);
+            if i == 0 {
+                first_node = node.clone();
+            }
+
+            print!("if_else_skip: {}", unsafe { IF_ELSE_SKIP });
+
             match node {
                 ASTNode::SemiColon => {
                     if !hasroot {
                         println!("Syntax error: expression must be more than a semicolon");
                         exit(1);
                     } else {
-                        route_to_parser(&mut tokenized_expression);
+                        match first_node.clone() {
+                            ASTNode::If(_s) => {
+                                route_to_parser(&mut tokenized_expression);
+                            }
+                            ASTNode::Elif(_e) => {
+                                if unsafe { IF_ELSE_SKIP } {
+                                    break; // Skip processing if IF_ELSE_SKIP is true
+                                } else {
+                                    route_to_parser(&mut tokenized_expression);
+                                }
+                            }
+                            ASTNode::Else => {
+                                if unsafe { IF_ELSE_SKIP } {
+                                    print!("ELSE STATEMENT reseting if else skip");
+                                    unsafe { IF_ELSE_SKIP = false }; // Reset IF_ELSE_SKIP
+                                    break; // Skip further parsing
+                                } else {
+                                    route_to_parser(&mut tokenized_expression);
+                                }
+                            }
+                            _ => {
+                                route_to_parser(&mut tokenized_expression); // Handle all other cases
+                            }
+                        }
                     }
                 }
                 _ => {
@@ -189,15 +223,8 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                     tokenized_expression.push(node);
                 }
             }
+            i += 1;
         }
-    }
-
-    // Check for unmatched braces and brackets
-    if brace_count > 0 {
-        return Err("Unmatched opening curly brace".into());
-    }
-    if bracket_count > 0 {
-        return Err("Unmatched opening square bracket".into());
     }
 
     Ok(())

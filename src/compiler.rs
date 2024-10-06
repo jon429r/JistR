@@ -6,6 +6,7 @@ pub mod compilers {
     use crate::compilers::collection::*;
     use crate::compilers::conditional::conditional_compilers::compile_if_elif_else_statement;
     use crate::compilers::function::*;
+    use crate::globals::IF_ELSE_SKIP;
 
     use crate::compilers::variable::parse_variable_call;
     use crate::compilers::variable::parse_variable_declaration;
@@ -216,12 +217,29 @@ pub mod compilers {
         while index < expression.len() {
             let node = &expression[index]; // Access node by index
             let next_node = expression.get(index + 1);
+            println!("Node: {:?}", node);
 
             match node {
+                ASTNode::LeftCurly => {}
                 ASTNode::If(_i) => {
-                    println!("Parsing IfNode");
-                    let end = compile_if_elif_else_statement(expression);
-                    if end {
+                    let result = compile_if_elif_else_statement(expression);
+                    if result {
+                        index += 2;
+                        unsafe { IF_ELSE_SKIP = true };
+                        println!("IF_ELSE_SKIP: {}", unsafe { IF_ELSE_SKIP });
+                        continue;
+                    } else {
+                        return;
+                    }
+                }
+                ASTNode::Elif(_i) => {
+                    let result = compile_if_elif_else_statement(expression);
+                    if result {
+                        index += 2;
+                        unsafe { IF_ELSE_SKIP = true };
+                        println!("IF_ELSE_SKIP: {}", unsafe { IF_ELSE_SKIP });
+                        continue;
+                    } else {
                         return;
                     }
                 }
@@ -243,6 +261,9 @@ pub mod compilers {
                     if end {
                         return;
                     }
+                }
+                ASTNode::Else => {
+                    println!("Parsing ElseNode");
                 }
                 ASTNode::Int(n) => {
                     let first: Option<ASTNode> = Some(ASTNode::Int(n.clone()));
@@ -270,7 +291,8 @@ pub mod compilers {
                     println!("Char: {}", c.value);
                 }
                 ASTNode::FunctionCall(_f) => {
-                    let _end = parse_function_call(expression); // Mutable reference
+                    let function_expression: Vec<ASTNode> = expression[index..].to_vec();
+                    let _end = parse_function_call(&function_expression); // Mutable reference
                     return;
                 }
                 ASTNode::VariableCall(_v) => {

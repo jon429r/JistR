@@ -4,6 +4,7 @@ pub mod collection;
 pub mod compiler;
 pub mod function;
 pub mod function_map;
+pub mod globals;
 pub mod highlighter;
 pub mod node;
 pub mod token_type;

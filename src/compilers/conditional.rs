@@ -139,6 +139,7 @@ pub mod conditional_compilers {
                     // call the operation function or make custom function for conditional operations
                     let mut result = compile_conditional_statement(&mut nodes);
                     println!("Result: {}", result);
+                    return result;
                 }
                 ASTNode::Elif(elifnode) => {
                     let tokenized_statement = tokenize(elifnode.condition.clone());
@@ -150,6 +151,7 @@ pub mod conditional_compilers {
                     } // call the operation function or make custom function for conditional operations
                     let mut result = compile_conditional_statement(&mut nodes);
                     println!("Result: {}", result);
+                    return result;
                 }
                 ASTNode::Else => {}
                 _ => {}
