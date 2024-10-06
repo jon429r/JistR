@@ -19,7 +19,6 @@ pub mod conditional_compilers {
 
         while index < expression.len() {
             let node = &expression[index];
-            println!("Node: {}", node); // Debugging output
             match node {
                 ASTNode::VariableCall(_) => {
                     let (_, value) = parse_variable_call(node);
@@ -53,7 +52,6 @@ pub mod conditional_compilers {
                 }
 
                 ASTNode::Operator(o) => {
-                    println!("Operator: {}", o.operator); // Debugging output
                     operation = ASTNode::Operator(o.clone());
                 }
 
@@ -138,7 +136,6 @@ pub mod conditional_compilers {
 
                     // call the operation function or make custom function for conditional operations
                     let mut result = compile_conditional_statement(&mut nodes);
-                    println!("Result: {}", result);
                     return result;
                 }
                 ASTNode::Elif(elifnode) => {
@@ -150,7 +147,6 @@ pub mod conditional_compilers {
                         nodes.push(match_token_to_node(token));
                     } // call the operation function or make custom function for conditional operations
                     let mut result = compile_conditional_statement(&mut nodes);
-                    println!("Result: {}", result);
                     return result;
                 }
                 ASTNode::Else => {}

@@ -203,7 +203,6 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                             }
                             ASTNode::Else => {
                                 if unsafe { IF_ELSE_SKIP } {
-                                    print!("ELSE STATEMENT reseting if else skip");
                                     unsafe { IF_ELSE_SKIP = false }; // Reset IF_ELSE_SKIP
                                     break; // Skip further parsing
                                 } else {

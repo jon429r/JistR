@@ -226,7 +226,6 @@ pub mod compilers {
                     if result {
                         index += 2;
                         unsafe { IF_ELSE_SKIP = true };
-                        println!("IF_ELSE_SKIP: {}", unsafe { IF_ELSE_SKIP });
                         continue;
                     } else {
                         return;
@@ -237,7 +236,6 @@ pub mod compilers {
                     if result {
                         index += 2;
                         unsafe { IF_ELSE_SKIP = true };
-                        println!("IF_ELSE_SKIP: {}", unsafe { IF_ELSE_SKIP });
                         continue;
                     } else {
                         return;
