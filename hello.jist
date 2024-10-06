@@ -1,6 +1,12 @@
-if (1 < 2) {
-  echo("Hello, Sun!");
+let a: int = 1;
+let b: int = 2;
+
+if (a > b) {
+    echo("b is less than a");
+} elif (a < b) {
+    echo("b is greater than a");
 }
 else {
-  echo("Goodbye, Sun!");
+    echo("a is equal to b");
 }
+
