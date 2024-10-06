@@ -1,1 +1,2 @@
 pub static mut IF_ELSE_SKIP: bool = false;
+pub static mut MAKE_LOOP: bool = false;

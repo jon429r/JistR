@@ -39,6 +39,7 @@ use std::process::exit;
 //use crate::collection::collections::{Array, Dictionary};
 use base_variable::variables::VARIABLE_STACK;
 use compiler::compilers::route_to_parser;
+use globals::MAKE_LOOP;
 use jist::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
 use node::nodes::match_token_to_node;
 use node::nodes::ASTNode;
@@ -107,6 +108,8 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let mut current_line = String::new();
     let mut finished_lines: Vec<String> = Vec::new();
 
+    let mut tokenized_expression = Vec::new();
+
     for (line_number, line) in lines.iter().enumerate() {
         for ch in line.chars() {
             match ch {
@@ -158,8 +161,6 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
 
     let _ast_nodes: Vec<ASTNode> = Vec::new();
 
-    let mut tokenized_expression = Vec::new();
-
     for line in finished_lines {
         let tokens = tokenize(line);
         let mut hasroot = true;
@@ -187,6 +188,9 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                                 break; // Skip processing if IF_ELSE_SKIP is true
                             } else {
                                 route_to_parser(&mut tokenized_expression);
+                                while unsafe { MAKE_LOOP } {
+                                    route_to_parser(&mut tokenized_expression);
+                                }
                             }
                         }
                         ASTNode::Else => {
@@ -195,10 +199,16 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                                 break; // Skip further parsing
                             } else {
                                 route_to_parser(&mut tokenized_expression);
+                                while unsafe { MAKE_LOOP } {
+                                    route_to_parser(&mut tokenized_expression);
+                                }
                             }
                         }
                         _ => {
-                            route_to_parser(&mut tokenized_expression); // Handle other cases
+                            route_to_parser(&mut tokenized_expression);
+                            while unsafe { MAKE_LOOP } {
+                                route_to_parser(&mut tokenized_expression);
+                            }
                         }
                     }
 

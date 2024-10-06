@@ -6,7 +6,8 @@ pub mod compilers {
     use crate::compilers::collection::*;
     use crate::compilers::conditional::conditional_compilers::compile_if_elif_else_statement;
     use crate::compilers::function::*;
-    use crate::globals::IF_ELSE_SKIP;
+    use crate::compilers::loops::loop_compilers::{compile_for_loop, compile_while_loop};
+    use crate::globals::{IF_ELSE_SKIP, MAKE_LOOP};
 
     use crate::compilers::variable::parse_variable_call;
     use crate::compilers::variable::parse_variable_declaration;
@@ -212,6 +213,8 @@ pub mod compilers {
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
         let mut index = 0; // Start with index-based iteration
+        let mut make_loop = false;
+
         while index < expression.len() {
             let node = &expression[index]; // Access node by index
             let next_node = expression.get(index + 1);
@@ -239,11 +242,22 @@ pub mod compilers {
                     }
                 }
                 ASTNode::For(_f) => {
-                    println!("Parsing ForNode");
+                    let mut result = compile_for_loop(expression);
+                    if result {
+                        unsafe { MAKE_LOOP = true };
+                    } else {
+                        unsafe { MAKE_LOOP = false };
+                    }
                 }
                 ASTNode::While(_w) => {
-                    println!("Parsing WhileNode");
+                    let mut result = compile_while_loop(expression);
+                    if result {
+                        unsafe { MAKE_LOOP = true };
+                    } else {
+                        unsafe { MAKE_LOOP = false };
+                    }
                 }
+
                 ASTNode::Try => {
                     println!("Parsing TryNode");
                 }
@@ -311,6 +325,7 @@ pub mod compilers {
                     println!("Syntax Error: Unhandled node type.");
                     exit(1);
                 }
+                ASTNode::RightParenthesis => {}
                 _ => {
                     println!("Syntax Error: Unhandled node: {:?}", node);
                 }
