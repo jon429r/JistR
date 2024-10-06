@@ -17,8 +17,6 @@ fn add_to_array_stack(array: Array) {
 }
 
 pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
-    //println!("Expression: {:?}", expression);
-
     //let mut array_stack = ARRAY_STACK.lock().unwrap();
     //let mut dict_stack = DICTIONARY_STACK.lock().unwrap();
 

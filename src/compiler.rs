@@ -211,13 +211,10 @@ pub mod compilers {
     }
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
-        //println!("Expression: {:?}", expression);
-
         let mut index = 0; // Start with index-based iteration
         while index < expression.len() {
             let node = &expression[index]; // Access node by index
             let next_node = expression.get(index + 1);
-            println!("Node: {:?}", node);
 
             match node {
                 ASTNode::LeftCurly => {}

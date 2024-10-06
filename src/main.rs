@@ -101,16 +101,13 @@ use crate::globals::IF_ELSE_SKIP;
 
 fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
-
     let lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
     let mut brace_count = 0;
     let mut bracket_count = 0;
     let mut current_line = String::new();
-    let mut number_of_lines = 0;
     let mut finished_lines: Vec<String> = Vec::new();
 
     for (line_number, line) in lines.iter().enumerate() {
-        // Process each character in the line
         for ch in line.chars() {
             match ch {
                 '{' => {
@@ -119,22 +116,17 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                 }
                 '}' => {
                     brace_count -= 1;
-                    if brace_count == 0 && bracket_count == 0 {
-                        current_line.push(ch);
-                        finished_lines.push(current_line.clone());
-                        current_line.clear();
-                        number_of_lines += 1;
-                    } else {
-                        current_line.push(ch);
-                        brace_count -= 1;
-                    }
-
+                    current_line.push(ch);
                     if brace_count < 0 {
                         return Err(format!(
                             "Unmatched closing curly brace at line {}",
                             line_number + 1
                         )
                         .into());
+                    }
+                    if brace_count == 0 && bracket_count == 0 {
+                        finished_lines.push(current_line.clone());
+                        current_line.clear();
                     }
                 }
                 '[' => {
@@ -153,13 +145,10 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                     }
                 }
                 ';' => {
+                    current_line.push(ch);
                     if brace_count == 0 && bracket_count == 0 {
-                        current_line.push(ch);
                         finished_lines.push(current_line.clone());
                         current_line.clear();
-                        number_of_lines += 1;
-                    } else {
-                        current_line.push(ch);
                     }
                 }
                 _ => current_line.push(ch),
@@ -167,60 +156,60 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // Tokenization and AST generation
     let _ast_nodes: Vec<ASTNode> = Vec::new();
+
+    let mut tokenized_expression = Vec::new();
 
     for line in finished_lines {
         let tokens = tokenize(line);
-        //println!("Tokens: {:?}", tokens);
-
-        let mut hasroot = false;
-        let mut tokenized_expression = Vec::new();
+        let mut hasroot = true;
         let mut first_node: ASTNode = ASTNode::None;
-        let mut i = 0;
-        for parsed_info in tokens {
-            let node = match_token_to_node(parsed_info);
+
+        for (i, parsed_info) in tokens.iter().enumerate() {
+            let node = match_token_to_node(parsed_info.clone());
             if i == 0 {
                 first_node = node.clone();
             }
 
             match node {
                 ASTNode::SemiColon => {
-                    if !hasroot {
+                    // Check if the expression is valid before processing
+                    if tokenized_expression.is_empty() {
                         println!("Syntax error: expression must be more than a semicolon");
-                        exit(1);
-                    } else {
-                        match first_node.clone() {
-                            ASTNode::If(_s) => {
+                        std::process::exit(1);
+                    }
+
+                    // Route to parser only if there are valid tokens
+                    match first_node.clone() {
+                        ASTNode::If(_) => route_to_parser(&mut tokenized_expression),
+                        ASTNode::Elif(_) => {
+                            if unsafe { IF_ELSE_SKIP } {
+                                break; // Skip processing if IF_ELSE_SKIP is true
+                            } else {
                                 route_to_parser(&mut tokenized_expression);
                             }
-                            ASTNode::Elif(_e) => {
-                                if unsafe { IF_ELSE_SKIP } {
-                                    break; // Skip processing if IF_ELSE_SKIP is true
-                                } else {
-                                    route_to_parser(&mut tokenized_expression);
-                                }
-                            }
-                            ASTNode::Else => {
-                                if unsafe { IF_ELSE_SKIP } {
-                                    unsafe { IF_ELSE_SKIP = false }; // Reset IF_ELSE_SKIP
-                                    break; // Skip further parsing
-                                } else {
-                                    route_to_parser(&mut tokenized_expression);
-                                }
-                            }
-                            _ => {
-                                route_to_parser(&mut tokenized_expression); // Handle all other cases
+                        }
+                        ASTNode::Else => {
+                            if unsafe { IF_ELSE_SKIP } {
+                                unsafe { IF_ELSE_SKIP = false }; // Reset IF_ELSE_SKIP
+                                break; // Skip further parsing
+                            } else {
+                                route_to_parser(&mut tokenized_expression);
                             }
                         }
+                        _ => {
+                            route_to_parser(&mut tokenized_expression); // Handle other cases
+                        }
                     }
+
+                    // Clear tokenized_expression after processing
+                    tokenized_expression.clear();
                 }
                 _ => {
-                    hasroot = true;
-                    tokenized_expression.push(node);
+                    hasroot = true; // Mark that we have a valid root
+                    tokenized_expression.push(node); // Accumulate tokens
                 }
             }
-            i += 1;
         }
     }
 

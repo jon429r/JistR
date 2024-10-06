@@ -261,11 +261,7 @@ pub mod tokenizers {
         if info.token != none.token {
             return info;
         }
-
-        let info = read_collection_assignment(expression, index);
-        if info.token != none.token {
-            return info;
-        }
+        print!("No token found for: {}", expression);
 
         /*
                 // tokenize char value if it matches 'a' to 'z' or 'A' to 'Z'
