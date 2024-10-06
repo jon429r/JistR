@@ -1,5 +1,7 @@
 use std::process::exit;
 
+use rand::seq::index;
+
 use crate::base_variable::base_types::BaseTypes;
 use crate::base_variable::variable::Variable;
 use crate::base_variable::variables::VARIABLE_STACK;
@@ -35,6 +37,103 @@ pub fn parse_variable_call(node: &ASTNode) -> (String, BaseTypes) {
         _ => {
             println!("Syntax Error: Expected a variable call.");
             exit(1)
+        }
+    }
+}
+
+///
+/// This function is called when the first token in the expression is a variable
+/// can be used to set the value of the variable to something else
+///
+
+pub fn compile_variable_call(exp_stack: &mut Vec<ASTNode>) -> bool {
+    // Ensure there is at least one node in the stack
+    if exp_stack.is_empty() {
+        println!("Syntax Error: Empty expression stack.");
+        return false;
+    }
+
+    let first_node = &exp_stack[0];
+
+    // Match against the first node to see if it is a variable call
+    match first_node {
+        ASTNode::VariableCall(v) => {
+            let mut arg1_value = BaseTypes::StringWrapper(String::new()); // Initialize with default value
+            let mut arg1_name = String::new(); // Initialize with default value
+            let mut variable = Variable::new(String::new(), BaseTypes::Null, BaseTypes::Null);
+            let mut index = 1;
+
+            // Search for the variable in the global VARIABLE_STACK
+            for var in unsafe { &VARIABLE_STACK } {
+                if var.name == v.name {
+                    variable = var.clone();
+                    arg1_value = var.value.clone();
+                    arg1_name = var.name.clone();
+                    break; // Break after finding the variable
+                } else {
+                    println!("Variable not found in stack.");
+                    return false; // Return false if the variable is not found
+                }
+            }
+
+            // Optionally, do something with arg1_name and arg1_value
+            println!(
+                "Variable found: Name = {}, Value = {:?}",
+                arg1_name, arg1_value
+            );
+
+            // Process further if there are additional nodes in exp_stack
+            for node in &exp_stack[1..] {
+                println!("node: {:?}", node);
+                // Iterate from the second node onward
+                match node {
+                    ASTNode::AssignmentOperator(o) => {
+                        let mut operation_stack = exp_stack.clone();
+                        for node in &exp_stack[1..] {
+                            operation_stack.push(node.clone());
+                        }
+                        operation(&mut operation_stack);
+                        // Handle assignment operator
+                        println!("Processing assignment operator: {:?}", node);
+                        //get next node and set value to variable
+
+                        let next_node = &exp_stack[index + 1];
+                        let value: BaseTypes = next_node.into();
+                        variable.set_value(value);
+
+                        return true;
+                    }
+                    ASTNode::Operator(o) => match o.operator.as_str() {
+                        "++" => {
+                            variable.increment();
+                            println!("Incremented variable: {:?}", variable);
+                            return true;
+                        }
+                        "--" => {
+                            variable.decrement();
+                            return true;
+                        }
+                        _ => {
+                            println!("Syntax Error: Unrecognized operator '{}'", o.operator);
+                            return false;
+                        }
+                    },
+                    _ => {
+                        println!("Processing additional argument: {:?}", node);
+                        // call set_value on variable and set to node
+                        // Add your logic here
+                        let value: BaseTypes = node.into();
+
+                        variable.set_value(value);
+                    }
+                }
+            }
+
+            return true; // Successfully processed the variable call
+        }
+        _ => {
+            println!("Syntax Error: Expected a variable call.");
+            return false; // Return false if the first node is not a variable call
         }
     }
 }
@@ -128,7 +227,6 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             }
             ASTNode::Int(n) => {
                 if inside_assignment {
-                    first = Some(ASTNode::Int(n.clone()));
                     var_value = operation(exp_stack);
                     if let ASTNode::Int(n) = var_value {
                         value = BaseTypes::Int(n.value);
@@ -250,6 +348,10 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
 
     while let Some(top) = exp_stack.pop() {
         match top {
+            ASTNode::AssignmentOperator(o) => {
+                operator = ASTNode::AssignmentOperator(o);
+            }
+
             ASTNode::Operator(o) => {
                 operator = ASTNode::Operator(o);
             }
@@ -327,6 +429,13 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
             "+" => {
                 if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                     let result = left_val.value + right_val.value;
+                    let result = IntNode { value: result };
+                    return ASTNode::Int(result);
+                }
+            }
+            "=" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = right_val.value;
                     let result = IntNode { value: result };
                     return ASTNode::Int(result);
                 }

@@ -9,6 +9,7 @@ pub mod variable {
     use super::base_types::BaseTypes;
     use super::variables::VARIABLE_STACK;
     use crate::base_variable::base_types::GetType;
+    use crate::node::nodes::ASTNode;
     use std::fmt;
 
     #[derive(Debug, Clone)]
@@ -20,6 +21,20 @@ pub mod variable {
 
     pub trait GetValue {
         fn get_value(&self) -> BaseTypes;
+    }
+
+    pub trait SetValue {
+        fn set_value<T>(&mut self, value: T)
+        where
+            T: Into<BaseTypes>;
+    }
+
+    pub trait Increment {
+        fn increment(&mut self);
+    }
+
+    pub trait Decrement {
+        fn decrement(&mut self);
     }
 
     impl PartialEq for BaseTypes {
@@ -279,6 +294,66 @@ pub mod variable {
             &self.value
         }
 
+        pub fn increment(&mut self) {
+            match self.value {
+                BaseTypes::Int(ref mut i) => {
+                    // Increment the integer value in place
+                    *i += 1;
+
+                    // Now update the variable in the stack
+                    for variable in unsafe { VARIABLE_STACK.iter_mut() } {
+                        if variable.name == self.name {
+                            variable.value = BaseTypes::Int(*i);
+                            break; // Exit loop once the variable is found and updated
+                        }
+                    }
+                }
+                BaseTypes::Float(ref mut f) => {
+                    // Increment the float value in place
+                    *f += 1.0;
+
+                    // Now update the variable in the stack
+                    for variable in unsafe { VARIABLE_STACK.iter_mut() } {
+                        if variable.name == self.name {
+                            variable.value = BaseTypes::Float(*f);
+                            break; // Exit loop once the variable is found and updated
+                        }
+                    }
+                }
+                _ => println!("Warning: Cannot increment non-numeric type."),
+            }
+        }
+
+        pub fn decrement(&mut self) {
+            match self.value {
+                BaseTypes::Int(ref mut i) => {
+                    // Decrement the integer value in place
+                    *i -= 1;
+
+                    // Now update the variable in the stack
+                    for variable in unsafe { VARIABLE_STACK.iter_mut() } {
+                        if variable.name == self.name {
+                            variable.value = BaseTypes::Int(*i);
+                            break; // Exit loop once the variable is found and updated
+                        }
+                    }
+                }
+                BaseTypes::Float(ref mut f) => {
+                    // Decrement the float value in place
+                    *f -= 1.0;
+
+                    // Now update the variable in the stack
+                    for variable in unsafe { VARIABLE_STACK.iter_mut() } {
+                        if variable.name == self.name {
+                            variable.value = BaseTypes::Float(*f);
+                            break; // Exit loop once the variable is found and updated
+                        }
+                    }
+                }
+                _ => println!("Warning: Cannot decrement non-numeric type."),
+            }
+        }
+
         pub fn print(&self) {
             println!("Variable Name: {}", self.name);
             println!("Variable Type: {}", self.var_type.GetType());
@@ -350,6 +425,32 @@ pub mod variable {
                 BaseTypes::Float(f) => f,
                 BaseTypes::Int(i) => i as f64,
                 _ => 0.0,
+            }
+        }
+    }
+
+    impl From<&ASTNode> for BaseTypes {
+        fn from(value: &ASTNode) -> Self {
+            match value {
+                ASTNode::Int(n) => BaseTypes::Int(n.value),
+                ASTNode::Float(f) => BaseTypes::Float(f.value.into()),
+                ASTNode::String(s) => BaseTypes::StringWrapper(s.value.clone()),
+                ASTNode::Bool(b) => BaseTypes::Bool(b.value),
+                ASTNode::Char(c) => BaseTypes::Char(c.value),
+                _ => BaseTypes::Null,
+            }
+        }
+    }
+
+    impl From<ASTNode> for BaseTypes {
+        fn from(value: ASTNode) -> Self {
+            match value {
+                ASTNode::Int(n) => BaseTypes::Int(n.value),
+                ASTNode::Float(f) => BaseTypes::Float(f.value.into()),
+                ASTNode::String(s) => BaseTypes::StringWrapper(s.value),
+                ASTNode::Bool(b) => BaseTypes::Bool(b.value),
+                ASTNode::Char(c) => BaseTypes::Char(c.value),
+                _ => BaseTypes::Null,
             }
         }
     }

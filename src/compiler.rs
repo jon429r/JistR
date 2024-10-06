@@ -10,7 +10,7 @@ pub mod compilers {
     use crate::globals::{IF_ELSE_SKIP, MAKE_LOOP};
 
     use crate::compilers::variable::parse_variable_call;
-    use crate::compilers::variable::parse_variable_declaration;
+    use crate::compilers::variable::{compile_variable_call, parse_variable_declaration};
     use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
     use crate::token_type::token_types::*;
     use std::process::exit;
@@ -305,7 +305,10 @@ pub mod compilers {
                     return;
                 }
                 ASTNode::VariableCall(_v) => {
-                    let _call_result = parse_variable_call(&node); // Mutable reference
+                    let call_result = compile_variable_call(expression); // Mutable reference
+                    if call_result {
+                        return;
+                    }
                 }
                 ASTNode::Comment(_c) => {
                     return;
