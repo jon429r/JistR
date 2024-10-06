@@ -357,6 +357,106 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     }
                 }
             }
+            "==" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value == right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "!=" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value != right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            ">" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value > right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "<" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value < right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            ">=" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value >= right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "<=" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value <= right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "&&" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value != 0 && right_val.value != 0;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "||" => {
+                if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    let result = left_val.value != 0 || right_val.value != 0;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "!" => {
+                if let ASTNode::Int(left_val) = left {
+                    let result = left_val.value == 0;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "==" => {
+                if let (ASTNode::Float(left_val), ASTNode::Float(right_val)) = (left, right) {
+                    let result = left_val.value == right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+            "!=" => {
+                if let (ASTNode::Float(left_val), ASTNode::Float(right_val)) = (left, right) {
+                    let result = left_val.value != right_val.value;
+                    let result = IntNode {
+                        value: result as i32,
+                    };
+                    return ASTNode::Int(result);
+                }
+            }
+
             _ => {
                 println!("Syntax Error: Unrecognized operator '{}'", o.operator);
                 std::process::exit(1);

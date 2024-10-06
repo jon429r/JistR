@@ -207,7 +207,8 @@ pub mod tokenizers {
             return info;
         }
 
-        let info = read_operators(expression.to_string(), char, index);
+        let next_char = expression.chars().nth(index + 1).unwrap_or('\0');
+        let info = read_operators(expression.to_string(), char, next_char, index);
         if info.token != none.token {
             return info;
         }

@@ -34,7 +34,24 @@ pub mod basic_tokenizers {
         ParseInfo::new(TokenTypes::None, 0, "none".to_string())
     }
 
-    pub fn read_operators(expression: String, char: char, index: usize) -> ParseInfo {
+    pub fn read_operators(
+        expression: String,
+        char: char,
+        next_char: char,
+        index: usize,
+    ) -> ParseInfo {
+        let two_chars = format!("{}{}", char, next_char);
+        match two_chars.to_string().as_str() {
+            "==" | "!=" | ">=" | "<=" | "&&" | "||" | "++" | "--" => {
+                let chars_read = 2;
+                return ParseInfo::new(
+                    TokenTypes::Operator,
+                    chars_read.try_into().unwrap(),
+                    two_chars,
+                );
+            }
+            _ => {}
+        }
         match char {
             '+' | '-' | '*' | '/' | '>' | '<' | '!' => {
                 let chars_read = 1;
