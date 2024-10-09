@@ -103,6 +103,10 @@ pub mod conditional_compilers {
         // Assuming the operation is a comparison operator (e.g., >, <, ==)
         let ast_result = parse_operator(&first_value, &operation, &second_value);
 
+        println!(
+            "expression: {:?} {:?} {:?}",
+            first_value, operation, second_value
+        );
         // Safely convert AST result to BaseTypes, with error handling
         let base_result: BaseTypes = match to_base_type(&ast_result) {
             Some(result) => result,
@@ -113,8 +117,10 @@ pub mod conditional_compilers {
         };
 
         // Convert BaseTypes result into i32 and return true/false
-        let result: i32 = base_result.into();
-        result == 1
+        let mut result: i32 = base_result.into();
+        let bool_result = result == 1;
+        print!("Bool Result: {}\n", bool_result);
+        return bool_result;
     }
 
     pub fn compile_if_elif_else_statement(expression: &mut Vec<ASTNode>) -> bool {

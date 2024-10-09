@@ -29,6 +29,14 @@ pub mod variable {
             T: Into<BaseTypes>;
     }
 
+    pub trait SetType {
+        fn set_type(&mut self, var_type: BaseTypes);
+    }
+
+    pub trait SetName {
+        fn set_name(&mut self, name: String);
+    }
+
     pub trait Increment {
         fn increment(&mut self);
     }
@@ -258,29 +266,31 @@ pub mod variable {
                         }
                     }
                 }
+
                 BaseTypes::Null => {
-                    println!(
-                        "Warning: Value type mismatch for '{}'. Null type cannot have a value.",
-                        name
-                    );
-                    BaseTypes::Null
+                    match value {
+                        BaseTypes::Null => value,
+                        _ => {
+                            println!("Warning: Value type mismatch for '{}'. Setting default Null value.", name);
+                            BaseTypes::Null
+                        }
+                    }
                 }
             };
-
-            // Add to VARIABLE_STACK
-            unsafe {
-                VARIABLE_STACK.push(Variable {
-                    name: name.clone(),
-                    value: checked_value.clone(),
-                    var_type: var_type.clone(),
-                });
-            }
 
             Variable {
                 name,
                 value: checked_value,
                 var_type,
             }
+        }
+
+        pub fn set_name(&mut self, name: String) {
+            self.name = name;
+        }
+
+        pub fn set_type(&mut self, var_type: BaseTypes) {
+            self.var_type = var_type;
         }
 
         pub fn set_value<T>(&mut self, value: T)

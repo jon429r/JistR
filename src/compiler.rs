@@ -211,86 +211,79 @@ pub mod compilers {
         return result;
     }
 
-    pub fn route_to_parser(expression: &mut Vec<ASTNode>) {
-        let mut index = 0; // Start with index-based iteration
-        let mut make_loop = false;
+    pub fn route_to_parser(expression: &mut Vec<ASTNode>, index: Option<usize>) -> bool {
+        let mut index = index.unwrap_or(0); // Default to 0 if None
 
+        // Main loop through the expression
         while index < expression.len() {
             let node = &expression[index]; // Access node by index
             let next_node = expression.get(index + 1);
+            println!("Node: {:?}", node);
 
             match node {
-                ASTNode::LeftCurly => {}
+                ASTNode::LeftCurly => {
+                    println!("Parsing LeftCurlyNode");
+                }
                 ASTNode::If(_i) => {
                     let result = compile_if_elif_else_statement(expression);
                     if result {
-                        index += 2;
+                        index += 2; // Skip to the next statement after processing `if`
                         unsafe { IF_ELSE_SKIP = true };
                         continue;
                     } else {
-                        return;
+                        return true;
                     }
                 }
                 ASTNode::Elif(_i) => {
                     let result = compile_if_elif_else_statement(expression);
                     if result {
-                        index += 2;
+                        index += 2; // Skip to the next statement after processing `elif`
                         unsafe { IF_ELSE_SKIP = true };
                         continue;
                     } else {
-                        return;
+                        return true;
                     }
                 }
                 ASTNode::For(_f) => {
-                    let mut result = compile_for_loop(expression);
-                    if result {
-                        unsafe { MAKE_LOOP = true };
-                    } else {
-                        unsafe { MAKE_LOOP = false };
-                    }
+                    let result = compile_for_loop(expression);
+                    unsafe { MAKE_LOOP = result };
                 }
-                ASTNode::While(_w) => {
-                    let mut result = compile_while_loop(expression);
-                    if result {
-                        unsafe { MAKE_LOOP = true };
-                    } else {
-                        unsafe { MAKE_LOOP = false };
-                    }
+                ASTNode::While(w) => {
+                    // Evaluate the condition
+                    let condition_result = compile_while_loop(expression);
+                    println!("Condition Result: {}\n", condition_result);
+                    return true;
                 }
-
                 ASTNode::Try => {
                     println!("Parsing TryNode");
                 }
                 ASTNode::Collection(_c) => {
                     let _value = parse_collection_declaration(expression);
-                    return;
+                    return true;
                 }
                 ASTNode::Variable(_v) => {
-                    let end = parse_variable_declaration(expression); // Pass mutable reference
+                    let end = parse_variable_declaration(expression);
                     if end {
-                        return;
+                        return true;
                     }
                 }
                 ASTNode::Else => {
                     println!("Parsing ElseNode");
                 }
                 ASTNode::Int(n) => {
-                    let first: Option<ASTNode> = Some(ASTNode::Int(n.clone()));
-
-                    // If the expression is just a single number, return it
                     if expression.len() == 1 {
-                        println!("Result: {:?}", first);
+                        println!("Result: {:?}", ASTNode::Int(n.clone()));
                         break;
                     } else {
-                        let result = operation(expression); // Mutable reference
+                        let result = operation(expression);
                         println!("Result: {:?}", result);
                         break;
                     }
                 }
                 ASTNode::Function(_f) => {
-                    let end = parse_function_declaration(expression); // Mutable reference
+                    let end = parse_function_declaration(expression);
                     if end {
-                        return;
+                        return true;
                     }
                 }
                 ASTNode::String(s) => {
@@ -301,40 +294,37 @@ pub mod compilers {
                 }
                 ASTNode::FunctionCall(_f) => {
                     let function_expression: Vec<ASTNode> = expression[index..].to_vec();
-                    let _end = parse_function_call(&function_expression); // Mutable reference
-                    return;
+                    let _end = parse_function_call(&function_expression);
+                    return true;
                 }
                 ASTNode::VariableCall(_v) => {
-                    let call_result = compile_variable_call(expression); // Mutable reference
+                    let call_result = compile_variable_call(expression);
                     if call_result {
-                        return;
+                        return true;
                     }
                 }
                 ASTNode::Comment(_c) => {
-                    return;
+                    return true;
                 }
                 ASTNode::LeftParenthesis => {
-                    let _first: Option<ASTNode> = next_node.cloned();
-
-                    let value = operation(expression); // Mutable reference
-                    print!("Result: {:?}", value);
+                    let value = operation(expression);
+                    println!("Result: {:?}", value);
                     break;
-                }
-
-                ASTNode::LeftCurly => {
-                    println!("Parsing LeftCurlyNode");
                 }
                 ASTNode::None => {
                     println!("Syntax Error: Unhandled node type.");
-                    exit(1);
+                    std::process::exit(1);
                 }
                 ASTNode::RightParenthesis => {}
                 _ => {
                     println!("Syntax Error: Unhandled node: {:?}", node);
                 }
             }
+
             index += 1; // Move to the next node
         }
+
+        true // Return true when done processing
     }
 }
 
