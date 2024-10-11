@@ -44,7 +44,7 @@ Jist is built using **Rust**, taking advantage of its safety and performance. Wi
 # Currently, the compiler is not available via a package manager. Please clone the repository to use.
 
 # If on Windows
-./setup.ps1
+./windows_setup.ps1
 
 # If on Linux/macOS
 ./setup.sh
