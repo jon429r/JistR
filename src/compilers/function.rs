@@ -1,19 +1,13 @@
 use crate::base_variable::variable::Variable;
 use crate::node::nodes::ASTNode;
-//use std::collections::HashMap;
 use std::process::exit;
-//use std::sync::MutexGuard;
 
 use crate::base_variable::base_types::BaseTypes;
 use crate::base_variable::variables::VARIABLE_STACK;
 use crate::function::functions::call_function;
 use crate::function::functions::Function;
-use crate::function::functions::FunctionTypes;
 use crate::function::FUNCTION_STACK;
-use crate::function_map::{
-    FUNCTIONS, STD_FUNCTIONS, STD_FUNCTIONS_DOUBLE, STD_FUNCTIONS_ECHO, STD_FUNCTIONS_SINGLE,
-    USER_FUNCTIONS,
-};
+use crate::function_map::FUNCTIONS;
 use std::any::Any;
 
 fn add_to_function_stack(func: Function) {
@@ -198,22 +192,6 @@ pub fn get_function_result(
     function_name: String,
     parameter_and_value: &mut Vec<BaseTypes>,
 ) -> BaseTypes {
-    let std_echo = match STD_FUNCTIONS_ECHO.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
-    let std = match STD_FUNCTIONS.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
-    let std_double = match STD_FUNCTIONS_DOUBLE.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
-    let std_single = match STD_FUNCTIONS_SINGLE.lock() {
-        Ok(guard) => guard,
-        Err(poisoned) => poisoned.into_inner(),
-    };
     let std_functions = match FUNCTIONS.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(),
@@ -304,100 +282,6 @@ pub fn get_function_result(
             return BaseTypes::Null;
         }
     }
-
-    /*
-    if let Some(func) = std_double.get(function_name.as_str()) {
-        println!(
-            "Function call is in STD_FUNCTIONS_DOUBLE: {}",
-            function_name
-        );
-
-        // Convert Int to Float for the first two parameters
-        for param in parameter_and_value.iter_mut().take(2) {
-            if let BaseTypes::Int(x) = *param {
-                *param = BaseTypes::Float(x as f64);
-            }
-        }
-
-        // Ensure at least two parameters are provided
-        if parameter_and_value.len() < 2 {
-            println!(
-                "Syntax Error: Not enough parameters supplied to function, {}/2 Provided.",
-                parameter_and_value.len()
-            );
-            exit(1);
-        }
-
-        // Call the function and return the result
-        let param1: f64 = parameter_and_value[0]
-            .clone()
-            .try_into()
-            .expect("Failed to convert parameter 1 to f64");
-        let param2: f64 = parameter_and_value[1]
-            .clone()
-            .try_into()
-            .expect("Failed to convert parameter 2 to f64");
-
-        let result = func(param1, param2);
-        println!("Result of Function: {:?}", result);
-
-        return BaseTypes::Float(result);
-    }
-
-    // Function is in STD_FUNCTIONS
-    if let Some(func) = std.get(function_name.as_str()) {
-        println!("Function call is in STD_FUNCTIONS: {}", function_name);
-
-        // Call the function and return the result
-        let result = func();
-        println!("Result of Function: {}", result);
-
-        return BaseTypes::Float(result);
-    }
-
-    // Function is in STD_FUNCTIONS_ECHO
-    if let Some(func) = std_echo.get(&function_name.as_str()) {
-        println!("Function call is in STD_FUNCTIONS_ECHO: {}", function_name);
-
-        // Ensure at least one parameter is provided
-        if parameter_and_value.is_empty() {
-            println!("Syntax Error: No parameters supplied to function.");
-            exit(1);
-        }
-
-        // Call the function and return the result
-        let param: BaseTypes = parameter_and_value[0].clone();
-        let result = func(param.into());
-
-        return result.into();
-    }
-
-    // Function is in STD_FUNCTIONS_SINGLE
-    if let Some(func) = std_single.get(&function_name.as_str()) {
-        println!(
-            "Function call is in STD_FUNCTIONS_SINGLE: {}",
-            function_name
-        );
-
-        // Ensure at least one parameter is provided
-        if parameter_and_value.is_empty() {
-            println!("Syntax Error: No parameters supplied to function.");
-            exit(1);
-        }
-
-        // Convert the first parameter to f64
-        let param: f64 = parameter_and_value[0]
-            .clone()
-            .try_into()
-            .expect("Failed to convert parameter to f64");
-
-        // Call the function and return the result
-        let result = func(param);
-        println!("Result of Function: {}", result);
-
-        return BaseTypes::Float(result);
-    }
-    */
 
     // Function not found
 

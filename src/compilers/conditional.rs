@@ -9,7 +9,6 @@ pub mod conditional_compilers {
     use crate::node::nodes::ASTNode;
     use crate::statement_tokenizer::tokenizer::tokenizers::tokenize;
     use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
-    use crate::token_type::token_types::TokenTypes;
 
     pub fn compile_conditional_statement(expression: &mut Vec<ASTNode>) -> bool {
         let mut index = 0;
@@ -117,9 +116,9 @@ pub mod conditional_compilers {
         };
 
         // Convert BaseTypes result into i32 and return true/false
-        let mut result: i32 = base_result.into();
+        let result: i32 = base_result.into();
         let bool_result = result == 1;
-        print!("Bool Result: {}\n", bool_result);
+        println!("Bool Result: {}", bool_result);
         return bool_result;
     }
 
@@ -141,7 +140,7 @@ pub mod conditional_compilers {
                     }
 
                     // call the operation function or make custom function for conditional operations
-                    let mut result = compile_conditional_statement(&mut nodes);
+                    let result = compile_conditional_statement(&mut nodes);
                     return result;
                 }
                 ASTNode::Elif(elifnode) => {
@@ -152,7 +151,7 @@ pub mod conditional_compilers {
                     for token in tokenized_statement {
                         nodes.push(match_token_to_node(token));
                     } // call the operation function or make custom function for conditional operations
-                    let mut result = compile_conditional_statement(&mut nodes);
+                    let result = compile_conditional_statement(&mut nodes);
                     return result;
                 }
                 ASTNode::Else => {}

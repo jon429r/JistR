@@ -5,9 +5,6 @@
 
 pub mod token_types {
 
-    use crate::base_variable::base_types::BaseTypes;
-    use crate::base_variable::variable::Variable;
-
     #[derive(Debug, Clone)]
     pub enum TokenTypes {
         /*

@@ -9,8 +9,8 @@ lazy_static! {
 pub mod functions {
 
     use crate::base_variable::base_types::BaseTypes;
+    use crate::base_variable::variable::Variable;
     use crate::node::nodes::ASTNode;
-    use crate::{base_variable::variable::Variable, token_type::token_types::TokenTypes};
     use std::fmt;
 
     pub enum FunctionTypes {

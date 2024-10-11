@@ -1,4 +1,5 @@
-pub mod operation {
+/*
+* pub mod operation {
     use crate::node::nodes::ASTNode;
 
     pub fn parse_operation(expression: &Vec<ASTNode>) {
@@ -36,3 +37,4 @@ pub mod operation {
         //println!("Successfully parsed operation.");
     }
 }
+*/

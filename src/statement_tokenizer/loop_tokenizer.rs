@@ -1,5 +1,4 @@
 pub mod loop_tokenizers {
-    use crate::statement_tokenizer::tokenizer::tokenizers::tokenize;
     use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
     use crate::token_type::token_types::TokenTypes;
 

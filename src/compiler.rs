@@ -9,7 +9,6 @@ pub mod compilers {
     use crate::compilers::loops::loop_compilers::{compile_for_loop, compile_while_loop};
     use crate::globals::{IF_ELSE_SKIP, MAKE_LOOP};
 
-    use crate::compilers::variable::parse_variable_call;
     use crate::compilers::variable::{compile_variable_call, parse_variable_declaration};
     use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
     use crate::token_type::token_types::*;
@@ -140,14 +139,14 @@ pub mod compilers {
                     }
                 }
                 "++" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(_right_val)) = (left, right) {
                         let result = left_val.value + 1;
                         let result = IntNode { value: result };
                         return ASTNode::Int(result);
                     }
                 }
                 "--" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
+                    if let (ASTNode::Int(left_val), ASTNode::Int(_right_val)) = (left, right) {
                         let result = left_val.value - 1;
                         let result = IntNode { value: result };
                         return ASTNode::Int(result);
@@ -217,8 +216,8 @@ pub mod compilers {
         // Main loop through the expression
         while index < expression.len() {
             let node = &expression[index]; // Access node by index
-            let next_node = expression.get(index + 1);
-            println!("Node: {:?}", node);
+            let _next_node = expression.get(index + 1);
+            //println!("Node: {:?}", node);
 
             match node {
                 ASTNode::LeftCurly => {
@@ -248,10 +247,9 @@ pub mod compilers {
                     let result = compile_for_loop(expression);
                     unsafe { MAKE_LOOP = result };
                 }
-                ASTNode::While(w) => {
+                ASTNode::While(_w) => {
                     // Evaluate the condition
-                    let condition_result = compile_while_loop(expression);
-                    println!("Condition Result: {}\n", condition_result);
+                    let _condition_result = compile_while_loop(expression);
                     return true;
                 }
                 ASTNode::Try => {
@@ -270,13 +268,13 @@ pub mod compilers {
                 ASTNode::Else => {
                     println!("Parsing ElseNode");
                 }
-                ASTNode::Int(n) => {
+                ASTNode::Int(_n) => {
                     if expression.len() == 1 {
-                        println!("Result: {:?}", ASTNode::Int(n.clone()));
+                        //println!("Result: {:?}", ASTNode::Int(n.clone()));
                         break;
                     } else {
-                        let result = operation(expression);
-                        println!("Result: {:?}", result);
+                        let _result = operation(expression);
+                        //println!("Result: {:?}", result);
                         break;
                     }
                 }
@@ -307,8 +305,8 @@ pub mod compilers {
                     return true;
                 }
                 ASTNode::LeftParenthesis => {
-                    let value = operation(expression);
-                    println!("Result: {:?}", value);
+                    let _value = operation(expression);
+                    //println!("Result: {:?}", value);
                     break;
                 }
                 ASTNode::None => {
@@ -461,24 +459,24 @@ mod complier_tests {
                 panic!("Result is not an IntNode");
             }
         }
+    }
 
-        #[test]
-        fn test_operation_multiplication() {
-            let mut expression: Vec<ASTNode> = vec![
-                ASTNode::Int(IntNode { value: 5 }),
-                ASTNode::Operator(OperatorNode {
-                    operator: "*".to_string(),
-                }),
-                ASTNode::Int(IntNode { value: 5 }),
-            ];
-            let result = operation(&mut expression);
-            match result {
-                ASTNode::Int(n) => {
-                    assert_eq!(n.value, 25);
-                }
-                _ => {
-                    panic!("Result is not an IntNode");
-                }
+    #[test]
+    fn test_operation_multiplication() {
+        let mut expression: Vec<ASTNode> = vec![
+            ASTNode::Int(IntNode { value: 5 }),
+            ASTNode::Operator(OperatorNode {
+                operator: "*".to_string(),
+            }),
+            ASTNode::Int(IntNode { value: 5 }),
+        ];
+        let result = operation(&mut expression);
+        match result {
+            ASTNode::Int(n) => {
+                assert_eq!(n.value, 25);
+            }
+            _ => {
+                panic!("Result is not an IntNode");
             }
         }
     }

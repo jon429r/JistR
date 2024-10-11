@@ -1,12 +1,4 @@
-let a: int = 2;
-let b: int = 1;
-
-if (a > 1) {
-    echo("a is gt than b");
-} 
-elif (a < b) {
-    echo("b is greater than a");
-}
-else {
-    echo("a is equal to b");
-}
+let hello: string = "Hello World";
+echo(hello);
+let helloup: string = to_uppercase(hello);
+echo(helloup);

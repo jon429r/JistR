@@ -1,15 +1,6 @@
-pub mod functions {
-    use crate::function::functions::Function;
-
-    pub static mut FUNCTIONSTACK: Vec<Function> = Vec::new();
-}
-
-use crate::base_variable::base_types::BaseTypes;
-use crate::base_variable::variable::Variable;
 use crate::function::functions::Function;
 
 use crate::function::functions::FunctionTypes;
-use crate::node::nodes::ASTNode;
 
 use std::collections::HashMap;
 use std::sync::Mutex;

@@ -21,7 +21,7 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
     //let mut dict_stack = DICTIONARY_STACK.lock().unwrap();
 
     // Check if the first node is a Collection
-    if let Some(node) = expression.get(0) {
+    if let Some(node) = expression.first() {
         if let ASTNode::Collection(collection_node) = node {
             // Access fields from the CollectionNode
             let name = &collection_node.name;
@@ -33,7 +33,7 @@ pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
                 .map(|(v1, v2)| (v1.clone(), v2.clone()));
 
             // Convert the tuple elements to BaseTypes
-            let single_key_type: BaseTypes = value_type_single.clone().into();
+            let single_key_type: BaseTypes = value_type_single.into();
             let key_type: BaseTypes = value_type_tuple
                 .as_ref()
                 .map_or(BaseTypes::Null, |(v1, _)| v1.clone().into());

@@ -9,7 +9,7 @@ pub mod tokenizers {
     };
     use crate::statement_tokenizer::collection_tokenizer::collection_tokenizers::read_collection_assignment;
     use crate::statement_tokenizer::function_tokenizer::function_tokenizers::{
-        read_function_assignment, read_function_call, read_function_declaration,
+        read_function_assignment, read_function_call,
     };
     use crate::statement_tokenizer::variable_tokenizer::variable_tokenizers::{
         read_variable_assignment, read_variable_call, read_variable_declaration,
@@ -262,7 +262,7 @@ pub mod tokenizers {
         if info.token != none.token {
             return info;
         }
-        print!("No token found for: {}", expression);
+        //print!("No token found for: {}", expression);
 
         /*
                 // tokenize char value if it matches 'a' to 'z' or 'A' to 'Z'
