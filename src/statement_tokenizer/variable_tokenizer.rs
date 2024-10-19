@@ -176,7 +176,28 @@ pub mod variable_tokenizers {
         for (_i, char) in chars {
             // Check if the current or next character is '=' (assignment)
             let next_char = expression.chars().nth(j + 1).unwrap_or('\0');
-            if char == '(' || next_char == '(' {
+            // Check if its a dot for dot notation then grab the function call as well as a string
+            if char == '.' || next_char == '.' {
+                let mut function_call = String::new();
+                let mut k = j + 1;
+                // loop and collect the function call until we hit ';'
+                while k < expression.len() {
+                    let char = expression.chars().nth(k).unwrap();
+                    if char == ';' {
+                        break;
+                    }
+                    function_call.push(char);
+                    k += 1;
+                }
+                return ParseInfo::new(
+                    TokenTypes::Dot {
+                        object: (variable_name.clone()),
+                        method: (function_call.clone()),
+                    },
+                    (k - index).try_into().unwrap(),
+                    "Dot Notation".to_string(),
+                );
+            } else if char == '(' || next_char == '(' {
                 return ParseInfo::new(
                     TokenTypes::FunctionCall,
                     (j - index).try_into().unwrap(),
@@ -189,6 +210,7 @@ pub mod variable_tokenizers {
                     variable_name,
                 );
             }
+
             // Collect valid variable name characters (alphanumeric and '_')
 
             if char.is_alphanumeric() || char == '_' {

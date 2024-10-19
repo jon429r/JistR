@@ -16,6 +16,14 @@ fn add_to_array_stack(array: Array) {
     ARRAY_STACK.lock().unwrap().push(array.clone());
 }
 
+pub fn parse_collection_call(expression: &[ASTNode]) -> (String, Vec<BaseTypes>) {
+    println!("Parsing collection call");
+    let mut name: String = "example".into();
+    let mut values: Vec<BaseTypes> = Vec::new();
+
+    return (name, values);
+}
+
 pub fn parse_collection_declaration(expression: &[ASTNode]) -> bool {
     //let mut array_stack = ARRAY_STACK.lock().unwrap();
     //let mut dict_stack = DICTIONARY_STACK.lock().unwrap();

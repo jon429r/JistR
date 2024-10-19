@@ -9,7 +9,9 @@ pub mod compilers {
     use crate::compilers::loops::loop_compilers::{compile_for_loop, compile_while_loop};
     use crate::globals::{IF_ELSE_SKIP, MAKE_LOOP};
 
-    use crate::compilers::variable::{compile_variable_call, parse_variable_declaration};
+    use crate::compilers::variable::{
+        compile_dot_statement, compile_variable_call, parse_variable_declaration,
+    };
     use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
     use crate::token_type::token_types::*;
     use std::process::exit;
@@ -220,6 +222,14 @@ pub mod compilers {
             //println!("Node: {:?}", node);
 
             match node {
+                ASTNode::Dot(_d) => {
+                    let result = compile_dot_statement(expression);
+                    if result {
+                        return true;
+                    }
+                    return false;
+                }
+
                 ASTNode::LeftCurly => {
                     println!("Parsing LeftCurlyNode");
                 }
@@ -292,7 +302,13 @@ pub mod compilers {
                 }
                 ASTNode::FunctionCall(_f) => {
                     let function_expression: Vec<ASTNode> = expression[index..].to_vec();
-                    let _end = parse_function_call(&function_expression);
+                    let _end = parse_function_call(
+                        &function_expression,
+                        "None".to_string(),
+                        None,
+                        None,
+                        None,
+                    );
                     return true;
                 }
                 ASTNode::VariableCall(_v) => {

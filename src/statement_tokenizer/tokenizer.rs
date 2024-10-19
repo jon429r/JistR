@@ -5,7 +5,7 @@
 
 pub mod tokenizers {
     use crate::statement_tokenizer::basic_tokenizer::basic_tokenizers::{
-        read_boolean, read_numbers, read_operators, read_strings_chars,
+        read_boolean, read_numbers, read_object_call, read_operators, read_strings_chars,
     };
     use crate::statement_tokenizer::collection_tokenizer::collection_tokenizers::read_collection_assignment;
     use crate::statement_tokenizer::function_tokenizer::function_tokenizers::{
@@ -197,6 +197,11 @@ pub mod tokenizers {
 
         let char = expression.chars().nth(index).unwrap();
 
+        let info = read_object_call(expression);
+        if info.token != none.token {
+            return info;
+        }
+
         let info = read_boolean(expression.to_string(), index);
         if info.token != none.token {
             return info;
@@ -262,7 +267,7 @@ pub mod tokenizers {
         if info.token != none.token {
             return info;
         }
-        //print!("No token found for: {}", expression);
+        print!("No token found for: {}", expression);
 
         /*
                 // tokenize char value if it matches 'a' to 'z' or 'A' to 'Z'

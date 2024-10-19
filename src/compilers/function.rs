@@ -1,4 +1,7 @@
 use crate::base_variable::variable::Variable;
+use crate::collection::collections::{Array, Dictionary};
+use crate::collection::ARRAY_FUNCTIONS;
+use crate::function::functions::FunctionTypes;
 use crate::node::nodes::ASTNode;
 use std::process::exit;
 
@@ -22,7 +25,7 @@ fn find_function_in_stack(function_name: &str) -> Function {
 
     for function in function_stack.iter() {
         if function_name == function.name {
-            return function.clone(); // If Function is Clone, clone it and return
+            return function.clone();
         }
     }
 
@@ -140,7 +143,13 @@ pub fn parse_function_declaration(expression: &Vec<ASTNode>) -> bool {
     true
 }
 
-pub fn parse_function_call(expression: &Vec<ASTNode>) -> BaseTypes {
+pub fn parse_function_call(
+    expression: &Vec<ASTNode>,
+    dot_notation: String,
+    array: Option<Array>,
+    dictionary: Option<Dictionary>,
+    variable: Option<Variable>,
+) -> BaseTypes {
     let mut function_name: String = "None".to_string();
     let mut parameter_and_value: Vec<BaseTypes> = Vec::new();
     let mut i = 0;
@@ -184,18 +193,144 @@ pub fn parse_function_call(expression: &Vec<ASTNode>) -> BaseTypes {
         _ => println!("Unhandled node: {:?}", expression[i]),
     }
 
+    match dot_notation.as_str() {
+        "dictionary" => {
+            return get_function_result(
+                function_name,
+                &mut parameter_and_value,
+                dot_notation,
+                None,
+                dictionary,
+                None,
+            );
+        }
+        "array" => {
+            return get_function_result(
+                function_name,
+                &mut parameter_and_value,
+                dot_notation,
+                array,
+                None,
+                None,
+            );
+        }
+        "variable" => {
+            return get_function_result(
+                function_name,
+                &mut parameter_and_value,
+                dot_notation,
+                None,
+                None,
+                variable,
+            );
+        }
+        _ => {
+            return get_function_result(
+                function_name,
+                &mut parameter_and_value,
+                dot_notation,
+                None,
+                None,
+                None,
+            );
+        }
+    }
     // Handle the result or error
-    get_function_result(function_name, &mut parameter_and_value)
 }
 
 pub fn get_function_result(
     function_name: String,
     parameter_and_value: &mut Vec<BaseTypes>,
+    dot_notation: String,
+    array: Option<Array>,
+    dictionary: Option<Dictionary>,
+    variable: Option<Variable>,
 ) -> BaseTypes {
     let std_functions = match FUNCTIONS.lock() {
         Ok(guard) => guard,
         Err(poisoned) => poisoned.into_inner(),
     };
+
+    let array_functions = match ARRAY_FUNCTIONS.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+
+    println!("dot_notation: {}", dot_notation);
+    match dot_notation.as_str() {
+        "dictionary" => {}
+        "array" => {
+            if let Some(func) = array_functions.get(function_name.as_str()) {
+                //println!("Function call is in ARRAY_FUNCTIONS: {}", function_name);
+                // Convert Int to Float for the first two parameters
+                for param in parameter_and_value.iter_mut().take(2) {
+                    if let BaseTypes::Int(x) = *param {
+                        *param = BaseTypes::Float(x as f64);
+                    }
+                }
+                /*
+                // Ensure at least two parameters are provided
+                if parameter_and_value.len() < 2 {
+                    println!(
+                "Syntax Error: Not enough parameters supplied to function, {}/2 Provided.",
+                parameter_and_value.len()
+                    );
+                    exit(1);
+                }
+                */
+                let mut params: Vec<Box<dyn Any>> = Vec::new();
+
+                // Call the function and return the result
+                for param in parameter_and_value.iter() {
+                    //println!("Parameter: {:?}", param);
+                    let boxed_param: Box<dyn Any> = match param {
+                        BaseTypes::Int(x) => Box::new(BaseTypes::Int(*x)),
+                        BaseTypes::Float(x) => Box::new(BaseTypes::Float(*x)),
+                        BaseTypes::StringWrapper(x) => {
+                            Box::new(BaseTypes::StringWrapper(x.clone()))
+                        }
+                        BaseTypes::Bool(x) => Box::new(BaseTypes::Bool(*x)),
+                        BaseTypes::Char(x) => Box::new(BaseTypes::Char(*x)),
+                        _ => panic!("Unknown parameter type"),
+                    };
+
+                    let array_param: Array = array.clone().unwrap();
+
+                    params.insert(0, Box::new(array_param));
+                    params.push(boxed_param);
+                    //add array to params at [0]
+                }
+                // Create a vector of Box<dyn Any> for parameters
+                // Call the function and handle the result
+                let result = call_function(func, params);
+                // convert the result to the appropriate type
+                if result.is::<f64>() {
+                    //println!("Result of Function: {:?} of type float", result);
+                    return BaseTypes::Float(*result.downcast::<f64>().unwrap());
+                }
+                if result.is::<i32>() {
+                    //println!("Result of Function: {:?} of type int", result);
+                    return BaseTypes::Int(*result.downcast::<i32>().unwrap());
+                }
+                if result.is::<String>() {
+                    //println!("Result of Function: {:?} of type string", result);
+                    return BaseTypes::StringWrapper(
+                        result.downcast::<String>().unwrap().to_string(),
+                    );
+                }
+                if result.is::<bool>() {
+                    //println!("Result of Function: {:?} of type bool", result);
+                    return BaseTypes::Bool(*result.downcast::<bool>().unwrap());
+                } else {
+                    return BaseTypes::Null;
+                }
+            }
+            println!("Function call is not in any of the ARRAY_FUNCTIONS.");
+        }
+
+        "variable" => {}
+        _ => println!("Not calling any function with dot notation"),
+    }
 
     if let Some(func) = std_functions.get(function_name.as_str()) {
         //println!("Function call is in STD_FUNCTIONS: {}", function_name);
