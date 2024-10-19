@@ -1,4 +1,7 @@
 let hello: string = "Hello World";
 echo(hello);
-let helloup: string = to_uppercase(hello);
-echo(helloup);
+echo(hello);
+let goodbye: string = "Goodbye World";
+echo(goodbye);
+let con: string = concat(hello, goodbye);
+echo(con);

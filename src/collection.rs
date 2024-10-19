@@ -1,19 +1,173 @@
+use crate::base_variable::base_types::BaseTypes;
 use crate::collection::collections::Array;
 use crate::collection::collections::Dictionary;
 use lazy_static::lazy_static;
-/// this file will store code for collections
-/// there are 2 types, arrays and dictoinaries
-/// arrays are unordered collections of variable amounts, can store one type of data declared at initialization
-/// dictionaries are ordered collections of key value pairs, keys are one type, values are another type or the same
-/// declared at runtime
-/// arrays are declared with [a, b, c]
-/// dictionaries are declared with {a=>1, b=>2, c=>3}
-///
+
+use crate::function::functions::FunctionTypes;
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 lazy_static! {
     pub static ref ARRAY_STACK: Mutex<Vec<Array>> = Mutex::new(Vec::new());
     pub static ref DICTIONARY_STACK: Mutex<Vec<Dictionary>> = Mutex::new(Vec::new());
+}
+
+lazy_static! {
+    pub static ref ARRAY_FUNCTIONS: Mutex<HashMap<&'static str, FunctionTypes>> = {
+        let mut map = HashMap::new();
+
+        map.insert("push", FunctionTypes::ArrayPushFn(array_push));
+        map.insert("pop", FunctionTypes::ArrayPopFn(array_pop));
+        map.insert("remove", FunctionTypes::ArrayRemoveFn(array_remove));
+        map.insert("get", FunctionTypes::ArrayGetFn(array_get));
+        map.insert("set", FunctionTypes::ArraySetFn(array_set));
+
+        map.into()
+    };
+    //pub static ref DICTIONARY_FUNCTIONS: Mutex<HashMap<&'static str, FunctionTypes>> = HashMap::new();
+        /*
+        map.insert("add", FunctionTypes::DictionaryAddFn(dictionary_add));
+        map.insert(
+            "remove",
+            FunctionTypes::DictionaryRemoveFn(dictionary_remove),
+        );
+        map.insert("get", FunctionTypes::DictionaryGetFn(dictionary_get));
+        map.insert("set", FunctionTypes::DictionarySetFn(dictionary_set));
+        map.insert("keys", FunctionTypes::DictionaryKeysFn(dictionary_keys));
+        map.insert(
+            "values",
+            FunctionTypes::DictionaryValuesFn(dictionary_values),
+        );
+        map.into()
+*/
+}
+
+pub fn update_array_stack(array: Array) {
+    //remove array from stack then add it back
+    let mut array_stack = ARRAY_STACK.lock().unwrap();
+    let mut index = None;
+    for (i, a) in array_stack.iter().enumerate() {
+        if a.name == array.name {
+            index = Some(i);
+            break;
+        }
+    }
+    if let Some(i) = index {
+        array_stack.remove(i);
+    }
+    array_stack.push(array);
+}
+
+// Function to push an element into the array
+fn array_push(array: &mut Array, value: BaseTypes) {
+    let mut array_functions = ArrayFunctions::Push;
+    array_functions.push(array, value);
+}
+
+// Function to pop an element from the array
+fn array_pop(array: &mut Array) -> Option<BaseTypes> {
+    let mut array_functions = ArrayFunctions::Pop;
+    array_functions.pop(array)
+}
+
+// Function to remove an element from the array by index
+fn array_remove(array: &mut Array, index: usize) {
+    let mut array_functions = ArrayFunctions::Remove;
+    array_functions.remove(array, index);
+}
+
+// Function to get an element from the array by index
+fn array_get(array: &Array, index: usize) -> Option<BaseTypes> {
+    let mut array_functions = ArrayFunctions::Get;
+    array_functions.get(array, index)
+}
+
+// Function to set an element in the array at the specified index
+fn array_set(array: &mut Array, index: usize, value: BaseTypes) -> Option<BaseTypes> {
+    let mut array_functions = ArrayFunctions::Set;
+    array_functions.set(array, index, value)
+}
+
+pub enum ArrayFunctions {
+    Push,
+    Pop,
+    Append,
+    Remove,
+    Get,
+    Set,
+}
+
+impl ArrayFunctions {
+    pub fn push(&mut self, array: &mut Array, value: BaseTypes) {
+        array.push(value.clone());
+        update_array_stack(array.clone());
+    }
+    pub fn pop(&mut self, array: &mut Array) -> Option<BaseTypes> {
+        let result = array.pop();
+        update_array_stack(array.clone());
+        result
+    }
+    pub fn append(&mut self, array: &mut Array, values: &Vec<BaseTypes>) {
+        for value in values {
+            array.push(value.clone());
+            update_array_stack(array.clone());
+        }
+    }
+    pub fn remove(&mut self, array: &mut Array, index: usize) {
+        array.remove(index);
+        update_array_stack(array.clone());
+    }
+    pub fn get(&mut self, array: &Array, index: usize) -> Option<BaseTypes> {
+        array.get(index)
+    }
+    pub fn set(&mut self, array: &mut Array, index: usize, value: BaseTypes) -> Option<BaseTypes> {
+        array.set(index, value.clone());
+        update_array_stack(array.clone());
+        Some(value)
+    }
+}
+
+pub enum DictionaryFunctions {
+    Add,
+    Remove,
+    Get,
+    Set,
+    Keys,
+    Values,
+}
+
+impl DictionaryFunctions {
+    pub fn add(&mut self, dictionary: &mut Dictionary, key: BaseTypes, value: BaseTypes) {
+        dictionary.add(key, value);
+    }
+    pub fn remove(
+        &mut self,
+        dictionary: &mut Dictionary,
+        key: BaseTypes,
+    ) -> Option<(BaseTypes, BaseTypes)> {
+        dictionary.remove(key)
+    }
+    pub fn get<'a>(
+        &mut self,
+        dictionary: &'a Dictionary,
+        key: BaseTypes,
+    ) -> Option<&'a (BaseTypes, BaseTypes)> {
+        dictionary.get(key)
+    }
+    pub fn set(
+        &mut self,
+        dictionary: &mut Dictionary,
+        key: BaseTypes,
+        value: BaseTypes,
+    ) -> Option<BaseTypes> {
+        dictionary.set(key, value)
+    }
+    pub fn keys<'a>(&mut self, dictionary: &'a Dictionary) -> Vec<&'a BaseTypes> {
+        dictionary.keys()
+    }
+    pub fn values<'a>(&mut self, dictionary: &'a Dictionary) -> Vec<&'a BaseTypes> {
+        dictionary.values()
+    }
 }
 
 pub mod collections {

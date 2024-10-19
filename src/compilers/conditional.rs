@@ -42,10 +42,22 @@ pub mod conditional_compilers {
                     }
 
                     if first_value == ASTNode::None {
-                        let value = parse_function_call(&function_call);
+                        let value = parse_function_call(
+                            &function_call,
+                            "None".to_string(),
+                            None,
+                            None,
+                            None,
+                        );
                         first_value = from_base_type(value);
                     } else {
-                        let value = parse_function_call(&function_call);
+                        let value = parse_function_call(
+                            &function_call,
+                            "None".to_string(),
+                            None,
+                            None,
+                            None,
+                        );
                         second_value = from_base_type(value);
                     }
                 }

@@ -7,7 +7,8 @@ pub mod nodes {
     use crate::base_variable::base_types::BaseTypes;
     use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
     use crate::token_type::token_types::*;
-    use std::fmt;
+    use std::fmt::{self, Display};
+    use std::process::exit;
 
     pub fn to_base_type(node: &ASTNode) -> Option<BaseTypes> {
         match node {
@@ -20,39 +21,13 @@ pub mod nodes {
             ASTNode::Char(char_node) => Some(BaseTypes::Char(char_node.value)),
             ASTNode::Bool(bool_node) => Some(BaseTypes::Bool(bool_node.value)),
             ASTNode::Float(float_node) => Some(BaseTypes::Float(float_node.value as f64)),
-            ASTNode::Assignment(_) => Some(BaseTypes::Null),
-            ASTNode::Collection(_) => Some(BaseTypes::Null),
-            ASTNode::VarTypeAssignment(_) => Some(BaseTypes::Null),
-            ASTNode::Variable(_) => Some(BaseTypes::Null),
-            ASTNode::Function(_) => Some(BaseTypes::Null),
-            ASTNode::FunctionCall(_) => Some(BaseTypes::Null),
-            ASTNode::VariableCall(_) => Some(BaseTypes::Null),
-            ASTNode::VariableType(_) => Some(BaseTypes::Null),
-            ASTNode::VariableValue(_) => Some(BaseTypes::Null),
-            ASTNode::FunctionArguments(_) => Some(BaseTypes::Null),
-            ASTNode::AssignmentOperator(_) => Some(BaseTypes::Null),
-            ASTNode::ReturnTypeAssignment(_) => Some(BaseTypes::Null),
-            ASTNode::Comment(_) => Some(BaseTypes::Null),
-            ASTNode::FunctionCallArguments(_) => Some(BaseTypes::Null),
-            ASTNode::LeftParenthesis => Some(BaseTypes::Null),
-            ASTNode::RightParenthesis => Some(BaseTypes::Null),
-            ASTNode::ArgumentSeparator => Some(BaseTypes::Null),
-            ASTNode::LeftCurly => Some(BaseTypes::Null),
-            ASTNode::RightCurly => Some(BaseTypes::Null),
-            ASTNode::RightBracket => Some(BaseTypes::Null),
-            ASTNode::LeftBracket => Some(BaseTypes::Null),
-            ASTNode::FatArrow => Some(BaseTypes::Null),
-            ASTNode::While(_) => Some(BaseTypes::Null),
-            ASTNode::For(_) => Some(BaseTypes::Null),
-            ASTNode::If(_) => Some(BaseTypes::Null),
-            ASTNode::Elif(_) => Some(BaseTypes::Null),
-            ASTNode::Try => Some(BaseTypes::Null),
-            ASTNode::Catch => Some(BaseTypes::Null),
-            ASTNode::Finally => Some(BaseTypes::Null),
-            ASTNode::Else => Some(BaseTypes::Null),
-
-            ASTNode::None => Some(BaseTypes::Null),
-            _ => None,
+            _ => {
+                println!(
+                    "This type {:?} cannot be converted to base type since it is not a value",
+                    node
+                );
+                exit(1)
+            } // cannot convert to base type since it is not a value, error
         }
     }
 
@@ -69,6 +44,9 @@ pub mod nodes {
 
     #[derive(Debug, Clone, PartialEq)]
     pub enum ASTNode {
+        ObjectCall(ObjectCallNode),
+        CollectionCall(CollectionCallNode),
+        Dot(DotNode),
         While(WhileNode),
         For(ForNode),
         If(IfNode),
@@ -115,6 +93,9 @@ pub mod nodes {
         ///
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
             match self {
+                ASTNode::CollectionCall(c) => write!(f, "{}", c),
+                ASTNode::ObjectCall(c) => write!(f, "{}", c),
+                ASTNode::Dot(d) => write!(f, "{}", d),
                 ASTNode::While(w) => write!(f, "{}", w),
                 ASTNode::For(fr) => write!(f, "{}", fr),
                 ASTNode::If(i) => write!(f, "{}", i),
@@ -154,6 +135,62 @@ pub mod nodes {
                 ASTNode::FatArrow => write!(f, "FatArrow"),
                 ASTNode::None => write!(f, "None"),
             }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct CollectionCallNode {
+        pub name: String,
+    }
+
+    impl CollectionCallNode {
+        pub fn new(name: String) -> Self {
+            CollectionCallNode { name }
+        }
+    }
+
+    impl Display for CollectionCallNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Collection Call Node, name {}", self.name)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct ObjectCallNode {
+        pub name: String,
+    }
+
+    impl ObjectCallNode {
+        pub fn new(name: String) -> Self {
+            ObjectCallNode { name }
+        }
+    }
+
+    impl Display for ObjectCallNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Object Call Node, name: {}", self.name)
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    pub struct DotNode {
+        pub object: String,
+        pub function: String,
+    }
+
+    impl DotNode {
+        pub fn new(object: String, function: String) -> Self {
+            DotNode { object, function }
+        }
+    }
+
+    impl fmt::Display for DotNode {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(
+                f,
+                "Dot: object: {}, function: {}",
+                self.object, self.function
+            )
         }
     }
 
@@ -817,6 +854,8 @@ pub mod nodes {
             TokenTypes::LeftParenthesis => ASTNode::LeftParenthesis,
             TokenTypes::RightParenthesis => ASTNode::RightParenthesis,
 
+            TokenTypes::Dot { object, method } => ASTNode::Dot(DotNode::new(object, method)),
+
             TokenTypes::Function {
                 name,
                 return_type,
@@ -869,6 +908,7 @@ pub mod nodes {
             TokenTypes::Try => ASTNode::Try,
             TokenTypes::Catch => ASTNode::Catch,
             TokenTypes::Finally => ASTNode::Finally,
+            TokenTypes::ObjectCall { name } => ASTNode::ObjectCall(ObjectCallNode::new(name)),
 
             _ => {
                 panic!("Unrecognized token: {:?}", parse_info.token);

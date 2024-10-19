@@ -114,6 +114,13 @@ pub mod token_types {
             stored_value_type_tuple: (String, String),
         },
         /*
+         * if statement is simply a object name e.g. foo it is recognized as a call to an object,
+         * var, collection, etc
+         */
+        ObjectCall {
+            name: String,
+        },
+        /*
          * [
          */
         LeftBracket,
@@ -129,6 +136,14 @@ pub mod token_types {
         Used as a bad return value
         */
         None,
+
+        /*
+         * used for dot notation eg obj.method()
+         */
+        Dot {
+            object: String,
+            method: String,
+        },
 
         /*
          * If statement
@@ -186,7 +201,21 @@ pub mod token_types {
     impl PartialEq for TokenTypes {
         fn eq(&self, other: &Self) -> bool {
             match (self, other) {
+                (
+                    TokenTypes::Dot {
+                        object: ref a,
+                        method: ref b,
+                    },
+                    TokenTypes::Dot {
+                        object: ref c,
+                        method: ref d,
+                    },
+                ) => a == c && b == d,
                 (TokenTypes::FunctionCallArguments, TokenTypes::FunctionCallArguments) => true,
+                (
+                    TokenTypes::ObjectCall { name: ref name1 },
+                    TokenTypes::ObjectCall { name: ref name2 },
+                ) => name1 == name2,
                 (TokenTypes::SemiColon, TokenTypes::SemiColon) => true,
                 (TokenTypes::Int, TokenTypes::Int) => true,
                 (TokenTypes::Float, TokenTypes::Float) => true,
@@ -280,6 +309,8 @@ pub mod token_types {
     impl TokenTypes {
         pub fn to_string(&self) -> String {
             match self {
+                TokenTypes::ObjectCall { name } => format!("Object Call: name: {}", name),
+                TokenTypes::Dot { object, method } => format!("Dot: {}.{}", object, method),
                 TokenTypes::Function {
                     name,
                     return_type,

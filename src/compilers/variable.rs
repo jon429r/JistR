@@ -3,10 +3,228 @@ use std::process::exit;
 use crate::base_variable::base_types::BaseTypes;
 use crate::base_variable::variable::Variable;
 use crate::base_variable::variables::VARIABLE_STACK;
+use crate::collection::collections::{Array, Dictionary};
+use crate::compilers::collection::parse_collection_call;
 use crate::compilers::function::parse_function_call;
+use crate::node::nodes::match_token_to_node;
 use crate::node::nodes::ASTNode;
 use crate::node::nodes::VariableCallNode;
 use crate::node::nodes::{IntNode, OperatorNode};
+use crate::statement_tokenizer::tokenizer::tokenizers::tokenize;
+
+use crate::collection::{ARRAY_STACK, DICTIONARY_STACK};
+use crate::statement_tokenizer::variable_tokenizer::variable_tokenizers::read_variable_call;
+
+pub fn search_for_dict_name(name: String) -> bool {
+    // if name is in DICTIONARY_STACK reutrn true
+    let dict_stack = DICTIONARY_STACK.lock().unwrap(); // Lock the mutex
+    for dict in dict_stack.iter() {
+        if dict.name == name {
+            return true;
+        }
+    }
+    return false;
+}
+
+pub fn search_for_array_name(name: String) -> bool {
+    let array_stack = ARRAY_STACK.lock().unwrap();
+    for array in array_stack.iter() {
+        if array.name == name {
+            return true;
+        }
+    }
+    return false;
+}
+
+/*
+pub fn search_for_var_name(name: String) -> bool {
+    let var_stack = unsafe { VARIABLE_STACK };
+    for var in var_stack.inter() {
+        if var.name == name {
+            return true;
+        }
+    }
+    return False;
+} */
+
+pub fn get_dict(name: String) -> Dictionary {
+    let dict_stack = DICTIONARY_STACK.lock().unwrap();
+    for dict in dict_stack.iter() {
+        if dict.name == name {
+            return dict.clone();
+        }
+    }
+    println!("Dictionary not found");
+    exit(1);
+}
+
+pub fn get_array(name: String) -> Array {
+    let array_stack = ARRAY_STACK.lock().unwrap();
+    for array in array_stack.iter() {
+        if array.name == name {
+            return array.clone();
+        }
+    }
+    println!("Array not found");
+    exit(1);
+}
+
+pub fn parse_object_call(node: &ASTNode) -> (String, String) {
+    // will look at object call name and see if it is in variable stack or collection stack then
+    // return the approiate ast node, eg variable call or collection call
+
+    match node.clone() {
+        ASTNode::Dot(c) => {
+            let object_name = c.object.clone();
+            let dict: bool = search_for_dict_name(object_name.clone());
+            let array: bool = search_for_array_name(object_name.clone());
+            let variable: bool = false;
+
+            if dict {
+                return (object_name, "dictionary".to_string());
+            }
+            if array {
+                return (object_name, "array".to_string());
+            }
+            if variable {
+                return (object_name, "variable".to_string());
+            } else {
+                println!("Object call is not a variable, dictionary or array");
+                exit(1);
+            }
+        }
+        _ => {
+            println!(
+                "Error expected an object call node in parse object call found {:?}",
+                node
+            );
+        }
+    }
+
+    exit(1);
+}
+
+pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
+    println!("compiling dot statement");
+
+    // in order to compile we must, tokenize variable or collection call, tokenize function call
+    // check what type object is
+    // then make an object type specific function call
+
+    let node: ASTNode = exp_stack.get(0).unwrap().clone();
+
+    match node.clone() {
+        ASTNode::Dot(d) => {
+            println!("Dot call\nobject: {}, function: {}", d.object, d.function);
+            let mut variable: (String, BaseTypes);
+            let mut collection: (String, Vec<BaseTypes>);
+            let mut object_name_type: (String, String);
+
+            // first tokenize object
+            let objects = tokenize(d.object);
+            let mut object_nodes: Vec<ASTNode> = Vec::new();
+            //now match to node
+            for object in objects.clone() {
+                object_nodes.push(match_token_to_node(object));
+            }
+
+            // check type of object, var, collection? then comiple
+            match object_nodes.get(0).unwrap() {
+                ASTNode::ObjectCall(c) => {
+                    object_name_type = parse_object_call(&node);
+
+                    //determine object type
+                    //get that from stack, then call approiate function
+
+                    match object_name_type.1.to_string().as_str() {
+                        "dictionary" => {
+                            println!("Object call is a dictionary");
+                            let dict: Option<Dictionary> = get_dict(object_name_type.0).into();
+                            let tokenized_function = tokenize(d.function.clone());
+                            let mut function_nodes: Vec<ASTNode> = Vec::new();
+                            for function in tokenized_function {
+                                function_nodes.push(match_token_to_node(function));
+                            }
+                            println!("Function nodes: {:?}", function_nodes);
+                            parse_function_call(
+                                &function_nodes,
+                                "dictionary".to_string(),
+                                None,
+                                dict,
+                                None,
+                            );
+                        }
+                        "array" => {
+                            println!("Object call is an array");
+                            let array: Option<Array> = get_array(object_name_type.0).into();
+                            let tokenized_function = tokenize(d.function.clone());
+                            let mut function_nodes: Vec<ASTNode> = Vec::new();
+                            for function in tokenized_function {
+                                function_nodes.push(match_token_to_node(function));
+                            }
+                            println!("Function nodes: {:?}", function_nodes);
+
+                            //make sure array is not None
+
+                            match array.clone() {
+                                Some(Array {
+                                    name,
+                                    data,
+                                    value_type,
+                                }) => {
+                                    println!(
+                                        "Array is not None with name: {}, and data type: {}",
+                                        name, value_type
+                                    );
+                                    // You can use name, data, value_type as needed
+                                }
+                                None => {
+                                    println!("Array is None");
+                                    exit(1);
+                                }
+                            }
+
+                            parse_function_call(
+                                &function_nodes,
+                                "array".to_string(),
+                                array,
+                                None,
+                                None,
+                            );
+                        }
+                        "variable" => {
+                            println!("Object call is a variable");
+                            let tokenized_function = tokenize(d.function.clone());
+                            let mut function_nodes: Vec<ASTNode> = Vec::new();
+                            for function in tokenized_function {
+                                function_nodes.push(match_token_to_node(function));
+                            }
+                            println!("Function nodes: {:?}", function_nodes);
+                        }
+                        _ => {
+                            println!("Object call is not a variable, dictionary or array");
+                            exit(1);
+                        }
+                    }
+                }
+                ASTNode::Collection(c) => collection = parse_collection_call(&object_nodes),
+                ASTNode::VariableCall(c) => {
+                    variable = parse_variable_call(object_nodes.get(0).unwrap())
+                }
+                _ => {
+                    println!("Unexpected node found within comple dot statement function");
+                    exit(1);
+                }
+            }
+        }
+        _ => {
+            println!("Syntax Error: Expected a dot statement found {}", node);
+            exit(1);
+        }
+    }
+
+    return true;
+}
 
 ///
 ///This Function takes in an ASTNode and returns a tuple of the variable name and its value
@@ -191,7 +409,13 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
 
                     //println!("Function call stack: {:?}", function_call_stack);
 
-                    let result = parse_function_call(&function_call_stack);
+                    let result = parse_function_call(
+                        &function_call_stack,
+                        "None".to_string(),
+                        None,
+                        None,
+                        None,
+                    );
                     // TODO set value to result
                     value = result;
 

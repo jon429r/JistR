@@ -61,6 +61,27 @@ pub mod function_tokenizers {
         while j < chars.len() {
             let char = chars[j];
             //let next_char = chars.get(j + 1).cloned().unwrap_or('\0');
+            if char == '.' {
+                let mut function_call = String::new();
+                let mut k = j + 1;
+                // loop and collect the function call until we hit ';'
+                while k < expression.len() {
+                    let char = expression.chars().nth(k).unwrap();
+                    if char == ';' {
+                        break;
+                    }
+                    function_call.push(char);
+                    k += 1;
+                }
+                return ParseInfo::new(
+                    TokenTypes::Dot {
+                        object: (function_name.clone()), //please excuse the naming, it's a bit misleading
+                        method: (function_call.clone()),
+                    },
+                    (k - index).try_into().unwrap(),
+                    "Dot Notation".to_string(),
+                );
+            }
 
             if char == '=' {
                 return ParseInfo::new(TokenTypes::None, 0, "none".to_string());

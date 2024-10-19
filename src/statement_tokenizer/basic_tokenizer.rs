@@ -2,6 +2,31 @@ pub mod basic_tokenizers {
     use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
     use crate::token_type::token_types::TokenTypes;
 
+    pub fn read_object_call(expression: &String) -> ParseInfo {
+        // if the whole expression is a group of characters it is a object call eg foo eg a eg
+        // rad_var
+        let mut object_name: String = String::new();
+        let mut j = 0;
+
+        while j < expression.len() {
+            let char: char = expression.chars().nth(j).unwrap();
+            if !char.is_alphabetic() {
+                return ParseInfo::new(TokenTypes::None, 0, "none".to_string());
+            } else {
+                //add char to object object_name
+                object_name.push(char);
+            }
+            j += 1;
+        }
+        return ParseInfo::new(
+            TokenTypes::ObjectCall {
+                name: object_name.clone(),
+            },
+            expression.len().try_into().unwrap(),
+            object_name,
+        );
+    }
+
     pub fn read_boolean(expression: String, index: usize) -> ParseInfo {
         let mut j = index;
         let mut boolean: String = String::new();
