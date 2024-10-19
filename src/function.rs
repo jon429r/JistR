@@ -24,6 +24,16 @@ pub mod functions {
         ArrayGetFn(fn(&Array, BaseTypes) -> Option<BaseTypes>),
         ArraySetFn(fn(&mut Array, BaseTypes, BaseTypes) -> Option<BaseTypes>),
         ArrayAppendFn(fn(&mut Array, BaseTypes)),
+        ArrayPrint(fn(&Array)),
+
+        DictionaryAddFn(fn(&mut Dictionary, BaseTypes, BaseTypes)),
+        DictionaryRemoveFn(fn(&mut Dictionary, BaseTypes)),
+
+        DictionaryGetFn(fn(&Dictionary, BaseTypes) -> Option<(BaseTypes, BaseTypes)>),
+        DictionarySetFn(fn(&mut Dictionary, BaseTypes, BaseTypes)),
+        DictionaryKeysFn(fn(&Dictionary) -> Vec<BaseTypes>),
+        DictionaryValuesFn(fn(&Dictionary) -> Vec<BaseTypes>),
+        DictionaryPrint(fn(&Dictionary)),
 
         FloatFn(fn(f64)),
         DoubleFloatFn(fn(f64, f64) -> f64),
@@ -260,6 +270,127 @@ pub mod functions {
                     return Box::new(result);
                 } else {
                     panic!("Expected exactly three arguments for ArraySetFn");
+                }
+            }
+
+            FunctionTypes::ArrayPrint(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0]
+                        .downcast_ref::<Array>()
+                        .expect("Expected Array");
+                    f(&arg.clone());
+                    //println!("ArrayPrint called with: {:?}", arg);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly one argument for ArrayPrint");
+                }
+            }
+
+            FunctionTypes::DictionaryPrint(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0]
+                        .downcast_ref::<Dictionary>()
+                        .expect("Expected Dictionary");
+                    f(&arg.clone());
+                    //println!("DictionaryPrint called with: {:?}", arg);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly one argument for DictionaryPrint");
+                }
+            }
+
+            FunctionTypes::DictionaryAddFn(f) => {
+                if arguments.len() == 3 {
+                    let arg1 = arguments[0]
+                        .downcast_ref::<Dictionary>()
+                        .expect("Expected Dictionary");
+                    let arg2 = arguments[1]
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+                    let arg3 = arguments[2]
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+                    f(&mut arg1.clone(), arg2.clone(), arg3.clone());
+                    //println!("DictionaryAddFn called with: {:?}", arg2);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly three arguments for DictionaryAddFn");
+                }
+            }
+
+            FunctionTypes::DictionaryRemoveFn(f) => {
+                if arguments.len() == 2 {
+                    let arg1 = arguments[0]
+                        .downcast_ref::<Dictionary>()
+                        .expect("Expected Dictionary");
+                    let arg2 = arguments[1]
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+                    f(&mut arg1.clone(), arg2.clone());
+                    //println!("DictionaryRemoveFn called with: {:?}", arg2);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly two arguments for DictionaryRemoveFn");
+                }
+            }
+
+            FunctionTypes::DictionaryGetFn(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0]
+                        .downcast_ref::<Dictionary>()
+                        .expect("Expected Dictionary");
+                    let arg2 = arguments[1]
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+                    let result: Option<(BaseTypes, BaseTypes)> = f(arg, arg2.clone());
+
+                    // result is now an Option<(BaseTypes, BaseTypes)>
+                    return Box::new(result);
+                } else {
+                    panic!("Expected exactly one argument for DictionaryGetFn");
+                }
+            }
+
+            FunctionTypes::DictionarySetFn(f) => {
+                if arguments.len() == 3 {
+                    let arg1 = arguments[0]
+                        .downcast_ref::<Dictionary>()
+                        .expect("Expected Dictionary");
+                    let arg2 = arguments[1]
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+                    let arg3 = arguments[2]
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+                    let result = f(&mut arg1.clone(), arg2.clone(), arg3.clone());
+                    //println!("DictionarySetFn result: {:?}", result);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly three arguments for DictionarySetFn");
+                }
+            }
+
+            FunctionTypes::DictionaryKeysFn(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0]
+                        .downcast_ref::<Dictionary>()
+                        .expect("Expected Dictionary");
+                    let result = f(arg); // No need to clone `arg` here
+                    return Box::new(result); // Ensure `result` is of the right type
+                } else {
+                    panic!("Expected exactly one argument for DictionaryKeysFn");
+                }
+            }
+
+            FunctionTypes::DictionaryValuesFn(f) => {
+                if arguments.len() == 1 {
+                    let arg = arguments[0]
+                        .downcast_ref::<Dictionary>()
+                        .expect("Expected Dictionary");
+                    let result = f(arg); // No need to clone `arg` here
+                    return Box::new(result); // Ensure `result` is of the right type
+                } else {
+                    panic!("Expected exactly one argument for DictionaryValuesFn");
                 }
             }
 

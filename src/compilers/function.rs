@@ -1,6 +1,6 @@
 use crate::base_variable::variable::Variable;
 use crate::collection::collections::{Array, Dictionary};
-use crate::collection::ARRAY_FUNCTIONS;
+use crate::collection::{ARRAY_FUNCTIONS, DICTIONARY_FUNCTIONS};
 use crate::function::functions::FunctionTypes;
 use crate::node::nodes::ASTNode;
 use std::process::exit;
@@ -256,9 +256,67 @@ pub fn get_function_result(
         Err(poisoned) => poisoned.into_inner(),
     };
 
+    let dictionary_functions = match DICTIONARY_FUNCTIONS.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+
     println!("dot_notation: {}", dot_notation);
     match dot_notation.as_str() {
-        "dictionary" => {}
+        "dictionary" => {
+            if let Some(func) = dictionary_functions.get(function_name.as_str()) {
+                //println!("Function call is in DICTIONARY_FUNCTIONS: {}", function_name);
+                // Convert Int to Float for the first two parameters
+                for param in parameter_and_value.iter_mut().take(2) {
+                    if let BaseTypes::Int(x) = *param {
+                        *param = BaseTypes::Float(x as f64);
+                    }
+                }
+                /*
+                // Ensure at least two parameters are provided
+                if parameter_and_value.len() < 2 {
+                    println!(
+                "Syntax Error: Not enough parameters supplied to function, {}/2 Provided.",
+                parameter_and_value.len()
+                    );
+                    exit(1);
+                }
+                */
+                let mut params: Vec<Box<dyn Any>> = Vec::new();
+                let dictionary_param: Dictionary = dictionary.clone().unwrap();
+                println!("Dictionary: {:?}", dictionary_param);
+                params.insert(0, Box::new(dictionary_param));
+                // Call the function and return the result
+                for param in parameter_and_value.iter() {
+                    //println!("Parameter: {:?}", param);
+                    let boxed_param: Box<dyn Any> = match param {
+                        BaseTypes::Int(x) => Box::new(BaseTypes::Int(*x)),
+                        BaseTypes::Float(x) => Box::new(BaseTypes::Float(*x)),
+                        BaseTypes::StringWrapper(x) => {
+                            Box::new(BaseTypes::StringWrapper(x.clone()))
+                        }
+                        BaseTypes::Bool(x) => Box::new(BaseTypes::Bool(*x)),
+                        BaseTypes::Char(x) => Box::new(BaseTypes::Char(*x)),
+                        _ => panic!("Unknown parameter type"),
+                    };
+                    params.push(boxed_param);
+                    //add array to params at [0]
+                }
+                // Create a vector of Box<dyn Any> for parameters
+                // Call the function and handle the result
+                println!("Params: {:?}", params);
+                let result = call_function(func, params);
+                // convert the result to the appropriate type
+                if result.is::<f64>() {
+                    //println!("Result of Function: {:?} of type float", result);
+                    return BaseTypes::Float(*result.downcast::<f64>().unwrap());
+                }
+                if result.is::<i32>() {
+                    //println!("Result of Function: {:?} of type int", result);
+                    return BaseTypes::Int(*result.downcast::<i32>().unwrap());
+                }
+            }
+        }
         "array" => {
             if let Some(func) = array_functions.get(function_name.as_str()) {
                 //println!("Function call is in ARRAY_FUNCTIONS: {}", function_name);
