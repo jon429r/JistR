@@ -6,6 +6,7 @@ use lazy_static::lazy_static;
 use crate::function::functions::FunctionTypes;
 use std::collections::HashMap;
 use std::sync::Mutex;
+use std::usize;
 
 lazy_static! {
     pub static ref ARRAY_STACK: Mutex<Vec<Array>> = Mutex::new(Vec::new());
@@ -21,6 +22,7 @@ lazy_static! {
         map.insert("remove", FunctionTypes::ArrayRemoveFn(array_remove));
         map.insert("get", FunctionTypes::ArrayGetFn(array_get));
         map.insert("set", FunctionTypes::ArraySetFn(array_set));
+        map.insert("append", FunctionTypes::ArrayAppendFn(array_append));
 
         map.into()
     };
@@ -64,6 +66,11 @@ fn array_push(array: &mut Array, value: BaseTypes) {
     array_functions.push(array, value);
 }
 
+fn array_append(array: &mut Array, value: BaseTypes) {
+    let mut array_functions = ArrayFunctions::Append;
+    array_functions.append(array, value);
+}
+
 // Function to pop an element from the array
 fn array_pop(array: &mut Array) -> Option<BaseTypes> {
     let mut array_functions = ArrayFunctions::Pop;
@@ -71,19 +78,22 @@ fn array_pop(array: &mut Array) -> Option<BaseTypes> {
 }
 
 // Function to remove an element from the array by index
-fn array_remove(array: &mut Array, index: usize) {
+fn array_remove(array: &mut Array, index: BaseTypes) {
     let mut array_functions = ArrayFunctions::Remove;
-    array_functions.remove(array, index);
+    array_functions.remove(array, index.into());
 }
 
 // Function to get an element from the array by index
-fn array_get(array: &Array, index: usize) -> Option<BaseTypes> {
+fn array_get(array: &Array, index: BaseTypes) -> Option<BaseTypes> {
+    let index: usize = index.into();
     let mut array_functions = ArrayFunctions::Get;
     array_functions.get(array, index)
 }
 
 // Function to set an element in the array at the specified index
-fn array_set(array: &mut Array, index: usize, value: BaseTypes) -> Option<BaseTypes> {
+fn array_set(array: &mut Array, index: BaseTypes, value: BaseTypes) -> Option<BaseTypes> {
+    let index: usize = index.into();
+    println!("Index: {}", index);
     let mut array_functions = ArrayFunctions::Set;
     array_functions.set(array, index, value)
 }
@@ -107,20 +117,20 @@ impl ArrayFunctions {
         update_array_stack(array.clone());
         result
     }
-    pub fn append(&mut self, array: &mut Array, values: &Vec<BaseTypes>) {
-        for value in values {
-            array.push(value.clone());
-            update_array_stack(array.clone());
-        }
+    pub fn append(&mut self, array: &mut Array, value: BaseTypes) {
+        array.append(value);
+        update_array_stack(array.clone());
     }
     pub fn remove(&mut self, array: &mut Array, index: usize) {
         array.remove(index);
+
         update_array_stack(array.clone());
     }
     pub fn get(&mut self, array: &Array, index: usize) -> Option<BaseTypes> {
         array.get(index)
     }
     pub fn set(&mut self, array: &mut Array, index: usize, value: BaseTypes) -> Option<BaseTypes> {
+        println!("Index: {}", index);
         array.set(index, value.clone());
         update_array_stack(array.clone());
         Some(value)
@@ -213,9 +223,9 @@ pub mod collections {
             self.data.pop()
         }
 
-        pub fn append(&mut self, value: &mut Vec<BaseTypes>) {
-            //add to end
-            self.data.append(value);
+        pub fn append(&mut self, value: BaseTypes) {
+            // Push the value to the existing data vector
+            self.data.push(value);
         }
 
         pub fn remove(&mut self, index: usize) {

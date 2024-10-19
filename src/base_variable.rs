@@ -413,9 +413,25 @@ pub mod variable {
         }
     }
 
+    impl From<usize> for BaseTypes {
+        fn from(value: usize) -> Self {
+            BaseTypes::Int(value as i32)
+        }
+    }
+
     impl From<()> for BaseTypes {
         fn from(_: ()) -> Self {
             BaseTypes::Null
+        }
+    }
+
+    impl From<BaseTypes> for usize {
+        fn from(value: BaseTypes) -> Self {
+            match value {
+                BaseTypes::Int(i) => i as usize,
+                BaseTypes::Float(f) => f as usize,
+                _ => 0,
+            }
         }
     }
 
