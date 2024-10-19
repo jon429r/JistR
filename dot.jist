@@ -1,2 +1,2 @@
-let a: array<int> = [1,2,3];
-a.append(4);
+let a: dict<int, int> = {1 => 2, 3 => 4};
+a.add(5, 6);
