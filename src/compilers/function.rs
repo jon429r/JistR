@@ -280,6 +280,11 @@ pub fn get_function_result(
                 */
                 let mut params: Vec<Box<dyn Any>> = Vec::new();
 
+                let array_param: Array = array.clone().unwrap();
+                println!("Array: {:?}", array_param);
+
+                params.insert(0, Box::new(array_param));
+
                 // Call the function and return the result
                 for param in parameter_and_value.iter() {
                     //println!("Parameter: {:?}", param);
@@ -294,14 +299,13 @@ pub fn get_function_result(
                         _ => panic!("Unknown parameter type"),
                     };
 
-                    let array_param: Array = array.clone().unwrap();
-
-                    params.insert(0, Box::new(array_param));
                     params.push(boxed_param);
                     //add array to params at [0]
                 }
                 // Create a vector of Box<dyn Any> for parameters
                 // Call the function and handle the result
+                println!("Params: {:?}", params);
+
                 let result = call_function(func, params);
                 // convert the result to the appropriate type
                 if result.is::<f64>() {

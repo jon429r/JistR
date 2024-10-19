@@ -19,10 +19,11 @@ pub mod functions {
     pub enum FunctionTypes {
         ArrayPopFn(fn(&mut Array) -> Option<BaseTypes>),
         ArrayPushFn(fn(&mut Array, BaseTypes)),
-        ArrayRemoveFn(fn(&mut Array, usize)),
-        ArrayInsertFn(fn(&mut Array, usize, BaseTypes)),
-        ArrayGetFn(fn(&Array, usize) -> Option<BaseTypes>),
-        ArraySetFn(fn(&mut Array, usize, BaseTypes) -> Option<BaseTypes>),
+        ArrayRemoveFn(fn(&mut Array, BaseTypes)),
+        ArrayInsertFn(fn(&mut Array, BaseTypes, BaseTypes)),
+        ArrayGetFn(fn(&Array, BaseTypes) -> Option<BaseTypes>),
+        ArraySetFn(fn(&mut Array, BaseTypes, BaseTypes) -> Option<BaseTypes>),
+        ArrayAppendFn(fn(&mut Array, BaseTypes)),
 
         FloatFn(fn(f64)),
         DoubleFloatFn(fn(f64, f64) -> f64),
@@ -140,16 +141,36 @@ pub mod functions {
                 }
             }
 
+            FunctionTypes::ArrayAppendFn(f) => {
+                if arguments.len() == 2 {
+                    let arg1 = arguments[0]
+                        .downcast_ref::<Array>()
+                        .expect("Expected Array");
+                    let arg2 = arguments[1]
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+                    f(&mut arg1.clone(), arg2.clone());
+                    //println!("ArrayAppendFn called with: {:?}", arg2);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly two arguments for ArrayAppendFn");
+                }
+            }
+
             FunctionTypes::ArrayPopFn(f) => {
+                println!("ArrayPopFn called arguments: {:?}", arguments);
                 if arguments.len() == 1 {
+                    // Extract the argument and ensure it's of type Array
                     let arg = arguments[0]
                         .downcast_ref::<Array>()
                         .expect("Expected Array");
-                    let result = f(&mut arg.clone());
-                    //println!("ArrayPopFn result: {:?}", result);
+
+                    // Call the function with the array
+                    let result = f(&mut arg.clone()); // Array passed here
+
                     return Box::new(result);
                 } else {
-                    panic!("Expected exactly one argument for ArrayPopFn");
+                    panic!("Expected exactly one argument for ArrayPopFn (the array itself)");
                 }
             }
 
@@ -177,9 +198,10 @@ pub mod functions {
                         .downcast_ref::<Array>()
                         .expect("Expected Array");
                     let arg2 = arguments[1]
-                        .downcast_ref::<usize>()
-                        .expect("Expected usize");
-                    f(&mut arg1.clone(), *arg2);
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+
+                    f(&mut arg1.clone(), (*arg2).clone().into());
                     //println!("ArrayRemoveFn called with: {:?}", arg2);
                     return Box::new(());
                 } else {
@@ -198,7 +220,7 @@ pub mod functions {
                     let arg3 = arguments[2]
                         .downcast_ref::<BaseTypes>()
                         .expect("Expected BaseTypes");
-                    f(&mut arg1.clone(), *arg2, arg3.clone());
+                    f(&mut arg1.clone(), (*arg2).clone().into(), arg3.clone());
                     //println!("ArrayInsertFn called with: {:?}", arg2);
                     return Box::new(());
                 } else {
@@ -214,7 +236,7 @@ pub mod functions {
                     let arg2 = arguments[1]
                         .downcast_ref::<usize>()
                         .expect("Expected usize");
-                    let result = f(&mut arg1, *arg2);
+                    let result = f(&mut arg1, (*arg2).into());
                     //println!("ArrayGetFn result: {:?}", result);
                     return Box::new(result);
                 } else {
@@ -233,7 +255,7 @@ pub mod functions {
                     let arg3 = arguments[2]
                         .downcast_ref::<BaseTypes>()
                         .expect("Expected BaseTypes");
-                    let result = f(&mut arg1.clone(), *arg2, arg3.clone());
+                    let result = f(&mut arg1.clone(), (*arg2).clone().into(), arg3.clone());
                     //println!("ArraySetFn result: {:?}", result);
                     return Box::new(result);
                 } else {
