@@ -163,7 +163,7 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
 
     for line in finished_lines {
         let tokens = tokenize(line);
-        println!("tokens: {:?}", tokens);
+        //println!("tokens: {:?}", tokens);
         let mut hasroot = true;
         let mut first_node: ASTNode = ASTNode::None;
         let mut result: bool;

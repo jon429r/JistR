@@ -105,7 +105,7 @@ pub fn parse_object_call(node: &ASTNode) -> (String, String) {
 }
 
 pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
-    println!("compiling dot statement");
+    //println!("compiling dot statement");
 
     // in order to compile we must, tokenize variable or collection call, tokenize function call
     // check what type object is
@@ -115,7 +115,7 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
 
     match node.clone() {
         ASTNode::Dot(d) => {
-            println!("Dot call\nobject: {}, function: {}", d.object, d.function);
+            //println!("Dot call\nobject: {}, function: {}", d.object, d.function);
             let mut variable: (String, BaseTypes);
             let mut collection: (String, Vec<BaseTypes>);
             let mut object_name_type: (String, String);
@@ -138,14 +138,14 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
 
                     match object_name_type.1.to_string().as_str() {
                         "dictionary" => {
-                            println!("Object call is a dictionary");
+                            //println!("Object call is a dictionary");
                             let dict: Option<Dictionary> = get_dict(object_name_type.0).into();
                             let tokenized_function = tokenize(d.function.clone());
                             let mut function_nodes: Vec<ASTNode> = Vec::new();
                             for function in tokenized_function {
                                 function_nodes.push(match_token_to_node(function));
                             }
-                            println!("Function nodes: {:?}", function_nodes);
+                            //println!("Function nodes: {:?}", function_nodes);
                             parse_function_call(
                                 &function_nodes,
                                 "dictionary".to_string(),
@@ -155,14 +155,14 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
                             );
                         }
                         "array" => {
-                            println!("Object call is an array");
+                            //println!("Object call is an array");
                             let array: Option<Array> = get_array(object_name_type.0).into();
                             let tokenized_function = tokenize(d.function.clone());
                             let mut function_nodes: Vec<ASTNode> = Vec::new();
                             for function in tokenized_function {
                                 function_nodes.push(match_token_to_node(function));
                             }
-                            println!("Function nodes: {:?}", function_nodes);
+                            //println!("Function nodes: {:?}", function_nodes);
 
                             //make sure array is not None
 
@@ -172,10 +172,10 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
                                     data,
                                     value_type,
                                 }) => {
-                                    println!(
-                                        "Array is not None with name: {}, and data type: {}",
-                                        name, value_type
-                                    );
+                                    //println!(
+                                    //    "Array is not None with name: {}, and data type: {}",
+                                    //    name, value_type
+                                    //);
                                     // You can use name, data, value_type as needed
                                 }
                                 None => {
@@ -199,10 +199,10 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
                             for function in tokenized_function {
                                 function_nodes.push(match_token_to_node(function));
                             }
-                            println!("Function nodes: {:?}", function_nodes);
+                            //println!("Function nodes: {:?}", function_nodes);
                         }
                         _ => {
-                            println!("Object call is not a variable, dictionary or array");
+                            println!("Object call is not a variable, dictionary or array, therefore cannot compile dot call");
                             exit(1);
                         }
                     }

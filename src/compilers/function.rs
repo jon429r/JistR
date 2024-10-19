@@ -261,7 +261,7 @@ pub fn get_function_result(
         Err(poisoned) => poisoned.into_inner(),
     };
 
-    println!("dot_notation: {}", dot_notation);
+    //println!("dot_notation: {}", dot_notation);
     match dot_notation.as_str() {
         "dictionary" => {
             if let Some(func) = dictionary_functions.get(function_name.as_str()) {
@@ -284,7 +284,7 @@ pub fn get_function_result(
                 */
                 let mut params: Vec<Box<dyn Any>> = Vec::new();
                 let dictionary_param: Dictionary = dictionary.clone().unwrap();
-                println!("Dictionary: {:?}", dictionary_param);
+                //println!("Dictionary: {:?}", dictionary_param);
                 params.insert(0, Box::new(dictionary_param));
                 // Call the function and return the result
                 for param in parameter_and_value.iter() {
@@ -304,7 +304,7 @@ pub fn get_function_result(
                 }
                 // Create a vector of Box<dyn Any> for parameters
                 // Call the function and handle the result
-                println!("Params: {:?}", params);
+                //println!("Params: {:?}", params);
                 let result = call_function(func, params);
                 // convert the result to the appropriate type
                 if result.is::<f64>() {
@@ -314,8 +314,11 @@ pub fn get_function_result(
                 if result.is::<i32>() {
                     //println!("Result of Function: {:?} of type int", result);
                     return BaseTypes::Int(*result.downcast::<i32>().unwrap());
+                } else {
+                    return BaseTypes::Null;
                 }
             }
+            println!("Function call is not in any of the DICTIONARY_FUNCTIONS.");
         }
         "array" => {
             if let Some(func) = array_functions.get(function_name.as_str()) {
@@ -339,7 +342,7 @@ pub fn get_function_result(
                 let mut params: Vec<Box<dyn Any>> = Vec::new();
 
                 let array_param: Array = array.clone().unwrap();
-                println!("Array: {:?}", array_param);
+                //println!("Array: {:?}", array_param);
 
                 params.insert(0, Box::new(array_param));
 
@@ -362,7 +365,7 @@ pub fn get_function_result(
                 }
                 // Create a vector of Box<dyn Any> for parameters
                 // Call the function and handle the result
-                println!("Params: {:?}", params);
+                //println!("Params: {:?}", params);
 
                 let result = call_function(func, params);
                 // convert the result to the appropriate type
