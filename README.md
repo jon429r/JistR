@@ -104,6 +104,38 @@ let greeting: string = "Hi" // String
 let firstInital: char = 'J' // Char, notice singe quotes for chars and double quotes for strings 
 let isValid: boolean = true  // Boolean
 ```
+
+Arrays and Dictionaries also come with built in functions to make working with them easier
+
+Arrays:
+```Jist
+Push(value)
+Pop() -> value
+append(value)
+remove(index)
+get(index) -> value
+set(index, value)
+print()
+```
+
+Dictionaries:
+```Jist
+add(key, value)
+remove(key)
+get(key) -> value
+set(key, value)
+keys() -> array
+values() -> array
+print()
+```
+These functions are called simply by using dot notation
+```jist
+let a: dict<int, int> = {1 => 2, 3 => 4};
+a.add(5, 6);
+```
+Initially a is a dictionary with the values {1 => 2, 3 => 4}
+Results after add() being {1 => 2, 3 => 4, 5 => 6}
+
 ### Control Structures
 
 If-Else
