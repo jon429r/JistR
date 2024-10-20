@@ -136,8 +136,7 @@ impl ArrayFunctions {
         update_array_stack(array.clone());
     }
     pub fn get(&mut self, array: &Array, index: usize) -> Option<BaseTypes> {
-        let result = array.get(index);
-        return result;
+        array.get(index)
     }
     pub fn set(&mut self, array: &mut Array, index: usize, value: BaseTypes) -> Option<BaseTypes> {
         println!("Index: {}", index);
@@ -253,7 +252,6 @@ impl DictionaryFunctions {
 
 pub mod collections {
     use crate::base_variable::base_types::BaseTypes;
-    //use crate::node::nodes::ASTNode;
     use std::fmt;
 
     #[derive(Clone, Debug)]

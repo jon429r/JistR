@@ -394,7 +394,7 @@ pub fn get_function_result(
         }
 
         "variable" => {}
-        _ => println!("Not calling any function with dot notation"),
+        _ => {}
     }
 
     if let Some(func) = std_functions.get(function_name.as_str()) {

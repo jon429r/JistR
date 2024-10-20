@@ -13,33 +13,7 @@ pub mod compilers {
         compile_dot_statement, compile_variable_call, parse_variable_declaration,
     };
     use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
-    use crate::token_type::token_types::*;
     use std::process::exit;
-
-    pub struct Parser {
-        pub tokens: Vec<TokenTypes>,
-        pub current: usize,
-    }
-
-    impl Parser {
-        pub fn new(tokens: Vec<TokenTypes>) -> Self {
-            Parser { tokens, current: 0 }
-        }
-
-        fn current_token(&self) -> &TokenTypes {
-            &self.tokens[self.current]
-        }
-
-        fn next_token(&mut self) {
-            if self.current < self.tokens.len() - 1 {
-                self.current += 1;
-            }
-        }
-
-        pub fn parse_expression(&mut self) -> ASTNode {
-            ASTNode::None
-        }
-    }
 
     pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> ASTNode {
         match operator {
@@ -207,9 +181,7 @@ pub mod compilers {
             }
         }
 
-        let result = parse_operator(&left, &operator, &right);
-        //println!("Parsed expression result: {:?}", result);
-        return result;
+        parse_operator(&left, &operator, &right)
     }
 
     pub fn route_to_parser(expression: &mut Vec<ASTNode>, index: Option<usize>) -> bool {
