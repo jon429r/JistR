@@ -55,7 +55,7 @@ $ cargo install --path .
 
 ### Hello World
 ```jist
-echo("Hello, World!")
+print("Hello, World!")
 ```
 ### Variables
 ```jist
@@ -151,7 +151,7 @@ Loops
 ```jist
 //Copy code
 for (i in 0..10) {
-    echo(i)
+    print(i)
 }
 
 while (condition) {
@@ -184,7 +184,7 @@ These are called by using standard function call syntax
 IE
 ```jist
 let a: string = to_uppercase("hello world");
-echo(a);
+print(a);
 ```
 Output:
 HELLO WORLD
@@ -200,8 +200,8 @@ fn add(a: f64, b: f64) -> f64
 fn sub(a: f64, b: f64) -> f64  
 fn mult(a: f64, b: f64) -> f64  
 fn divide(a: f64, b: f64) -> f64  
-fn echo(a: String)  
-fn echoln(a: String)  
+fn print(a: String)  
+fn println(a: String)  
 fn abs(a: f64) -> f64  
 fn pow(a: f64, b: f64) -> f64  
 fn sqrt(a: f64) -> f64  
