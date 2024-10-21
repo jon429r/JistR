@@ -333,6 +333,7 @@ pub mod variable {
                 _ => println!("Warning: Cannot increment non-numeric type."),
             }
         }
+        //use crate::node::nodes::ASTNode;
 
         pub fn decrement(&mut self) {
             match self.value {
