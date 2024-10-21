@@ -41,7 +41,7 @@ Jist is built using **Rust**, taking advantage of its safety and performance. Wi
 
 ```bash
 # Install the Jist compiler (requires Rust installed)
-# Currently, the compiler is not available via a package manager. Please clone the repository to use.
+cargo install jist
 
 # If on Windows
 ./windows_setup.ps1
