@@ -1,10 +1,10 @@
 [package]
-name = "jist"
+name = "jistR"
 version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "jist"
+name = "jistR"
 path = "src/main.rs"
 
 [dependencies]
