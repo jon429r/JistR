@@ -1,7 +1,9 @@
 [package]
 name = "jist"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+description = "Welcome to Jist a lightweight and efficient programming language built in Rust, designed for simplicity, flexibility, and fast performance with a clean and readable syntax."
+license = "MIT"
 
 [[bin]]
 name = "jist"
