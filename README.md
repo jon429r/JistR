@@ -143,6 +143,8 @@ If-Else
 Copy code
 if (condition) {
     // do something
+} elif (condtion){
+   // do something else
 } else {
     // do something else
 }
