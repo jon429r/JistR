@@ -36,9 +36,9 @@ pub mod conditional_tokenizers {
     pub fn tokenize_if_elif_else_statement(expression: &str, index: usize) -> ParseInfo {
         let chars: Vec<char> = expression.chars().collect();
         let mut j = index;
-        let mut i = 0;
+        let i = 0;
 
-        let mut keyword = String::new();
+        let keyword = String::new();
 
         while j < chars.len() {
             // Handle 'if'

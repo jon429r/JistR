@@ -1,4 +1,3 @@
-use crate::base_variable::base_types::BaseTypes;
 use crate::function::functions::Function;
 use lazy_static::lazy_static;
 use std::sync::Mutex;
@@ -244,10 +243,12 @@ pub mod functions {
                         .downcast_ref::<Array>()
                         .expect("Expected Array");
                     let arg2 = arguments[1]
-                        .downcast_ref::<usize>()
-                        .expect("Expected usize");
-                    let result = f(&mut arg1, (*arg2).into());
-                    //println!("ArrayGetFn result: {:?}", result);
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+
+                    let result = f(&mut arg1, arg2.clone().into());
+                    let result = result.unwrap();
+
                     return Box::new(result);
                 } else {
                     panic!("Expected exactly two arguments for ArrayGetFn");
@@ -260,8 +261,9 @@ pub mod functions {
                         .downcast_ref::<Array>()
                         .expect("Expected Array");
                     let arg2 = arguments[1]
-                        .downcast_ref::<usize>()
-                        .expect("Expected usize");
+                        .downcast_ref::<BaseTypes>()
+                        .expect("Expected BaseTypes");
+
                     let arg3 = arguments[2]
                         .downcast_ref::<BaseTypes>()
                         .expect("Expected BaseTypes");
@@ -396,13 +398,26 @@ pub mod functions {
 
             FunctionTypes::EchoFn(f) => {
                 if arguments.len() == 1 {
-                    let arg = arguments[0].downcast_ref::<String>().expect(&format!(
-                        "Expected String, found {:?}",
-                        arguments[0].type_id()
-                    ));
+                    let arg = if let Some(s) = arguments[0].downcast_ref::<String>() {
+                        // Argument is already a String
+                        s.clone()
+                    } else if let Some(i) = arguments[0].downcast_ref::<i32>() {
+                        // Argument is an i32, convert to String
+                        i.to_string()
+                    } else if let Some(flt) = arguments[0].downcast_ref::<f64>() {
+                        // Argument is a f64, convert to String
+                        flt.to_string()
+                    } else if let Some(b) = arguments[0].downcast_ref::<bool>() {
+                        // Argument is a bool, convert to String
+                        b.to_string()
+                    } else {
+                        panic!(
+                            "Expected String or convertible type, but found {:?}",
+                            arguments[0].type_id()
+                        );
+                    };
 
-                    f(arg.clone());
-                    //println!("EchoFn called with: {}", arg);
+                    f(arg); // Call the function with the converted argument.
                     return Box::new(());
                 } else {
                     println!("Arguments: {:?}", arguments);
@@ -412,7 +427,6 @@ pub mod functions {
                     );
                 }
             }
-
             _ => {
                 panic!("Function not implemented");
             }

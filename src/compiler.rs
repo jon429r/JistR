@@ -1,148 +1,101 @@
 /*
-* This file takes in a vector of AST nodes and routes them to be compiled by Rust functions in the
-* /compilers directory.
+    Compiler module for the language
+    This module contains the main compiler logic for the language.
+    It is responsible for parsing the AST and generating the output code.
 */
+
 pub mod compilers {
     use crate::compilers::collection::*;
     use crate::compilers::conditional::conditional_compilers::compile_if_elif_else_statement;
     use crate::compilers::function::*;
     use crate::compilers::loops::loop_compilers::{compile_for_loop, compile_while_loop};
-    use crate::globals::{IF_ELSE_SKIP, MAKE_LOOP};
-
     use crate::compilers::variable::{
         compile_dot_statement, compile_variable_call, parse_variable_declaration,
     };
+    use crate::globals::{IF_ELSE_SKIP, MAKE_LOOP};
     use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
-    use std::process::exit;
+    use std::error::Error;
 
-    pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> ASTNode {
+    pub fn set_make_loop(value: bool) {
+        unsafe {
+            MAKE_LOOP = value;
+        }
+    }
+
+    // Custom error type for better error messages
+    #[derive(Debug)]
+    pub enum CompilerError {
+        DivisionByZero,
+        UnrecognizedOperator(String),
+        InvalidSyntax(String),
+    }
+
+    impl std::fmt::Display for CompilerError {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                CompilerError::DivisionByZero => write!(f, "Division by zero"),
+                CompilerError::UnrecognizedOperator(op) => {
+                    write!(f, "Unrecognized operator: {}", op)
+                }
+                CompilerError::InvalidSyntax(s) => write!(f, "Invalid syntax: {}", s),
+            }
+        }
+    }
+
+    impl Error for CompilerError {}
+
+    // Use Result for proper error handling
+    pub fn parse_operator(
+        left: &ASTNode,
+        operator: &ASTNode,
+        right: &ASTNode,
+    ) -> Result<ASTNode, Box<dyn Error>> {
         match operator {
             ASTNode::Operator(o) => match o.operator.as_str() {
                 "+" => {
                     if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                         let result = left_val.value + right_val.value;
-                        let result = IntNode { value: result };
-                        return ASTNode::Int(result);
+                        return Ok(ASTNode::Int(IntNode { value: result }));
                     }
                 }
                 "-" => {
                     if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                         let result = left_val.value - right_val.value;
-                        let result = IntNode { value: result };
-                        return ASTNode::Int(result);
+                        return Ok(ASTNode::Int(IntNode { value: result }));
                     }
                 }
                 "*" => {
                     if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                         let result = left_val.value * right_val.value;
-                        let result = IntNode { value: result };
-                        return ASTNode::Int(result);
+                        return Ok(ASTNode::Int(IntNode { value: result }));
                     }
                 }
                 "/" => {
                     if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                         if right_val.value != 0 {
                             let result = left_val.value / right_val.value;
-                            let result = IntNode { value: result };
-                            return ASTNode::Int(result);
+                            return Ok(ASTNode::Int(IntNode { value: result }));
                         } else {
-                            println!("Syntax Error: Division by zero.");
-                            exit(1);
+                            return Err(Box::new(CompilerError::DivisionByZero));
                         }
                     }
                 }
-                ">" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value > right_val.value;
-                        let result = IntNode {
-                            value: result as i32,
-                        };
-                        return ASTNode::Int(result);
-                    }
-                }
-                "<" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value < right_val.value;
-                        let result = IntNode {
-                            value: result as i32,
-                        };
-                        return ASTNode::Int(result);
-                    }
-                }
-                ">=" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value >= right_val.value;
-                        let result = IntNode {
-                            value: result as i32,
-                        };
-                        return ASTNode::Int(result);
-                    }
-                }
-                "<=" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value <= right_val.value;
-                        let result = IntNode {
-                            value: result as i32,
-                        };
-                        return ASTNode::Int(result);
-                    }
-                }
-                "==" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value == right_val.value;
-                        let result = IntNode {
-                            value: result as i32,
-                        };
-                        return ASTNode::Int(result);
-                    }
-                }
-                "!=" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value != right_val.value;
-                        let result = IntNode {
-                            value: result as i32,
-                        };
-                        return ASTNode::Int(result);
-                    }
-                }
-                "!" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = !(left_val.value != 0 && right_val.value != 0);
-                        let result = IntNode {
-                            value: result as i32,
-                        };
-                        return ASTNode::Int(result);
-                    }
-                }
-                "++" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(_right_val)) = (left, right) {
-                        let result = left_val.value + 1;
-                        let result = IntNode { value: result };
-                        return ASTNode::Int(result);
-                    }
-                }
-                "--" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(_right_val)) = (left, right) {
-                        let result = left_val.value - 1;
-                        let result = IntNode { value: result };
-                        return ASTNode::Int(result);
-                    }
-                }
                 _ => {
-                    println!("Syntax Error: Unrecognized operator '{}'", o.operator);
-                    exit(1);
+                    return Err(Box::new(CompilerError::UnrecognizedOperator(
+                        o.operator.clone(),
+                    )))
                 }
             },
             _ => {
-                println!("Syntax Error: Expected an operator.");
-                exit(1);
+                return Err(Box::new(CompilerError::InvalidSyntax(
+                    "Expected an operator.".to_string(),
+                )))
             }
         }
-        ASTNode::None
+        Ok(ASTNode::None) // Return a neutral node on failure (though this should likely be handled better)
     }
 
-    pub fn operation(expression: &mut Vec<ASTNode>) -> ASTNode {
-        //let first: Option<ASTNode> = first_value;
+    pub fn operation(expression: &mut Vec<ASTNode>) -> Result<ASTNode, Box<dyn Error>> {
         let mut operator: ASTNode = ASTNode::Operator(OperatorNode {
             operator: "+".to_string(),
         });
@@ -150,10 +103,7 @@ pub mod compilers {
         let mut left: ASTNode = ASTNode::Int(IntNode { value: 0 });
         let mut first_found = false;
 
-        //let skip_by: usize = if has_parenthisis { 2 } else { 1 };
         expression.reverse();
-
-        //println!("Expression: {:?}", expression);
 
         for next_node in expression {
             match next_node {
@@ -172,11 +122,10 @@ pub mod compilers {
                     }
                 }
                 _ => {
-                    println!(
-                        "Syntax Error: Expected operator or number, found {:?}",
+                    return Err(Box::new(CompilerError::InvalidSyntax(format!(
+                        "Expected operator or number, found {:?}",
                         next_node
-                    );
-                    exit(1);
+                    ))));
                 }
             }
         }
@@ -184,86 +133,129 @@ pub mod compilers {
         parse_operator(&left, &operator, &right)
     }
 
-    pub fn route_to_parser(expression: &mut Vec<ASTNode>, index: Option<usize>) -> bool {
+    pub fn route_to_parser(
+        expression: &mut Vec<ASTNode>,
+        index: Option<usize>,
+    ) -> Result<bool, Box<dyn Error>> {
         let mut index = index.unwrap_or(0); // Default to 0 if None
 
         // Main loop through the expression
         while index < expression.len() {
             let node = &expression[index]; // Access node by index
-            let _next_node = expression.get(index + 1);
-            //println!("Node: {:?}", node);
 
             match node {
                 ASTNode::Dot(_d) => {
                     let result = compile_dot_statement(expression);
-                    if result {
-                        return true;
+                    //if result is Ok return true
+                    return Ok(true);
+                }
+                ASTNode::LeftCurly => {}
+
+                ASTNode::If(_i) => {
+                    // Call the function and store the result
+                    let result = compile_if_elif_else_statement(expression);
+                    match result {
+                        Ok(true) => {
+                            index += 2; // Skip to the next statement after processing `if`
+                            unsafe { IF_ELSE_SKIP = true };
+                            continue; // Continue with the next iteration of the loop
+                        }
+                        Ok(false) => {
+                            return Ok(false); // Return false if the condition was false
+                        }
+                        Err(e) => {
+                            return Err(e); // Return the error if there was one
+                        }
                     }
-                    return false;
                 }
 
-                ASTNode::LeftCurly => {
-                    println!("Parsing LeftCurlyNode");
-                }
-                ASTNode::If(_i) => {
-                    let result = compile_if_elif_else_statement(expression);
-                    if result {
-                        index += 2; // Skip to the next statement after processing `if`
-                        unsafe { IF_ELSE_SKIP = true };
-                        continue;
-                    } else {
-                        return true;
-                    }
-                }
                 ASTNode::Elif(_i) => {
                     let result = compile_if_elif_else_statement(expression);
-                    if result {
-                        index += 2; // Skip to the next statement after processing `elif`
-                        unsafe { IF_ELSE_SKIP = true };
-                        continue;
-                    } else {
-                        return true;
+                    match result {
+                        Ok(true) => {
+                            index += 2; // Skip to the next statement after processing `elif`
+                            unsafe { IF_ELSE_SKIP = true };
+                            continue;
+                        }
+                        Ok(false) => {
+                            return Ok(true);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
                     }
                 }
                 ASTNode::For(_f) => {
                     let result = compile_for_loop(expression);
-                    unsafe { MAKE_LOOP = result };
+                    match result {
+                        Ok(true) => {
+                            set_make_loop(true);
+                            return Ok(true);
+                        }
+                        Ok(false) => {
+                            set_make_loop(false);
+
+                            return Ok(false);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
                 }
                 ASTNode::While(_w) => {
                     // Evaluate the condition
-                    let _condition_result = compile_while_loop(expression);
-                    return true;
+                    let condition_result = compile_while_loop(expression);
+
+                    set_make_loop(false);
+                    match condition_result {
+                        Ok(true) => {
+                            return Ok(true);
+                        }
+                        Ok(false) => {
+                            return Ok(false);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
                 }
-                ASTNode::Try => {
-                    println!("Parsing TryNode");
-                }
+                ASTNode::Try => {}
                 ASTNode::Collection(_c) => {
-                    let _value = parse_collection_declaration(expression);
-                    return true;
+                    let value = parse_collection_declaration(expression);
+                    match value {
+                        Ok(()) => {
+                            return Ok(true);
+                        }
+                        Err(e) => {
+                            return Err(e.into());
+                        }
+                    }
                 }
                 ASTNode::Variable(_v) => {
                     let end = parse_variable_declaration(expression);
-                    if end {
-                        return true;
-                    }
+                    return Ok(end);
                 }
-                ASTNode::Else => {
-                    println!("Parsing ElseNode");
-                }
+                ASTNode::Else => {}
                 ASTNode::Int(_n) => {
                     if expression.len() == 1 {
-                        //println!("Result: {:?}", ASTNode::Int(n.clone()));
-                        break;
+                        println!("Int: {}", _n.value);
                     } else {
-                        let _result = operation(expression);
-                        //println!("Result: {:?}", result);
+                        let _result = operation(expression)?;
                         break;
                     }
                 }
                 ASTNode::Function(_f) => {
                     let end = parse_function_declaration(expression);
-                    if end {
-                        return true;
+                    match end {
+                        Ok(true) => {
+                            return Ok(true);
+                        }
+                        Ok(false) => {
+                            return Ok(false);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
                     }
                 }
                 ASTNode::String(s) => {
@@ -274,43 +266,50 @@ pub mod compilers {
                 }
                 ASTNode::FunctionCall(_f) => {
                     let function_expression: Vec<ASTNode> = expression[index..].to_vec();
-                    let _end = parse_function_call(
+                    let result = parse_function_call(
                         &function_expression,
                         "None".to_string(),
                         None,
                         None,
                         None,
                     );
-                    return true;
+                    match result {
+                        Ok(_result) => {
+                            return Ok(true);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
                 }
                 ASTNode::VariableCall(_v) => {
                     let call_result = compile_variable_call(expression);
-                    if call_result {
-                        return true;
-                    }
+                    return Ok(call_result);
                 }
                 ASTNode::Comment(_c) => {
-                    return true;
+                    return Ok(true);
                 }
                 ASTNode::LeftParenthesis => {
-                    let _value = operation(expression);
-                    //println!("Result: {:?}", value);
+                    let _value = operation(expression)?;
                     break;
                 }
                 ASTNode::None => {
-                    println!("Syntax Error: Unhandled node type.");
-                    std::process::exit(1);
+                    return Err(Box::new(CompilerError::InvalidSyntax(
+                        "Unhandled node type in compiler.".to_string(),
+                    )));
                 }
                 ASTNode::RightParenthesis => {}
                 _ => {
-                    println!("Syntax Error: Unhandled node: {:?}", node);
+                    return Err(Box::new(CompilerError::InvalidSyntax(
+                        "Unhandled node type in compiler.".to_string(),
+                    )));
                 }
             }
 
             index += 1; // Move to the next node
         }
 
-        true // Return true when done processing
+        Ok(true) // Return true when done processing
     }
 }
 
@@ -328,7 +327,7 @@ mod complier_tests {
         let right = ASTNode::Int(IntNode { value: 5 });
         let result = parse_operator(&left, &operator, &right);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 10);
             }
             _ => {
@@ -346,7 +345,7 @@ mod complier_tests {
         let right = ASTNode::Int(IntNode { value: 5 });
         let result = parse_operator(&left, &operator, &right);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 0);
             }
             _ => {
@@ -364,7 +363,7 @@ mod complier_tests {
         let right = ASTNode::Int(IntNode { value: 5 });
         let result = parse_operator(&left, &operator, &right);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 25);
             }
             _ => {
@@ -382,7 +381,7 @@ mod complier_tests {
         let right = ASTNode::Int(IntNode { value: 5 });
         let result = parse_operator(&left, &operator, &right);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 1);
             }
             _ => {
@@ -420,7 +419,7 @@ mod complier_tests {
         ];
         let result = operation(&mut expression);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 10);
             }
             _ => {
@@ -440,7 +439,7 @@ mod complier_tests {
         ];
         let result = operation(&mut expression);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 0);
             }
             _ => {
@@ -460,7 +459,7 @@ mod complier_tests {
         ];
         let result = operation(&mut expression);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 25);
             }
             _ => {
@@ -480,7 +479,7 @@ mod complier_tests {
         ];
         let result = operation(&mut expression);
         match result {
-            ASTNode::Int(n) => {
+            Ok(ASTNode::Int(n)) => {
                 assert_eq!(n.value, 1);
             }
             _ => {

@@ -1,7 +1,10 @@
 pub mod conditional_compilers {
+    use std::error::Error;
+
     use crate::base_variable::base_types::BaseTypes;
     use crate::compiler::compilers::parse_operator;
     use crate::compilers::function::parse_function_call;
+    use crate::compilers::variable::compile_dot_statement;
     use crate::compilers::variable::parse_variable_call;
     use crate::node::nodes::from_base_type;
     use crate::node::nodes::match_token_to_node;
@@ -10,7 +13,12 @@ pub mod conditional_compilers {
     use crate::statement_tokenizer::tokenizer::tokenizers::tokenize;
     use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
 
-    pub fn compile_conditional_statement(expression: &mut Vec<ASTNode>) -> bool {
+    /// Compiles a conditional statement
+    /// returns a boolean value or an error
+    /// true if the conditional statement is true and false if no
+    pub fn compile_conditional_statement(
+        expression: &mut Vec<ASTNode>,
+    ) -> Result<bool, Box<dyn Error>> {
         let mut index = 0;
         let mut first_value: ASTNode = ASTNode::None;
         let mut operation: ASTNode = ASTNode::None;
@@ -19,6 +27,18 @@ pub mod conditional_compilers {
         while index < expression.len() {
             let node = &expression[index];
             match node {
+                ASTNode::Dot(_) => {
+                    //put node into a vec and pass it to compile_dot_statement
+                    let mut vec_node: Vec<ASTNode> = Vec::new();
+                    vec_node.push(node.clone());
+                    let value = compile_dot_statement(&mut vec_node);
+
+                    first_value = if first_value == ASTNode::None {
+                        from_base_type(value)
+                    } else {
+                        first_value
+                    };
+                }
                 ASTNode::VariableCall(_) => {
                     let (_, value) = parse_variable_call(node);
                     first_value = if first_value == ASTNode::None {
@@ -49,7 +69,7 @@ pub mod conditional_compilers {
                             None,
                             None,
                         );
-                        first_value = from_base_type(value);
+                        first_value = from_base_type(value.unwrap());
                     } else {
                         let value = parse_function_call(
                             &function_call,
@@ -58,7 +78,7 @@ pub mod conditional_compilers {
                             None,
                             None,
                         );
-                        second_value = from_base_type(value);
+                        second_value = from_base_type(value.unwrap());
                     }
                 }
 
@@ -112,7 +132,13 @@ pub mod conditional_compilers {
         }
 
         // Assuming the operation is a comparison operator (e.g., >, <, ==)
-        let ast_result = parse_operator(&first_value, &operation, &second_value);
+
+        let mut ast_result = match parse_operator(&first_value, &operation, &second_value) {
+            Ok(result) => result,
+            Err(e) => {
+                return Err("Error: Unable to parse operator".into());
+            }
+        };
 
         println!(
             "expression: {:?} {:?} {:?}",
@@ -122,8 +148,7 @@ pub mod conditional_compilers {
         let base_result: BaseTypes = match to_base_type(&ast_result) {
             Some(result) => result,
             None => {
-                println!("Error: Unable to convert to BaseTypes");
-                return false;
+                return Err("Error: Unable to convert to BaseTypes".into());
             }
         };
 
@@ -131,10 +156,15 @@ pub mod conditional_compilers {
         let result: i32 = base_result.into();
         let bool_result = result == 1;
         println!("Bool Result: {}", bool_result);
-        return bool_result;
+        return Ok(bool_result);
     }
 
-    pub fn compile_if_elif_else_statement(expression: &mut Vec<ASTNode>) -> bool {
+    /// Compiles an if/elif/else statements
+    /// returns a boolean value or an error
+    /// true if the conditional statement is true and false if not
+    pub fn compile_if_elif_else_statement(
+        expression: &mut Vec<ASTNode>,
+    ) -> Result<bool, Box<dyn Error>> {
         let mut tokenized: Vec<ParseInfo> = Vec::new();
         let mut index = 0;
 
@@ -153,7 +183,13 @@ pub mod conditional_compilers {
 
                     // call the operation function or make custom function for conditional operations
                     let result = compile_conditional_statement(&mut nodes);
-                    return result;
+
+                    //if result is true or false, return the result
+                    //if result is an error, return the error
+                    return match result {
+                        Ok(result) => Ok(result),
+                        Err(e) => Err(e),
+                    };
                 }
                 ASTNode::Elif(elifnode) => {
                     let tokenized_statement = tokenize(elifnode.condition.clone());
@@ -164,13 +200,20 @@ pub mod conditional_compilers {
                         nodes.push(match_token_to_node(token));
                     } // call the operation function or make custom function for conditional operations
                     let result = compile_conditional_statement(&mut nodes);
-                    return result;
+                    return match result {
+                        Ok(result) => Ok(result),
+                        Err(e) => Err(e),
+                    };
                 }
-                ASTNode::Else => {}
-                _ => {}
+                ASTNode::Else => {
+                    // if there is an else statement, return true
+                    return Ok(true);
+                }
+                _ => {
+                    return Err("Error: Invalid statement".into());
+                }
             }
-            index += 1;
         }
-        return true;
+        return Ok(true);
     }
 }

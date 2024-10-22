@@ -5,6 +5,7 @@ pub mod loop_compilers {
     use crate::node::nodes::ASTNode;
     use crate::statement_tokenizer::tokenizer::tokenizers::tokenize;
     use crate::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
+    use std::error::Error;
 
     static mut MAKE_LOOP: bool = false;
 
@@ -14,7 +15,7 @@ pub mod loop_compilers {
         }
     }
 
-    pub fn compile_for_loop(expression: &Vec<ASTNode>) -> bool {
+    pub fn compile_for_loop(expression: &Vec<ASTNode>) -> Result<bool, Box<dyn Error>> {
         // check the condition and run
         // for i in 0..10 {}
         // set i to 0 iterate until 10
@@ -42,17 +43,24 @@ pub mod loop_compilers {
 
                     // call the operation function or make custom function for conditional operations
                     let result = compile_conditional_statement(&mut nodes);
-                    return result;
+                    match result {
+                        Ok(result) => {
+                            return Ok(result);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
                 }
                 ASTNode::Else => {}
                 _ => {}
             }
             index += 1;
         }
-        return true;
+        return Ok(true);
     }
 
-    pub fn compile_while_loop(expression: &mut Vec<ASTNode>) -> bool {
+    pub fn compile_while_loop(expression: &mut Vec<ASTNode>) -> Result<bool, Box<dyn Error>> {
         let mut tokenized: Vec<ParseInfo> = Vec::new();
         let mut index = 0;
 
@@ -73,10 +81,17 @@ pub mod loop_compilers {
                         .collect();
 
                     // Evaluate the initial condition
-                    let mut result = compile_conditional_statement(&mut condition_nodes);
-                    //println!("Initial condition evaluation result: {}", result);
-
-                    while result {
+                    let mut evaluation_result: bool = false; // Rename for clarity
+                                                             //println!("Initial condition evaluation result: {}", evaluation_result);
+                    match compile_conditional_statement(&mut condition_nodes) {
+                        Ok(result) => {
+                            evaluation_result = result; // Store the result from the function
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
+                    while evaluation_result {
                         set_make_loop(true);
 
                         //println!("Entering while loop body");
@@ -90,21 +105,31 @@ pub mod loop_compilers {
 
                             // Handle each body node
                             let body_result = route_to_parser(expression, Some(body_index));
-                            if !body_result {
+                            if !body_result.unwrap() {
                                 //println!("Parsing failed for body node. Exiting loop.");
-                                return false; // Exit the loop if parsing stops
+                                return Err("Error: Parsing failed for body node.".into());
                             }
 
                             body_index += 1; // Move to the next body node
                         }
 
                         // Re-evaluate the while loop condition after each iteration
-                        result = compile_conditional_statement(&mut condition_nodes);
+                        evaluation_result = false; // Reset the evaluation result
+                                                   //
+                        match compile_conditional_statement(expression) {
+                            Ok(result) => {
+                                evaluation_result = result; // Store the result from the function
+                            }
+                            Err(e) => {
+                                return Err(e);
+                            }
+                        }
+
                         //println!("Condition re-evaluation result: {}", result);
 
-                        if !result {
+                        if !evaluation_result {
                             //println!("Condition is false. Exiting while loop.");
-                            return false; // Exit the loop if the condition is false
+                            return Ok(false); // Exit the loop if the condition is false
                         }
                     }
 
@@ -126,6 +151,6 @@ pub mod loop_compilers {
             index += 1; // Move to the next node
         }
         //println!("While loop processing completed.");
-        true // Indicate successful processing
+        return Ok(true); // Indicate successful processing
     }
 }

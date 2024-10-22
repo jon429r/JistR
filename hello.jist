@@ -1,2 +1,2 @@
-let hello: string = "Hello World";
-print(hello);
+let a: int = 1+1;
+print(a);

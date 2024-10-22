@@ -13,7 +13,6 @@ use crate::node::nodes::{IntNode, OperatorNode};
 use crate::statement_tokenizer::tokenizer::tokenizers::tokenize;
 
 use crate::collection::{ARRAY_STACK, DICTIONARY_STACK};
-use crate::statement_tokenizer::variable_tokenizer::variable_tokenizers::read_variable_call;
 
 pub fn search_for_dict_name(name: String) -> bool {
     // if name is in DICTIONARY_STACK reutrn true
@@ -104,9 +103,10 @@ pub fn parse_object_call(node: &ASTNode) -> (String, String) {
     exit(1);
 }
 
-pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
+pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
     //println!("compiling dot statement");
 
+    let mut result: BaseTypes = BaseTypes::Null;
     // in order to compile we must, tokenize variable or collection call, tokenize function call
     // check what type object is
     // then make an object type specific function call
@@ -116,9 +116,9 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
     match node.clone() {
         ASTNode::Dot(d) => {
             //println!("Dot call\nobject: {}, function: {}", d.object, d.function);
-            let mut variable: (String, BaseTypes);
-            let mut collection: (String, Vec<BaseTypes>);
-            let mut object_name_type: (String, String);
+            let variable: (String, BaseTypes);
+            let collection: (String, Vec<BaseTypes>);
+            let object_name_type: (String, String);
 
             // first tokenize object
             let objects = tokenize(d.object);
@@ -146,13 +146,15 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
                                 function_nodes.push(match_token_to_node(function));
                             }
                             //println!("Function nodes: {:?}", function_nodes);
-                            parse_function_call(
+                            let func_result = parse_function_call(
                                 &function_nodes,
                                 "dictionary".to_string(),
                                 None,
                                 dict,
                                 None,
                             );
+
+                            result = func_result.unwrap();
                         }
                         "array" => {
                             //println!("Object call is an array");
@@ -184,13 +186,15 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
                                 }
                             }
 
-                            parse_function_call(
+                            let func_result = parse_function_call(
                                 &function_nodes,
                                 "array".to_string(),
                                 array,
                                 None,
                                 None,
                             );
+
+                            result = func_result.unwrap();
                         }
                         "variable" => {
                             println!("Object call is a variable");
@@ -207,7 +211,9 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
                         }
                     }
                 }
-                ASTNode::Collection(c) => collection = parse_collection_call(&object_nodes),
+                ASTNode::Collection(c) => {
+                    collection = parse_collection_call(&object_nodes).unwrap()
+                }
                 ASTNode::VariableCall(c) => {
                     variable = parse_variable_call(object_nodes.get(0).unwrap())
                 }
@@ -223,7 +229,7 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> bool {
         }
     }
 
-    return true;
+    return result;
 }
 
 ///
@@ -416,8 +422,9 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                         None,
                         None,
                     );
-                    // TODO set value to result
-                    value = result;
+
+                    // check with match then set value to result
+                    value = result.unwrap();
 
                     /*println!(
                                             "New variable = name: {}, value: {:?}, type: {:?}",

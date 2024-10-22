@@ -34,13 +34,11 @@ use std::error::Error;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::Path;
-use std::process::exit;
 
 //use crate::collection::collections::{Array, Dictionary};
 use base_variable::variables::VARIABLE_STACK;
 use compiler::compilers::route_to_parser;
 use globals::MAKE_LOOP;
-use jist::statement_tokenizer::tokenizer::tokenizers::ParseInfo;
 use node::nodes::match_token_to_node;
 use node::nodes::ASTNode;
 use statement_tokenizer::tokenizer::tokenizers::tokenize;
@@ -93,6 +91,42 @@ fn print_function_stack() {
     }
 }
 
+fn tokenize_input(input: &str) -> Vec<ASTNode> {
+    let tokens = tokenize(input.to_string());
+    let mut tokenized_expression = Vec::new();
+
+    for parsed_info in tokens {
+        let node = match_token_to_node(parsed_info);
+        tokenized_expression.push(node);
+    }
+
+    tokenized_expression
+}
+
+fn parse_tokens(tokens: Vec<ASTNode>) -> Result<(), Box<dyn Error>> {
+    let mut tokenized_expression = Vec::new();
+    let mut result = true;
+
+    for node in tokens {
+        match node {
+            ASTNode::SemiColon => {
+                result = route_to_parser(&mut tokenized_expression, None)?;
+                tokenized_expression.clear(); // Clear after processing
+            }
+            _ => {
+                tokenized_expression.push(node); // Accumulate tokens
+            }
+        }
+
+        // If needed, handle error states, loops, etc.
+        while unsafe { MAKE_LOOP } {
+            result = route_to_parser(&mut tokenized_expression, None)?;
+        }
+    }
+
+    Ok(())
+}
+
 ///
 ///This function reads the file and parses it, it was added to support multiple lines of code,
 ///multiline coding statements and later multiple files
@@ -100,15 +134,13 @@ fn print_function_stack() {
 // Global var if_else_skip
 use crate::globals::IF_ELSE_SKIP;
 
-fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
+pub fn parse_lines(file_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
     let lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
     let mut brace_count = 0;
     let mut bracket_count = 0;
     let mut current_line = String::new();
     let mut finished_lines: Vec<String> = Vec::new();
-
-    let mut tokenized_expression = Vec::new();
 
     for (line_number, line) in lines.iter().enumerate() {
         for ch in line.chars() {
@@ -158,11 +190,16 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
             }
         }
     }
+    return Ok(finished_lines);
+}
 
+fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let _ast_nodes: Vec<ASTNode> = Vec::new();
+    let finished_lines: Vec<String> = parse_lines(file_path).unwrap();
+    let mut tokenized_expression = Vec::new();
 
     for line in finished_lines {
-        let tokens = tokenize(line);
+        let tokens = tokenize(line.clone());
         //println!("tokens: {:?}", tokens);
         let mut hasroot = true;
         let mut first_node: ASTNode = ASTNode::None;
@@ -185,17 +222,19 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                     // Route to parser only if there are valid tokens
                     match first_node.clone() {
                         ASTNode::While(_) => {
-                            result = route_to_parser(&mut tokenized_expression, None)
+                            result = route_to_parser(&mut tokenized_expression, None)?
                         }
-                        ASTNode::If(_) => result = route_to_parser(&mut tokenized_expression, None),
+                        ASTNode::If(_) => {
+                            result = route_to_parser(&mut tokenized_expression, None)?
+                        }
                         ASTNode::Elif(_) => {
                             if unsafe { IF_ELSE_SKIP } {
                                 break; // Skip processing if IF_ELSE_SKIP is true
                             } else {
-                                result = route_to_parser(&mut tokenized_expression, None);
+                                result = route_to_parser(&mut tokenized_expression, None)?;
 
                                 while unsafe { MAKE_LOOP } {
-                                    result = route_to_parser(&mut tokenized_expression, None);
+                                    result = route_to_parser(&mut tokenized_expression, None)?;
                                 }
                             }
                         }
@@ -204,18 +243,24 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
                                 unsafe { IF_ELSE_SKIP = false }; // Reset IF_ELSE_SKIP
                                 break; // Skip further parsing
                             } else {
-                                result = route_to_parser(&mut tokenized_expression, None);
+                                result = route_to_parser(&mut tokenized_expression, None)?;
                                 while unsafe { MAKE_LOOP } {
-                                    result = route_to_parser(&mut tokenized_expression, None);
+                                    result = route_to_parser(&mut tokenized_expression, None)?;
                                 }
                             }
                         }
                         _ => {
-                            result = route_to_parser(&mut tokenized_expression, None);
+                            result = route_to_parser(&mut tokenized_expression, None)?;
                             while unsafe { MAKE_LOOP } {
-                                result = route_to_parser(&mut tokenized_expression, None);
+                                result = route_to_parser(&mut tokenized_expression, None)?;
                             }
                         }
+                    }
+
+                    // check result if Error throw error with line number and exit
+                    if !result {
+                        println!("Error in parsing line: {}", line);
+                        std::process::exit(1);
                     }
 
                     // Clear tokenized_expression after processing
@@ -232,79 +277,152 @@ fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+use crossterm::{
+    event::{self, KeyCode, KeyEvent},
+    terminal::{self, disable_raw_mode, enable_raw_mode},
+    ExecutableCommand,
+};
+use std::io::{self, Write};
+
+fn get_input(
+    history: &mut Vec<String>,
+    history_index: &mut usize,
+) -> Result<String, Box<dyn Error>> {
+    let mut current_input = String::new();
+
+    loop {
+        // Clear the current line
+        print!("\rjist> {}", current_input);
+        io::stdout().flush()?;
+
+        // Read the next event
+        if event::poll(std::time::Duration::from_millis(500))? {
+            if let event::Event::Key(KeyEvent { code, .. }) = event::read()? {
+                match code {
+                    KeyCode::Enter => {
+                        println!(); // Move to the next line
+                        break; // Exit input loop
+                    }
+                    KeyCode::Up => {
+                        if *history_index > 0 {
+                            *history_index -= 1;
+                            current_input = history[*history_index].clone(); // Load previous command
+                        }
+                    }
+                    KeyCode::Down => {
+                        if *history_index < history.len() {
+                            *history_index += 1;
+                            if *history_index == history.len() {
+                                current_input.clear(); // Clear if at the end of history
+                            } else {
+                                current_input = history[*history_index].clone();
+                            }
+                        }
+                    }
+                    KeyCode::Backspace => {
+                        current_input.pop(); // Remove last character
+                    }
+                    KeyCode::Char(c) => {
+                        current_input.push(c); // Add character to input
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // Move the cursor to the beginning of the line and clear the line
+        print!("\rjist> {}  ", current_input); // Clear the line
+        io::stdout().flush()?;
+    }
+
+    // Save command to history
+    if !current_input.is_empty() {
+        history.push(current_input.clone());
+        *history_index = history.len(); // Reset history index
+    }
+
+    Ok(current_input) // Return the final input
+}
+
+fn start_repl() -> Result<(), Box<dyn Error>> {
+    let mut history: Vec<String> = Vec::new();
+    let mut history_index = 0;
+
+    println!("JistR 0.1.1 (Released: Oct 21 2024)");
+    println!("Welcome to the JistR Read-Eval-Print-Loop!");
+    println!("Type 'exit();' to exit the REPL");
+
+    loop {
+        enable_raw_mode()?;
+        println!();
+        let input = get_input(&mut history, (&mut history_index).into())?;
+
+        disable_raw_mode()?;
+        if input.is_empty() {
+            continue;
+        }
+
+        if input == "exit();" {
+            println!("Exiting REPL... Goodbye!");
+            break;
+        }
+
+        // Tokenize input
+        let tokens = tokenize_input(&input);
+
+        // Parse tokens
+        if let Err(e) = parse_tokens(tokens) {
+            eprintln!("Error in parsing: {}", e);
+        }
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     // Collect command-line arguments
     let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        return Err("No file path provided".into());
+
+    if args.len() == 1 {
+        // Start the REPL if no file is passed
+        println!("Starting REPL...");
+        start_repl()?; // Propagate errors from REPL if any
+        return Ok(());
     }
+
+    // File path provided as an argument
     let file_path = &args[1];
-    match check_file_extension(file_path.to_owned()) {
+
+    // Check if the file has the correct extension
+    match check_file_extension(file_path.clone()) {
         Ok(true) => {
-            //println!("File path is valid");
+            // File extension is valid, continue with parsing
         }
-        Err(_) => {
-            return Err("File path not valid: Does not have extension .jist".into());
+        Ok(false) => {
+            return Err("File path not valid: Does not have .jist extension".into());
         }
-        _ => {
-            return Err("Some error occurred".into());
+        Err(e) => {
+            return Err(format!("Failed to check file extension: {}", e).into());
         }
     }
 
-    // Read the file contents
-    //let contents = fs::read_to_string(file_path)?;
-    //println!("{}", contents);
-    //
-    //curly braces take priority, then square braces then ;
-    //keep track of braces and make sure all are closed before finishing line and check for ; as
-    //next,
-    //if none go until ;
+    // Parse the file and handle any errors
     if let Err(e) = parse_file(file_path) {
         eprintln!("Failed to parse file: {}", e);
+        return Err(format!("Error occurred while parsing the file: {}", e).into());
     }
 
-    // Tokenize each line and collect AST nodes
-
-    // Display the collected AST nodes
-    /*
-    for node in &ast_nodes {
-        let indent = " ".repeat(4);
-        match node {
-            ASTNode::Bool(b) => println!("{}BoolNode: Value: {}", indent, b.value),
-            ASTNode::Variable(v) => println!("{}VariableNode: Type: {}, Value: {}", indent, v.var_type, v.value),
-            ASTNode::Int(n) => println!("{}IntNode: Value: {}", indent, n.value),
-            ASTNode::Operator(o) => println!("{}OperatorNode: Operator: {}", indent, o.operator),
-            ASTNode::Function(f) => println!("{}FunctionNode: Name: {}", indent, f.name),
-            ASTNode::String(s) => println!("{}StringNode: Value: {}", indent, s.value),
-            ASTNode::Char(c) => println!("{}CharNode: Value: {}", indent, c.value),
-            ASTNode::Assignment(a) => println!("{}AssignmentNode: Value: {}", indent, a.value),
-            ASTNode::VarTypeAssignment(v) => println!("{}VarTypeAssignmentNode: Value: {}", indent, v.value),
-            ASTNode::FunctionCall(f) => println!("{}FunctionCallNode: Value: {}", indent, f.name),
-            ASTNode::VariableCall(v) => println!("{}VariableCallNode: Value: {}", indent, v.name),
-            ASTNode::VariableType(v) => println!("{}VariableTypeNode: Value: {}", indent, v.value),
-            ASTNode::VariableValue(v) => println!("{}VariableValueNode: Value: {}", indent, v.value),
-            ASTNode::FunctionArguments(f) => println!("{}FunctionArgumentsNode: Value: {}", indent, f.value),
-            ASTNode::AssignmentOperator(a) => println!("{}AssignmentOperatorNode: Value: {}", indent, a.operator),
-            ASTNode::ReturnTypeAssignment(r) => println!("{}ReturnTypeAssignmentNode: Value: {}", indent, r.value),
-            ASTNode::Comment(c) => println!("{}CommentNode: Value: {}", indent, c.value),
-            ASTNode::SemiColon => println!("{}SemicolonNode", indent),
-            ASTNode::LeftParenthesis => println!("{}LeftParenthesisNode", indent),
-            ASTNode::RightParenthesis => println!("{}RightParenthesisNode", indent),
-            ASTNode::ArgumentSeparator => println!("{}ArgumentSeparatorNode", indent),
-            ASTNode::LeftCurly => println!("{}LeftCurlyNode", indent),
-            ASTNode::RightCurly => println!("{}RightCurlyNode", indent),
-            ASTNode::None => println!("{}NoneNode", indent),
-        }
-    }*/
-    //print variable stack
+    // After parsing, print the variable stack and other stacks
     println!("\n\nStack:");
     for variable in unsafe { VARIABLE_STACK.iter() } {
         variable.print();
     }
 
+    // Print array, dictionary, and function stacks
     print_array_stack();
     print_dictionary_stack();
     print_function_stack();
+
     Ok(())
 }
 

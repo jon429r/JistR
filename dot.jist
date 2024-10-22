@@ -1,2 +1,5 @@
-let a: array<int> = [1, 2, 3, 4];
-a.print();
+
+let first: int = input("First number");
+let second: int = input("Second number");
+let sum: int = first + second;
+println(sum);
