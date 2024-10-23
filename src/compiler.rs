@@ -233,7 +233,7 @@ pub mod compilers {
                 }
                 ASTNode::Variable(_v) => {
                     let end = parse_variable_declaration(expression);
-                    return Ok(end);
+                    return Ok(end?);
                 }
                 ASTNode::Else => {}
                 ASTNode::Int(_n) => {
@@ -284,7 +284,7 @@ pub mod compilers {
                 }
                 ASTNode::VariableCall(_v) => {
                     let call_result = compile_variable_call(expression);
-                    return Ok(call_result);
+                    return Ok(call_result?);
                 }
                 ASTNode::Comment(_c) => {
                     return Ok(true);

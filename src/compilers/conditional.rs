@@ -34,18 +34,21 @@ pub mod conditional_compilers {
                     let value = compile_dot_statement(&mut vec_node);
 
                     first_value = if first_value == ASTNode::None {
-                        from_base_type(value)
+                        from_base_type(value?)
                     } else {
                         first_value
                     };
                 }
                 ASTNode::VariableCall(_) => {
-                    let (_, value) = parse_variable_call(node);
-                    first_value = if first_value == ASTNode::None {
-                        from_base_type(value)
+                    if let Ok((_, value)) = parse_variable_call(node) {
+                        first_value = if first_value == ASTNode::None {
+                            from_base_type(value)
+                        } else {
+                            first_value
+                        };
                     } else {
-                        first_value
-                    };
+                        return Err("Error: Unable to parse variable call".into());
+                    }
                 }
 
                 ASTNode::FunctionCall(_) => {

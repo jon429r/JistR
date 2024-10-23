@@ -236,6 +236,8 @@ pub mod variable {
                 BaseTypes::StringWrapper(_) => {
                     match value {
                         BaseTypes::StringWrapper(_) => value,
+                        BaseTypes::Char(_) => BaseTypes::StringWrapper(value.into()),
+
                         BaseTypes::Null => BaseTypes::StringWrapper(String::new()),
 
                         _ => {
@@ -247,6 +249,8 @@ pub mod variable {
                 BaseTypes::Bool(_) => {
                     match value {
                         BaseTypes::Bool(_) => value,
+                        BaseTypes::Int(1) => BaseTypes::Bool(true),
+                        BaseTypes::Int(0) => BaseTypes::Bool(false),
                         BaseTypes::Null => BaseTypes::Bool(false),
 
                         _ => {
@@ -255,6 +259,7 @@ pub mod variable {
                         }
                     }
                 }
+
                 BaseTypes::Char(_) => {
                     match value {
                         BaseTypes::Char(_) => value,

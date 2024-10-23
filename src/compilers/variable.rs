@@ -11,6 +11,7 @@ use crate::node::nodes::ASTNode;
 use crate::node::nodes::VariableCallNode;
 use crate::node::nodes::{IntNode, OperatorNode};
 use crate::statement_tokenizer::tokenizer::tokenizers::tokenize;
+use std::error::Error;
 
 use crate::collection::{ARRAY_STACK, DICTIONARY_STACK};
 
@@ -22,7 +23,7 @@ pub fn search_for_dict_name(name: String) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
 pub fn search_for_array_name(name: String) -> bool {
@@ -32,7 +33,7 @@ pub fn search_for_array_name(name: String) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
 /*
@@ -46,29 +47,27 @@ pub fn search_for_var_name(name: String) -> bool {
     return False;
 } */
 
-pub fn get_dict(name: String) -> Dictionary {
+pub fn get_dict(name: String) -> Result<Dictionary, Box<dyn Error>> {
     let dict_stack = DICTIONARY_STACK.lock().unwrap();
     for dict in dict_stack.iter() {
         if dict.name == name {
-            return dict.clone();
+            return Ok(dict.clone());
         }
     }
-    println!("Dictionary not found");
-    exit(1);
+    return Err("Dictionary not found".into());
 }
 
-pub fn get_array(name: String) -> Array {
+pub fn get_array(name: String) -> Result<Array, Box<dyn Error>> {
     let array_stack = ARRAY_STACK.lock().unwrap();
     for array in array_stack.iter() {
         if array.name == name {
-            return array.clone();
+            return Ok(array.clone());
         }
     }
-    println!("Array not found");
-    exit(1);
+    return Err("Array not found".into());
 }
 
-pub fn parse_object_call(node: &ASTNode) -> (String, String) {
+pub fn parse_object_call(node: &ASTNode) -> Result<(String, String), Box<dyn Error>> {
     // will look at object call name and see if it is in variable stack or collection stack then
     // return the approiate ast node, eg variable call or collection call
 
@@ -80,30 +79,24 @@ pub fn parse_object_call(node: &ASTNode) -> (String, String) {
             let variable: bool = false;
 
             if dict {
-                return (object_name, "dictionary".to_string());
+                return Ok((object_name, "dictionary".to_string()));
             }
             if array {
-                return (object_name, "array".to_string());
+                return Ok((object_name, "array".to_string()));
             }
             if variable {
-                return (object_name, "variable".to_string());
+                return Ok((object_name, "variable".to_string()));
             } else {
-                println!("Object call is not a variable, dictionary or array");
-                exit(1);
+                return Err("Object not found".into());
             }
         }
         _ => {
-            println!(
-                "Error expected an object call node in parse object call found {:?}",
-                node
-            );
+            return Err("Error expected an object call node".into());
         }
     }
-
-    exit(1);
 }
 
-pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
+pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> Result<BaseTypes, Box<dyn Error>> {
     //println!("compiling dot statement");
 
     let mut result: BaseTypes = BaseTypes::Null;
@@ -131,7 +124,14 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
             // check type of object, var, collection? then comiple
             match object_nodes.get(0).unwrap() {
                 ASTNode::ObjectCall(c) => {
-                    object_name_type = parse_object_call(&node);
+                    match parse_object_call(&node) {
+                        Ok(result) => {
+                            object_name_type = result;
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
 
                     //determine object type
                     //get that from stack, then call approiate function
@@ -139,7 +139,7 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
                     match object_name_type.1.to_string().as_str() {
                         "dictionary" => {
                             //println!("Object call is a dictionary");
-                            let dict: Option<Dictionary> = get_dict(object_name_type.0).into();
+                            let dict: Option<Dictionary> = get_dict(object_name_type.0)?.into();
                             let tokenized_function = tokenize(d.function.clone());
                             let mut function_nodes: Vec<ASTNode> = Vec::new();
                             for function in tokenized_function {
@@ -158,7 +158,7 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
                         }
                         "array" => {
                             //println!("Object call is an array");
-                            let array: Option<Array> = get_array(object_name_type.0).into();
+                            let array: Option<Array> = get_array(object_name_type.0)?.into();
                             let tokenized_function = tokenize(d.function.clone());
                             let mut function_nodes: Vec<ASTNode> = Vec::new();
                             for function in tokenized_function {
@@ -181,8 +181,7 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
                                     // You can use name, data, value_type as needed
                                 }
                                 None => {
-                                    println!("Array is None");
-                                    exit(1);
+                                    return Err("Array not found".into());
                                 }
                             }
 
@@ -215,7 +214,7 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
                     collection = parse_collection_call(&object_nodes).unwrap()
                 }
                 ASTNode::VariableCall(c) => {
-                    variable = parse_variable_call(object_nodes.get(0).unwrap())
+                    variable = parse_variable_call(object_nodes.get(0).unwrap())?
                 }
                 _ => {
                     println!("Unexpected node found within comple dot statement function");
@@ -224,18 +223,17 @@ pub fn compile_dot_statement(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
             }
         }
         _ => {
-            println!("Syntax Error: Expected a dot statement found {}", node);
-            exit(1);
+            return Err("Syntax Error: Expected a dot statement".into());
         }
     }
 
-    return result;
+    return Ok(result);
 }
 
 ///
 ///This Function takes in an ASTNode and returns a tuple of the variable name and its value
 ///
-pub fn parse_variable_call(node: &ASTNode) -> (String, BaseTypes) {
+pub fn parse_variable_call(node: &ASTNode) -> Result<(String, BaseTypes), Box<dyn Error>> {
     match node {
         ASTNode::VariableCall(v) => {
             //println!("Function argument: {}", v.name);
@@ -254,11 +252,10 @@ pub fn parse_variable_call(node: &ASTNode) -> (String, BaseTypes) {
             }
             let arg1 = (arg1_name, arg1_value);
             //parameter_and_value.push(arg1);
-            return arg1;
+            return Ok(arg1);
         }
         _ => {
-            println!("Syntax Error: Expected a variable call.");
-            exit(1)
+            return Err("Syntax Error: Expected a variable call.".into());
         }
     }
 }
@@ -268,11 +265,10 @@ pub fn parse_variable_call(node: &ASTNode) -> (String, BaseTypes) {
 /// can be used to set the value of the variable to something else
 ///
 
-pub fn compile_variable_call(exp_stack: &mut Vec<ASTNode>) -> bool {
+pub fn compile_variable_call(exp_stack: &mut Vec<ASTNode>) -> Result<bool, Box<dyn Error>> {
     // Ensure there is at least one node in the stack
     if exp_stack.is_empty() {
-        println!("Syntax Error: Empty expression stack.");
-        return false;
+        return Err("Empty expression stack.".into());
     }
 
     // Find the first variable call node
@@ -305,7 +301,7 @@ pub fn compile_variable_call(exp_stack: &mut Vec<ASTNode>) -> bool {
         // If variable wasn't found, return false
         if variable.name.is_empty() {
             println!("Syntax Error: Variable '{}' not found in stack.", v.name);
-            return false;
+            return Err("Variable not found.".into());
         }
 
         // Process further if there are additional nodes in exp_stack
@@ -319,26 +315,19 @@ pub fn compile_variable_call(exp_stack: &mut Vec<ASTNode>) -> bool {
                         let value: BaseTypes = next_node.into();
                         variable.set_value(value);
                     }
-                    println!(
-                        "Processed assignment operator with updated variable: {:?}",
-                        variable
-                    );
-                    return true;
+                    return Ok(true);
                 }
                 ASTNode::Operator(o) => match o.operator.as_str() {
                     "++" => {
                         variable.increment();
-                        println!("Incremented variable: {:?}", variable);
-                        return true;
+                        return Ok(true);
                     }
                     "--" => {
                         variable.decrement();
-                        println!("Decremented variable: {:?}", variable);
-                        return true;
+                        return Ok(true);
                     }
                     _ => {
-                        println!("Syntax Error: Unrecognized operator '{}'", o.operator);
-                        return false;
+                        return Err("Syntax Error: Unrecognized operator.".into());
                     }
                 },
                 _ => {
@@ -350,13 +339,13 @@ pub fn compile_variable_call(exp_stack: &mut Vec<ASTNode>) -> bool {
             }
         }
 
-        return true; // Successfully processed the variable call
+        return Ok(true); // Successfully processed the variable call
     } else {
-        println!(
+        let error: String = format!(
             "Syntax Error: Expected a variable call but found {:?}",
             first_node
         );
-        return false; // Return false if the first node is not a variable call
+        return Err(error.into());
     }
 }
 
@@ -364,7 +353,7 @@ pub fn compile_variable_call(exp_stack: &mut Vec<ASTNode>) -> bool {
 ///This function takes in a mutable reference to a vector of ASTNodes and parses the variable
 ///declaration returning end after parsing the variable declaration
 ///
-pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
+pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> Result<bool, Box<dyn Error>> {
     let mut var_name: Option<String> = None;
     let mut var_type: Option<BaseTypes> = None;
     let mut assignment_operator: Option<String> = None;
@@ -390,8 +379,9 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                     "boolean" => Some(BaseTypes::Bool(false)),
                     "char" => Some(BaseTypes::Char('\0')),
                     _ => {
-                        println!("Syntax Error: Unrecognized type '{}'", v.value);
-                        return false;
+                        let error: String =
+                            format!("Syntax Error: Unrecognized type '{}'", v.value);
+                        return Err(error.into());
                     }
                 };
             }
@@ -435,33 +425,41 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                     */
 
                     let _variable = Variable::new(var_name.unwrap(), value, var_type.unwrap());
-                    return true;
+                    return Ok(true);
                 }
             }
             ASTNode::VariableCall(_c) => {
                 if inside_assignment {
-                    let result = parse_variable_call(node);
+                    let mut result = parse_variable_call(node);
+                    result = match result {
+                        Ok(result) => Ok(result),
+                        Err(e) => Err(e),
+                    };
                     //add the value back into the epression at same index
+
+                    let var_result = result?;
+
                     exp_stack.insert(
                         index,
                         ASTNode::VariableCall(VariableCallNode {
-                            name: result.0.clone(),
+                            name: var_result.clone().0,
                         }),
                     );
-                    variable_call_values.push(result);
+                    variable_call_values.push(var_result);
                 } else {
-                    println!("Syntax Error: Variable call outside of assignment.");
-                    return false;
+                    let error: String =
+                        format!("Syntax Error: Variable call outside of assignment.");
+                    return Err(error.into());
                 }
             }
             ASTNode::Int(_n) => {
                 if inside_assignment {
-                    var_value = operation(exp_stack);
+                    var_value = operation(exp_stack)?;
                     if let ASTNode::Int(n) = var_value {
                         value = BaseTypes::Int(n.value);
                     } else {
-                        println!("Syntax Error: Expected an integer after the operator.");
-                        return false;
+                        let result: String = format!("Expected an integer after the operator.");
+                        return Err(result.into());
                     }
                     break;
                 }
@@ -470,12 +468,11 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             ASTNode::Float(f) => {
                 if inside_assignment {
                     first = Some(ASTNode::Float(f.clone()));
-                    var_value = operation(exp_stack);
+                    var_value = operation(exp_stack)?;
                     if let ASTNode::Float(f) = var_value {
                         value = BaseTypes::Float(f.value.into());
                     } else {
-                        println!("Syntax Error: Expected a float after the operator.");
-                        return false;
+                        return Err("Expected a float after the operator.".into());
                     }
                     break;
                 }
@@ -484,12 +481,11 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                 if inside_assignment {
                     //print!("String: {}", s.value);
                     first = Some(ASTNode::String(s.clone()));
-                    var_value = operation(exp_stack);
+                    var_value = operation(exp_stack)?;
                     if let ASTNode::String(s) = var_value {
                         value = BaseTypes::StringWrapper(s.value.clone());
                     } else {
-                        println!("Syntax Error: Expected a string after the assignment_operator.");
-                        return false;
+                        return Err("Expected a string after the assignment_operator.".into());
                     }
                     break;
                 }
@@ -498,16 +494,14 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
                 if inside_assignment {
                     value = BaseTypes::Bool(b.value);
                 } else {
-                    println!("Syntax Error: Bool outside of assignment.");
-                    return false;
+                    return Err("Syntax Error: Bool outside of assignment.".into());
                 }
             }
             ASTNode::Char(c) => {
                 if inside_assignment {
                     value = BaseTypes::Char(c.value);
                 } else {
-                    println!("Syntax Error: Char outside of assignment.");
-                    return false;
+                    return Err("Syntax Error: Char outside of assignment.".into());
                 }
             }
             ASTNode::LeftParenthesis => {
@@ -516,19 +510,18 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
             ASTNode::RightParenthesis => {}
 
             _ => {
-                println!(
-                    "Syntax Error: Unhandled node while parsing variable declaration: {:?}",
+                let error: String = format!(
+                    "Syntax Error: Unhandled node in variable declaration: {:?}",
                     node
                 );
-                return false;
+                return Err(error.into());
             }
         }
         index += 1;
     }
 
     if var_name.is_none() || var_type.is_none() || assignment_operator.is_none() {
-        println!("Syntax Error: Missing variable components.");
-        return false;
+        return Err("Missing variable components.".into());
     }
 
     let variable = Variable::new(var_name.unwrap(), value, var_type.unwrap());
@@ -536,15 +529,15 @@ pub fn parse_variable_declaration(exp_stack: &mut Vec<ASTNode>) -> bool {
     unsafe {
         VARIABLE_STACK.push(variable.clone());
     }
-    println!("New variable: {:?}", variable.clone());
-    true
+    //println!("New variable: {:?}", variable.clone());
+    return Ok(true);
 }
 
 ///
 ///This Function is in the variable module and takes in a mut ref of a vector of ASTNodes
 ///It returns a BaseType result of the parsed expression
 ///
-pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
+pub fn operation(exp_stack: &mut Vec<ASTNode>) -> Result<ASTNode, Box<dyn Error>> {
     //cloned_exp_stack.reverse();
     //println!("Cloned stack after reversed: {:?}", cloned_exp_stack);
 
@@ -580,7 +573,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                     left = ASTNode::Int(n);
                 } else {
                     let right = ASTNode::Int(n);
-                    first_node = Some(parse_operator(&left, &operator, &right));
+                    first_node = Some(parse_operator(&left, &operator, &right)?);
                 }
             }
             ASTNode::Float(f) => {
@@ -589,7 +582,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                     left = ASTNode::Float(f);
                 } else {
                     let right = ASTNode::Float(f);
-                    first_node = Some(parse_operator(&left, &operator, &right));
+                    first_node = Some(parse_operator(&left, &operator, &right)?);
                 }
             }
             ASTNode::String(s) => {
@@ -598,7 +591,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                     left = ASTNode::String(s);
                 } else {
                     let right = ASTNode::String(s);
-                    first_node = Some(parse_operator(&left, &operator, &right));
+                    first_node = Some(parse_operator(&left, &operator, &right)?);
                 }
             }
             ASTNode::Bool(b) => {
@@ -607,7 +600,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                     left = ASTNode::Bool(b);
                 } else {
                     let right = ASTNode::Bool(b);
-                    first_node = Some(parse_operator(&left, &operator, &right));
+                    first_node = Some(parse_operator(&left, &operator, &right)?);
                 }
             }
             ASTNode::Char(c) => {
@@ -616,7 +609,7 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                     left = ASTNode::Char(c);
                 } else {
                     let right = ASTNode::Char(c);
-                    first_node = Some(parse_operator(&left, &operator, &right));
+                    first_node = Some(parse_operator(&left, &operator, &right)?);
                 }
             }
 
@@ -629,48 +622,52 @@ pub fn operation(exp_stack: &mut Vec<ASTNode>) -> ASTNode {
                 parenthesis = true;
             }
             _ => {
-                println!("Syntax Error: Unhandled node in operation: {:?}", top);
-                return ASTNode::Int(IntNode { value: 0 });
+                let error: String = format!("Syntax Error: Unhandled node in operation: {:?}", top);
+                return Err(error.into());
             }
         }
     }
 
     if first_node.is_none() {
-        return left;
+        return Ok(left);
     } else {
-        return first_node.unwrap();
+        return Ok(first_node.unwrap());
     }
 }
 
-pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> ASTNode {
+pub fn parse_operator(
+    left: &ASTNode,
+    operator: &ASTNode,
+    right: &ASTNode,
+) -> Result<ASTNode, Box<dyn Error>> {
     match operator {
         ASTNode::Operator(o) => match o.operator.as_str() {
             "+" => {
                 if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                     let result = left_val.value + right_val.value;
                     let result = IntNode { value: result };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "=" => {
                 if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                     let result = right_val.value;
                     let result = IntNode { value: result };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "-" => {
                 if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                     let result = left_val.value - right_val.value;
                     let result = IntNode { value: result };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "*" => {
                 if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
                     let result = left_val.value * right_val.value;
                     let result = IntNode { value: result };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "/" => {
@@ -678,10 +675,9 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     if right_val.value != 0 {
                         let result = left_val.value / right_val.value;
                         let result = IntNode { value: result };
-                        return ASTNode::Int(result);
+                        return Ok(ASTNode::Int(result));
                     } else {
-                        println!("Syntax Error: Division by zero.");
-                        std::process::exit(1);
+                        return Err("Division by zero.".into());
                     }
                 }
             }
@@ -691,7 +687,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "!=" => {
@@ -700,7 +696,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             ">" => {
@@ -709,7 +705,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "<" => {
@@ -718,7 +714,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             ">=" => {
@@ -727,7 +723,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "<=" => {
@@ -736,7 +732,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "&&" => {
@@ -745,7 +741,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "||" => {
@@ -754,7 +750,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "!" => {
@@ -763,7 +759,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "==" => {
@@ -772,7 +768,7 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
             "!=" => {
@@ -781,24 +777,23 @@ pub fn parse_operator(left: &ASTNode, operator: &ASTNode, right: &ASTNode) -> AS
                     let result = IntNode {
                         value: result as i32,
                     };
-                    return ASTNode::Int(result);
+                    return Ok(ASTNode::Int(result));
                 }
             }
 
             _ => {
-                println!("Syntax Error: Unrecognized operator '{}'", o.operator);
-                std::process::exit(1);
+                let error: String = format!("Syntax Error: Unrecognized operator '{}'", o.operator);
+                return Err(error.into());
             }
         },
         _ => {
-            println!("Syntax Error: Expected an operator.");
-            std::process::exit(1);
+            return Err("Syntax Error: Expected an operator.".into());
         }
     }
-    ASTNode::None
+    return Err("Syntax Error: Invalid operation.".into());
 }
 
-fn parse_numeric_expression(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
+fn parse_numeric_expression(exp_stack: &mut Vec<ASTNode>) -> Result<BaseTypes, Box<dyn Error>> {
     let mut evaluate_empty = true;
     let mut evaluate: (ASTNode, ASTNode, ASTNode) = (ASTNode::None, ASTNode::None, ASTNode::None);
     let mut operator = String::new(); // Use a String to store the operator instead of a reference
@@ -865,52 +860,58 @@ fn parse_numeric_expression(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
                         }
                         _ => {
                             println!("Syntax Error: Unrecognized operator '{}'", operator);
-                            std::process::exit(1);
+                            let error: String =
+                                format!("Syntax Error: Unrecognized operator '{}'", operator);
+                            return Err(error.into());
                         }
                     }
-                    return BaseTypes::Int(result);
+                    return Ok(BaseTypes::Int(result));
                 }
                 _ => {}
             }
         }
     }
 
-    BaseTypes::Null
+    return Err("Syntax Error: Invalid numeric expression.".into());
 }
 
-fn process_value_expression(exp_stack: &mut Vec<ASTNode>) -> BaseTypes {
+fn process_value_expression(exp_stack: &mut Vec<ASTNode>) -> Result<BaseTypes, Box<dyn Error>> {
     let mut char_buffer = String::new();
 
     while let Some(node) = exp_stack.pop() {
         match node {
             ASTNode::Int(n) => {
-                return BaseTypes::Int(n.value as i32);
+                return Ok(BaseTypes::Int(n.value as i32));
             }
             ASTNode::Float(f) => {
-                return BaseTypes::Float(f.value.into());
+                return Ok(BaseTypes::Float(f.value.into()));
             }
             ASTNode::String(s) => {
-                return BaseTypes::StringWrapper(s.value.clone());
+                return Ok(BaseTypes::StringWrapper(s.value.clone()));
             }
             ASTNode::Bool(b) => {
-                return BaseTypes::Bool(b.value);
+                return Ok(BaseTypes::Bool(b.value));
             }
             ASTNode::Char(c) => {
                 char_buffer.push(c.value);
 
                 if char_buffer == "true" {
-                    return BaseTypes::Bool(true);
+                    return Ok(BaseTypes::Bool(true));
                 } else if char_buffer == "false" {
-                    return BaseTypes::Bool(false);
+                    return Ok(BaseTypes::Bool(false));
                 } else {
-                    return BaseTypes::Char(c.value);
+                    return Ok(BaseTypes::Char(c.value));
                 }
             }
             _ => {
-                println!("Unhandled node in value expression: {:?}", node);
+                let error: String = format!(
+                    "Syntax Error: Unhandled node in value expression: {:?}",
+                    node
+                );
+                return Err(error.into());
             }
         }
     }
 
-    BaseTypes::Null
+    return Err("Syntax Error: Invalid value expression.".into());
 }

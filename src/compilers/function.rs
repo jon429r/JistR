@@ -176,7 +176,7 @@ pub fn parse_function_call(
                     ASTNode::VariableCall(v) => {
                         // get variable value
                         let var_value = parse_variable_call(&expression[i]);
-                        parameter_and_value.push(var_value.1);
+                        parameter_and_value.push(var_value?.1);
                     }
                     ASTNode::Int(n) => {
                         let arg1 = (String::new(), BaseTypes::Int(n.value.clone()));
@@ -228,6 +228,20 @@ pub fn parse_function_call(
                 None,
                 None,
                 variable,
+            );
+            match result {
+                Ok(result) => return Ok(result),
+                Err(e) => return Err(e),
+            }
+        }
+        "None" => {
+            let result = get_function_result(
+                function_name,
+                &mut parameter_and_value,
+                dot_notation,
+                None,
+                None,
+                None,
             );
             match result {
                 Ok(result) => return Ok(result),
@@ -370,7 +384,7 @@ fn parse_function_call_arguments(expression: &[ASTNode]) -> Result<Vec<BaseTypes
                 let mut vec: Vec<ASTNode> = expression[i..].to_vec();
                 let result = compile_dot_statement(&mut vec);
 
-                arguments.push(result);
+                arguments.push(result?);
             }
             ASTNode::VariableCall(v) => {
                 // Process variable call, you could push its value from a variable store
