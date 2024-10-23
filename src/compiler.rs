@@ -12,6 +12,7 @@ pub mod compilers {
     use crate::compilers::variable::{
         compile_dot_statement, compile_variable_call, parse_variable_declaration,
     };
+    use crate::compilers::variable::{operation, parse_operator};
     use crate::globals::{IF_ELSE_SKIP, MAKE_LOOP};
     use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
     use std::error::Error;
@@ -43,95 +44,6 @@ pub mod compilers {
     }
 
     impl Error for CompilerError {}
-
-    // Use Result for proper error handling
-    pub fn parse_operator(
-        left: &ASTNode,
-        operator: &ASTNode,
-        right: &ASTNode,
-    ) -> Result<ASTNode, Box<dyn Error>> {
-        match operator {
-            ASTNode::Operator(o) => match o.operator.as_str() {
-                "+" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value + right_val.value;
-                        return Ok(ASTNode::Int(IntNode { value: result }));
-                    }
-                }
-                "-" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value - right_val.value;
-                        return Ok(ASTNode::Int(IntNode { value: result }));
-                    }
-                }
-                "*" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        let result = left_val.value * right_val.value;
-                        return Ok(ASTNode::Int(IntNode { value: result }));
-                    }
-                }
-                "/" => {
-                    if let (ASTNode::Int(left_val), ASTNode::Int(right_val)) = (left, right) {
-                        if right_val.value != 0 {
-                            let result = left_val.value / right_val.value;
-                            return Ok(ASTNode::Int(IntNode { value: result }));
-                        } else {
-                            return Err(Box::new(CompilerError::DivisionByZero));
-                        }
-                    }
-                }
-                _ => {
-                    return Err(Box::new(CompilerError::UnrecognizedOperator(
-                        o.operator.clone(),
-                    )))
-                }
-            },
-            _ => {
-                return Err(Box::new(CompilerError::InvalidSyntax(
-                    "Expected an operator.".to_string(),
-                )))
-            }
-        }
-        Ok(ASTNode::None) // Return a neutral node on failure (though this should likely be handled better)
-    }
-
-    pub fn operation(expression: &mut Vec<ASTNode>) -> Result<ASTNode, Box<dyn Error>> {
-        let mut operator: ASTNode = ASTNode::Operator(OperatorNode {
-            operator: "+".to_string(),
-        });
-        let mut right: ASTNode = ASTNode::Int(IntNode { value: 0 });
-        let mut left: ASTNode = ASTNode::Int(IntNode { value: 0 });
-        let mut first_found = false;
-
-        expression.reverse();
-
-        for next_node in expression {
-            match next_node {
-                ASTNode::LeftParenthesis => {}
-                ASTNode::RightParenthesis => {}
-                ASTNode::Operator(o) => {
-                    operator = ASTNode::Operator(o.clone());
-                }
-                ASTNode::Int(n2) => {
-                    if !first_found {
-                        left = ASTNode::Int(n2.clone());
-                        first_found = true;
-                    } else {
-                        right = ASTNode::Int(n2.clone());
-                        break;
-                    }
-                }
-                _ => {
-                    return Err(Box::new(CompilerError::InvalidSyntax(format!(
-                        "Expected operator or number, found {:?}",
-                        next_node
-                    ))));
-                }
-            }
-        }
-
-        parse_operator(&left, &operator, &right)
-    }
 
     pub fn route_to_parser(
         expression: &mut Vec<ASTNode>,
@@ -315,7 +227,8 @@ pub mod compilers {
 
 #[cfg(test)]
 mod complier_tests {
-    use crate::compiler::compilers::{operation, parse_operator};
+
+    use crate::compilers::variable::{operation, parse_operator};
     use crate::node::nodes::{ASTNode, IntNode, OperatorNode};
     //test parse operator
     #[test]

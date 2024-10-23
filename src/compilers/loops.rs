@@ -99,13 +99,11 @@ pub mod loop_compilers {
                         // Process the body of the while loop
                         let mut body_index = index + 1; // Start after the while node
                         while body_index < expression.len() {
-                            let body_node = &expression[body_index];
-
-                            //println!("Processing body node: {:?}", body_node);
+                            println!("Processing expression: {:?}", expression);
 
                             // Handle each body node
-                            let body_result = route_to_parser(expression, Some(body_index));
-                            if !body_result.unwrap() {
+                            let body_result = route_to_parser(expression, Some(body_index))?;
+                            if !body_result {
                                 //println!("Parsing failed for body node. Exiting loop.");
                                 return Err("Error: Parsing failed for body node.".into());
                             }

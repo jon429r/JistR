@@ -23,6 +23,7 @@ pub mod tokenizers {
 
     use crate::token_type::token_types::TokenTypes;
     use std::char;
+    use std::process::exit;
 
     #[derive(Debug, PartialEq, Clone)]
     pub struct ParseInfo {
@@ -267,7 +268,9 @@ pub mod tokenizers {
         if info.token != none.token {
             return info;
         }
-        print!("No token found for: {}", expression);
+        let error: String = format!("Error: No token found for expression {}", expression);
+        println!("{}", error);
+        exit(1);
 
         /*
                 // tokenize char value if it matches 'a' to 'z' or 'A' to 'Z'

@@ -1,0 +1,2 @@
+write("output.txt", "Hello, world!");
+print("File successfully written");

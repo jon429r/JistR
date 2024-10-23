@@ -38,39 +38,25 @@ lazy_static::lazy_static! {
         map.insert("to_lowercase", FunctionTypes::SingleStringFn(FunctionMap::to_lowercase as fn(String) -> String));
         map.insert("trim", FunctionTypes::SingleStringFn(FunctionMap::trim as fn(String) -> String));
         map.insert("input", FunctionTypes::SingleStringFn(FunctionMap::input as fn(String) -> String));
+        map.insert("read", FunctionTypes::SingleStringFn(FunctionMap::read as fn(String) -> String));
+        map.insert("write", FunctionTypes::DoubleStringNoOutFn(FunctionMap::write as fn(String, String)));
         map.into()
     };
 
 }
 
-enum FunctionMap {
-    Max,
-    Min,
-    Rand,
-    Floor,
-    Ceil,
-    Round,
-    Add,
-    Sub,
-    Mult,
-    Divide,
-    Echo,
-    Abs,
-    Pow,
-    Sqrt,
-    Log,
-    Sin,
-    Cos,
-    Tan,
-    Concat,
-    Len,
-    ToUppercase,
-    ToLowercase,
-    Trim,
-    Input,
-}
+enum FunctionMap {}
 
 impl FunctionMap {
+    fn read(file_path: String) -> String {
+        let output: String = std::fs::read_to_string(file_path).unwrap();
+        output
+    }
+
+    fn write(file_path: String, content: String) {
+        std::fs::write(file_path, content).unwrap();
+    }
+
     fn max(a: f64, b: f64) -> f64 {
         if a > b {
             a

@@ -303,6 +303,13 @@ pub mod variable {
             T: Into<BaseTypes>,
         {
             self.value = value.into();
+            //now update the variable in the stack
+            for variable in unsafe { VARIABLE_STACK.iter_mut() } {
+                if variable.name == self.name {
+                    variable.value = self.value.clone();
+                    break; // Exit loop once the variable is found and updated
+                }
+            }
         }
 
         pub fn get_value(&self) -> &BaseTypes {

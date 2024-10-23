@@ -14,6 +14,8 @@ pub mod loop_tokenizers {
             } else if c == ')' {
                 parenthesis_count -= 1;
                 if parenthesis_count == 0 {
+                    index += 1;
+
                     break;
                 }
             }

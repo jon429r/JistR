@@ -1,0 +1,5 @@
+var a = true;
+var b = false;
+print("Logical AND: " + (a && b));
+print("Logical OR: " + (a || b));
+print("Logical NOT: " + (!a));

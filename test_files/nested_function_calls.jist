@@ -1,0 +1,9 @@
+fn outer(x) {
+    return x * 2;
+}
+fn inner(y) {
+    return y + 5;
+}
+var outer_result = outer(inner(5));
+print("Outer function result: " + outer_result);
+print("Inner function result: " + inner(5));

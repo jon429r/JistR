@@ -1,0 +1,3 @@
+var a = 10;
+var b = "string";
+var result = a + b; // This should cause a type mismatch error

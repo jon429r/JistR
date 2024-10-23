@@ -2,9 +2,9 @@ pub mod conditional_compilers {
     use std::error::Error;
 
     use crate::base_variable::base_types::BaseTypes;
-    use crate::compiler::compilers::parse_operator;
     use crate::compilers::function::parse_function_call;
     use crate::compilers::variable::compile_dot_statement;
+    use crate::compilers::variable::parse_operator;
     use crate::compilers::variable::parse_variable_call;
     use crate::node::nodes::from_base_type;
     use crate::node::nodes::match_token_to_node;
@@ -134,14 +134,8 @@ pub mod conditional_compilers {
             index += 1;
         }
 
-        // Assuming the operation is a comparison operator (e.g., >, <, ==)
-
-        let mut ast_result = match parse_operator(&first_value, &operation, &second_value) {
-            Ok(result) => result,
-            Err(e) => {
-                return Err("Error: Unable to parse operator".into());
-            }
-        };
+        let ast_result = parse_operator(&first_value, &operation, &second_value)
+            .map_err(|e| format!("Error:\n Unable to parse operator:\n {}", e))?;
 
         println!(
             "expression: {:?} {:?} {:?}",

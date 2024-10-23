@@ -217,6 +217,8 @@ fn to_uppercase(s: String) -> String
 fn to_lowercase(s: String) -> String  
 fn trim(s: String) -> String  
 fn input(s: String) -> String
+fn read(file_path: String) -> String
+fn write(file_path: String, content: String)
 ```
 
 ## Contributing

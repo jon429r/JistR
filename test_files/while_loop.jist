@@ -1,0 +1,7 @@
+let i: int = 1;
+while (i <= 3) {
+    print("Looping: ");
+    print(i);
+    i++;
+}
+print("Loop ended");

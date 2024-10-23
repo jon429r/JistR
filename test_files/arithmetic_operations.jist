@@ -1,0 +1,9 @@
+let add: int = 3 + 2;
+let sub: int = 2 - 1;
+let mul: int = 2 * 3;
+let div: int = 6 / 2;
+
+println(add);
+println(sub);
+println(mul);
+println(div);

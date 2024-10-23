@@ -1,0 +1,4 @@
+let file_content: string = "";
+file_content = read("hello.txt");
+print("File content: ");
+print(file_content);

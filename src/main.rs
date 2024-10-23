@@ -136,15 +136,42 @@ use crate::globals::IF_ELSE_SKIP;
 
 pub fn parse_lines(file_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
     let contents = fs::read_to_string(file_path)?;
-    let lines: Vec<String> = contents.lines().map(|s| s.to_string()).collect();
+    if contents.is_empty() {
+        return Err("Error: Empty file".into());
+    }
+
     let mut brace_count = 0;
     let mut bracket_count = 0;
     let mut current_line = String::new();
     let mut finished_lines: Vec<String> = Vec::new();
+    let mut multiline_comment = false;
 
-    for (line_number, line) in lines.iter().enumerate() {
-        for ch in line.chars() {
+    // Iterate through each line in the file
+    for (line_number, line) in contents.lines().enumerate() {
+        let mut chars = line.chars().peekable(); // Use a peekable iterator for lookahead
+
+        while let Some(ch) = chars.next() {
             match ch {
+                '/' => {
+                    if chars.peek() == Some(&'/') {
+                        break; // Skip the rest of the line if it's a single-line comment
+                    } else if chars.peek() == Some(&'*') {
+                        multiline_comment = true; // Start of multiline comment
+                        chars.next(); // Consume '*'
+                        continue;
+                    } else {
+                        current_line.push(ch);
+                    }
+                }
+                '*' => {
+                    if multiline_comment && chars.peek() == Some(&'/') {
+                        multiline_comment = false; // End of multiline comment
+                        chars.next(); // Consume '/'
+                        continue;
+                    } else {
+                        current_line.push(ch);
+                    }
+                }
                 '{' => {
                     brace_count += 1;
                     current_line.push(ch);
@@ -186,16 +213,56 @@ pub fn parse_lines(file_path: &str) -> Result<Vec<String>, Box<dyn Error>> {
                         current_line.clear();
                     }
                 }
-                _ => current_line.push(ch),
+                _ => {
+                    if !multiline_comment {
+                        current_line.push(ch); // Only push characters if not in a multiline comment
+                    }
+                }
             }
         }
+
+        // Check if there are unmatched braces or brackets at the end of the line
+        if brace_count < 0 {
+            return Err(
+                format!("Unmatched closing curly brace at line {}", line_number + 1).into(),
+            );
+        }
+        if bracket_count < 0 {
+            return Err(format!(
+                "Unmatched closing square bracket at line {}",
+                line_number + 1
+            )
+            .into());
+        }
     }
-    return Ok(finished_lines);
+
+    // If there's any remaining content in current_line, add it as a finished line
+    if !current_line.is_empty() {
+        if brace_count > 0 {
+            return Err(format!("Unmatched opening curly brace at end of file").into());
+        }
+        if bracket_count > 0 {
+            return Err(format!("Unmatched opening square bracket at end of file").into());
+        }
+        finished_lines.push(current_line);
+    }
+
+    Ok(finished_lines)
 }
 
 fn parse_file(file_path: &str) -> Result<(), Box<dyn Error>> {
     let _ast_nodes: Vec<ASTNode> = Vec::new();
-    let finished_lines: Vec<String> = parse_lines(file_path).unwrap();
+    let finished_lines: Vec<String>;
+
+    match parse_lines(file_path) {
+        Ok(lines) => {
+            finished_lines = lines;
+        }
+        Err(e) => {
+            return Err(e);
+        }
+    }
+
     let mut tokenized_expression = Vec::new();
 
     for line in finished_lines {
@@ -408,7 +475,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Parse the file and handle any errors
     if let Err(e) = parse_file(file_path) {
-        eprintln!("Failed to parse file: {}", e);
         return Err(format!("Error occurred while parsing the file: {}", e).into());
     }
 
@@ -448,6 +514,11 @@ mod main_test {
 mod test_input_output {
     use assert_cmd::Command;
     use predicates::prelude::*;
+
+    fn run_jist_command(file_path: &str) -> assert_cmd::assert::Assert {
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+        cmd.arg(file_path).assert().success()
+    }
 
     // Pass in a file path and check if the output is correct
     #[test]
@@ -630,4 +701,137 @@ mod test_input_output {
             r#"a: Dict<string, float> = {"one" => 1.100000023841858, "two" => 2.0999999046325684, "three" => 3.0999999046325684}"#,
         ));
     }
+    // Test variable assignment and modification
+    #[test]
+    fn test_variable_reassignment() {
+        let file_path = "test_files/variable_reassignment.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains("10"));
+    }
+
+    // Test arithmetic operations (addition, subtraction, etc.)
+    #[test]
+    fn test_arithmetic_operations() {
+        let file_path = "test_files/arithmetic_operations.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains("5\n1\n6\n3"));
+    }
+
+    // Test conditional statements (if, else, elif)
+    #[test]
+    fn test_if_else_conditions() {
+        let file_path = "test_files/if_else_conditions.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains(
+            "Condition met: a is greater than b",
+        ));
+    }
+
+    // Test loops (while, for)
+    #[test]
+    fn test_while_loop() {
+        let file_path = "test_files/while_loop.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains(
+            "Looping: 1\nLooping: 2\nLooping: 3\nLoop ended",
+        ));
+    }
+
+    #[test]
+    fn test_for_loop() {
+        let file_path = "test_files/for_loop.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains(
+            "Iterating: 1\nIterating: 2\nIterating: 3",
+        ));
+    }
+    /*
+                // Test function declarations and calls
+                #[test]
+                fn test_function_declaration_and_call() {
+                    let file_path = "test_files/function_declaration.jist";
+                    run_jist_command(file_path).stdout(predicate::str::contains("Function Result: 15"));
+                }
+
+                // Test nested function calls
+                #[test]
+                fn test_nested_function_calls() {
+                    let file_path = "test_files/nested_function_calls.jist";
+                    run_jist_command(file_path).stdout(predicate::str::contains(
+                        "Outer function result: 20\nInner function result: 10",
+                    ));
+                }
+
+                // Test recursive functions
+                #[test]
+                fn test_recursive_function() {
+                    let file_path = "test_files/recursive_function.jist";
+                    run_jist_command(file_path).stdout(predicate::str::contains("Factorial of 5 is 120"));
+                }
+
+        //
+        // Test logical operations (AND, OR, NOT)
+        #[test]
+        fn test_logical_operations() {
+            let file_path = "test_files/logical_operations.jist";
+            run_jist_command(file_path).stdout(predicate::str::contains(
+                "Logical AND: true\nLogical OR: true\nLogical NOT: false",
+            ));
+        }
+    */
+    // Test file I/O (assuming this is part of your README)
+    #[test]
+    fn test_file_read() {
+        let file_path = "test_files/file_read.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains("File content: Hello, world!"));
+    }
+
+    #[test]
+    fn test_file_write() {
+        let file_path = "test_files/file_write.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains("File successfully written"));
+    }
+
+    // Test comments (single-line and multi-line)
+    #[test]
+    fn test_single_line_comments() {
+        let file_path = "test_files/single_line_comments.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains(
+            "Execution completed without processing the commented line",
+        ));
+    }
+
+    #[test]
+    fn test_multi_line_comments() {
+        let file_path = "test_files/multi_line_comments.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains(
+            "Execution completed without processing the commented block",
+        ));
+    }
+
+    // Test edge cases: handling empty files
+
+    #[test]
+    fn test_empty_file() {
+        let file_path = "test_files/empty_file.jist";
+        let mut cmd = Command::cargo_bin("jist").unwrap();
+
+        cmd.arg(file_path)
+            .assert()
+            .failure() // Expect the command to fail
+            .stderr(predicate::str::contains("Error: Empty file")); // Check the error message
+    }
+
+    /*
+    // Test complex expressions with variable operations
+    #[test]
+    fn test_complex_expressions() {
+        let file_path = "test_files/complex_expressions.jist";
+        run_jist_command(file_path).stdout(predicate::str::contains("Expression result: 42"));
+    }
+
+    // Test type mismatches (expect error)
+    #[test]
+    fn test_type_mismatch() {
+        let file_path = "test_files/type_mismatch.jist";
+        run_jist_command(file_path).stderr(predicate::str::contains(
+            "Error: Type mismatch between Int and String",
+        ));
+    }
+    */
 }

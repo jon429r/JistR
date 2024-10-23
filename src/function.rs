@@ -34,6 +34,7 @@ pub mod functions {
         DictionaryValuesFn(fn(&Dictionary) -> Vec<BaseTypes>),
         DictionaryPrint(fn(&Dictionary)),
 
+        DoubleStringNoOutFn(fn(String, String)),
         FloatFn(fn(f64)),
         DoubleFloatFn(fn(f64, f64) -> f64),
         SingleFloatFn(fn(f64) -> f64),
@@ -143,7 +144,6 @@ pub mod functions {
                         .downcast_ref::<String>()
                         .expect("Expected String");
                     let result = f(arg.clone());
-                    //println!("SingleStringFn result: {}", result);
                     return Box::new(result);
                 } else {
                     panic!("Expected exactly one argument for SingleStringFn");
@@ -198,6 +198,22 @@ pub mod functions {
                     return Box::new(());
                 } else {
                     panic!("Expected exactly two arguments for ArrayPushFn");
+                }
+            }
+
+            FunctionTypes::DoubleStringNoOutFn(f) => {
+                if arguments.len() == 2 {
+                    let arg1 = arguments[0]
+                        .downcast_ref::<String>()
+                        .expect("Expected String");
+                    let arg2 = arguments[1]
+                        .downcast_ref::<String>()
+                        .expect("Expected String");
+                    f(arg1.clone(), arg2.clone());
+                    //println!("DoubleStringNoOutFn called with: {:?}, {:?}", arg1, arg2);
+                    return Box::new(());
+                } else {
+                    panic!("Expected exactly two arguments for DoubleStringNoOutFn");
                 }
             }
 

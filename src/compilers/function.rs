@@ -244,7 +244,10 @@ pub fn parse_function_call(
                 None,
             );
             match result {
-                Ok(result) => return Ok(result),
+                Ok(result) => {
+                    print!("result: {:?}", result);
+                    return Ok(result);
+                }
                 Err(e) => return Err(e),
             }
         }
@@ -295,6 +298,7 @@ pub fn get_function_result(
     // Handle standard functions
     if let Some(func) = std_functions.get(&function_name.as_str()) {
         let result = call_standard_function(func, parameter_and_value)?;
+        println!("Result: {:?}", result);
         return Ok(result);
     }
 

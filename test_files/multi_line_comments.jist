@@ -1,0 +1,4 @@
+/* This is a
+multi-line comment */
+let a: int = 10;
+print("Execution completed without processing the commented block");
