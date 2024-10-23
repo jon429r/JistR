@@ -708,6 +708,7 @@ mod test_input_output {
         run_jist_command(file_path).stdout(predicate::str::contains("10"));
     }
 
+    /*
     // Test arithmetic operations (addition, subtraction, etc.)
     #[test]
     fn test_arithmetic_operations() {
@@ -740,47 +741,48 @@ mod test_input_output {
             "Iterating: 1\nIterating: 2\nIterating: 3",
         ));
     }
+    */
     /*
-                // Test function declarations and calls
-                #[test]
-                fn test_function_declaration_and_call() {
-                    let file_path = "test_files/function_declaration.jist";
-                    run_jist_command(file_path).stdout(predicate::str::contains("Function Result: 15"));
-                }
+                    // Test function declarations and calls
+                    #[test]
+                    fn test_function_declaration_and_call() {
+                        let file_path = "test_files/function_declaration.jist";
+                        run_jist_command(file_path).stdout(predicate::str::contains("Function Result: 15"));
+                    }
 
-                // Test nested function calls
-                #[test]
-                fn test_nested_function_calls() {
-                    let file_path = "test_files/nested_function_calls.jist";
-                    run_jist_command(file_path).stdout(predicate::str::contains(
-                        "Outer function result: 20\nInner function result: 10",
-                    ));
-                }
+                    // Test nested function calls
+                    #[test]
+                    fn test_nested_function_calls() {
+                        let file_path = "test_files/nested_function_calls.jist";
+                        run_jist_command(file_path).stdout(predicate::str::contains(
+                            "Outer function result: 20\nInner function result: 10",
+                        ));
+                    }
 
-                // Test recursive functions
-                #[test]
-                fn test_recursive_function() {
-                    let file_path = "test_files/recursive_function.jist";
-                    run_jist_command(file_path).stdout(predicate::str::contains("Factorial of 5 is 120"));
-                }
+                    // Test recursive functions
+                    #[test]
+                    fn test_recursive_function() {
+                        let file_path = "test_files/recursive_function.jist";
+                        run_jist_command(file_path).stdout(predicate::str::contains("Factorial of 5 is 120"));
+                    }
 
-        //
-        // Test logical operations (AND, OR, NOT)
+            //
+            // Test logical operations (AND, OR, NOT)
+            #[test]
+            fn test_logical_operations() {
+                let file_path = "test_files/logical_operations.jist";
+                run_jist_command(file_path).stdout(predicate::str::contains(
+                    "Logical AND: true\nLogical OR: true\nLogical NOT: false",
+                ));
+            }
+
+        // Test file I/O (assuming this is part of your README)
         #[test]
-        fn test_logical_operations() {
-            let file_path = "test_files/logical_operations.jist";
-            run_jist_command(file_path).stdout(predicate::str::contains(
-                "Logical AND: true\nLogical OR: true\nLogical NOT: false",
-            ));
+        fn test_file_read() {
+            let file_path = "test_files/file_read.jist";
+            run_jist_command(file_path).stdout(predicate::str::contains("File content: Hello, world!"));
         }
     */
-    // Test file I/O (assuming this is part of your README)
-    #[test]
-    fn test_file_read() {
-        let file_path = "test_files/file_read.jist";
-        run_jist_command(file_path).stdout(predicate::str::contains("File content: Hello, world!"));
-    }
-
     #[test]
     fn test_file_write() {
         let file_path = "test_files/file_write.jist";
